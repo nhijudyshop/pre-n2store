@@ -1,0 +1,1003 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Quản lý Hàng Hoàn</title>
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="modern.css" />
+    <link rel="stylesheet" href="hanghoan.css" />
+    <link rel="stylesheet" href="trahang.css" />
+    <link rel="stylesheet" href="banhang.css" />
+    <link rel="stylesheet" href="doisoat.css" />
+
+    <!-- Navigation Manager -->
+    <!-- N2Store Optimization: Core Utilities Loader -->
+    <script src="../js/core-loader.js"></script>
+
+    <script src="../js/navigation-modern.js"></script>
+    <script src="../js/common-utils.js"></script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <!-- Token Manager for TPOS API -->
+    <script src="../orders-report/token-manager.js"></script>
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                <span>N2Shop</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+            <!-- Menu items auto-generated -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-lucide="user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="btn-permissions" id="btnPermissions">
+                <i data-lucide="shield-check"></i>
+                <span>Xem Quyền Của Tôi</span>
+            </button>
+            <button class="btn-logout" id="btnLogout">
+                <i data-lucide="log-out"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="btn-icon" id="menuToggle">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="breadcrumb">
+                    <i data-lucide="home"></i>
+                    <span>Quản lý Hàng Hoàn</span>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <button class="btn btn-primary" id="toggleFormButton">
+                    <i data-lucide="plus-circle"></i>
+                    <span>Thêm Đơn</span>
+                </button>
+                <button class="btn-icon" id="btnRefresh" title="Làm mới dữ liệu">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" placeholder="Tìm kiếm..." id="searchInput" />
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i data-lucide="package"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Tổng Đơn</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i data-lucide="clock"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-label">Chờ Nhận</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i data-lucide="check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value" id="statCompleted">0</div>
+                    <div class="stat-label">Đã Nhận</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value" id="statThisMonth">0</div>
+                    <div class="stat-label">Tháng Này</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Tabs Navigation -->
+        <div class="main-tabs">
+            <button class="main-tab-btn active" data-tab="hangHoanTab">
+                <i data-lucide="package-x"></i>
+                <span>Hàng Hoàn</span>
+            </button>
+            <button class="main-tab-btn" data-tab="traHangTab">
+                <i data-lucide="rotate-ccw"></i>
+                <span>Trả Hàng</span>
+            </button>
+            <button class="main-tab-btn" data-tab="banHangTab">
+                <i data-lucide="shopping-cart"></i>
+                <span>Bán Hàng</span>
+            </button>
+            <button class="main-tab-btn" data-tab="doiSoatTab">
+                <i data-lucide="clipboard-check"></i>
+                <span>Đối Soát</span>
+            </button>
+        </div>
+
+        <!-- Hàng Hoàn Tab Content -->
+        <div class="tab-content active" id="hangHoanTab">
+
+        <!-- Add Form Section -->
+        <section class="upload-section card" id="dataForm">
+            <div class="card-header">
+                <div class="card-title">
+                    <i data-lucide="file-plus"></i>
+                    <h2>Thêm Thông Tin Hàng Hoàn</h2>
+                </div>
+                <button class="btn-icon" id="closeForm">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <form id="return-product">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <i data-lucide="truck"></i>
+                                Kênh
+                            </label>
+                            <select id="ship" required>
+                                <option value="J&T">J&T</option>
+                                <option value="TP">TP</option>
+                                <option value="BM">BM</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <i data-lucide="list"></i>
+                                Trường hợp
+                            </label>
+                            <select id="scenario" required>
+                                <option value="BOOM">BOOM</option>
+                                <option value="Sửa COD">Sửa COD</option>
+                                <option value="Thu về">Thu về</option>
+                                <option value="Khách gửi">Khách gửi</option>
+                                <option value="Thay đổi thông tin">
+                                    Thay đổi thông tin
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <i data-lucide="user"></i>
+                                Tên FB + SĐT
+                            </label>
+                            <input type="text" id="customerInfo" list="suggestionsInfo" required />
+                            <datalist id="suggestionsInfo"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <i data-lucide="dollar-sign"></i>
+                                Giá tiền
+                            </label>
+                            <input type="text" id="totalAmount" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i data-lucide="message-square"></i>
+                            Lý do
+                        </label>
+                        <input type="text" id="cause" list="suggestionsCause" required />
+                        <datalist id="suggestionsCause"></datalist>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="clearDataButton">
+                            <i data-lucide="rotate-ccw"></i>
+                            Reset
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="addButton">
+                            <i data-lucide="check"></i>
+                            Thêm Đơn
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Filter & Table Section -->
+        <section class="gallery-section card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i data-lucide="table"></i>
+                    <h2>Danh Sách Hàng Hoàn</h2>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon" id="btnExport" title="Xuất Excel">
+                        <i data-lucide="download"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Filters -->
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <i data-lucide="filter"></i>
+                        <select id="channelFilter">
+                            <option value="all">Tất cả kênh</option>
+                            <option value="J&T">J&T</option>
+                            <option value="TP">TP</option>
+                            <option value="BM">BM</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <i data-lucide="list"></i>
+                        <select id="scenarioFilter">
+                            <option value="all">Tất cả trường hợp</option>
+                            <option value="BOOM">BOOM</option>
+                            <option value="Sửa COD">Sửa COD</option>
+                            <option value="Thu về">Thu về</option>
+                            <option value="Khách gửi">Khách gửi</option>
+                            <option value="Thay đổi thông tin">
+                                Thay đổi thông tin
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <i data-lucide="check-circle"></i>
+                        <select id="statusFilter">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="active">Chưa nhận</option>
+                            <option value="completed">Đã nhận</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group date-filter">
+                        <i data-lucide="calendar"></i>
+                        <input type="date" id="startDate" />
+                        <span>đến</span>
+                        <input type="date" id="endDate" />
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Kênh</th>
+                                <th>Trường hợp</th>
+                                <th>Tên FB + SĐT</th>
+                                <th>Số tiền</th>
+                                <th>Lý do</th>
+                                <th>Đã nhận</th>
+                                <th>Ngày duyệt</th>
+                                <th>Sửa</th>
+                                <th>Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Data rows here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState">
+                    <i data-lucide="inbox"></i>
+                    <h3>Chưa có dữ liệu</h3>
+                    <p>Thêm đơn hàng hoàn đầu tiên của bạn</p>
+                </div>
+            </div>
+        </section>
+
+        </div>
+        <!-- End Hàng Hoàn Tab Content -->
+
+        <!-- Trả Hàng Tab Content -->
+        <div class="tab-content" id="traHangTab">
+            <section class="trahang-section">
+                <!-- Stats -->
+                <div class="trahang-stats">
+                    <div class="trahang-stat-card">
+                        <div class="stat-icon blue">
+                            <i data-lucide="file-text"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="trahangStatTotal">0</div>
+                            <div class="stat-label">Tổng đơn</div>
+                        </div>
+                    </div>
+                    <div class="trahang-stat-card">
+                        <div class="stat-icon green">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="trahangStatConfirmed">0</div>
+                            <div class="stat-label">Đã xác nhận</div>
+                        </div>
+                    </div>
+                    <div class="trahang-stat-card">
+                        <div class="stat-icon orange">
+                            <i data-lucide="file-edit"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="trahangStatDraft">0</div>
+                            <div class="stat-label">Nháp</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="trahang-actions">
+                    <button class="btn btn-primary" id="btnImportExcel">
+                        <i data-lucide="upload"></i>
+                        <span>Import Excel</span>
+                    </button>
+                    <button class="btn btn-secondary" id="btnRefreshTraHang" title="Làm mới dữ liệu từ Firebase">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>Làm mới</span>
+                    </button>
+                    <button class="btn btn-outline-danger" id="btnClearTraHang" title="Xóa tất cả dữ liệu">
+                        <i data-lucide="trash-2"></i>
+                        <span>Xóa tất cả</span>
+                    </button>
+                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display: none;">
+                </div>
+
+                <!-- Filters -->
+                <div class="trahang-filters">
+                    <div class="trahang-filter-group">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="trahangSearchInput" placeholder="Tìm kiếm khách hàng, SĐT, mã HĐ...">
+                    </div>
+                    <div class="trahang-filter-group">
+                        <i data-lucide="filter"></i>
+                        <select id="trahangStatusFilter">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="confirmed">Đã xác nhận</option>
+                        </select>
+                    </div>
+                    <div class="trahang-filter-group">
+                        <i data-lucide="calendar"></i>
+                        <input type="date" id="trahangStartDate">
+                        <span>đến</span>
+                        <input type="date" id="trahangEndDate">
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i data-lucide="table"></i>
+                            <h2>Danh Sách Trả Hàng</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="trahang-table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Khách hàng</th>
+                                        <th>Facebook</th>
+                                        <th>Điện thoại</th>
+                                        <th>Địa chỉ</th>
+                                        <th>Số</th>
+                                        <th>Tham chiếu</th>
+                                        <th>Ngày bán</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Còn nợ</th>
+                                        <th>Trạng thái</th>
+                                        <th>Công ty</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trahangTableBody">
+                                    <!-- Data rows will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="trahang-loading" id="trahangLoadingState">
+                            <i data-lucide="loader-2"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div class="trahang-empty" id="trahangEmptyState">
+                            <i data-lucide="inbox"></i>
+                            <h3>Chưa có dữ liệu</h3>
+                            <p>Dữ liệu trả hàng sẽ hiển thị ở đây</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- End Trả Hàng Tab Content -->
+
+        <!-- Bán Hàng Tab Content -->
+        <div class="tab-content" id="banHangTab">
+            <section class="banhang-section">
+                <!-- Action Buttons -->
+                <div class="banhang-actions">
+                    <button class="btn btn-primary" id="btnImportExcelBanHang">
+                        <i data-lucide="upload"></i>
+                        <span>Import Excel</span>
+                    </button>
+                    <button class="btn btn-secondary" id="btnRefreshBanHang" title="Làm mới dữ liệu từ Firebase">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>Làm mới</span>
+                    </button>
+                    <button class="btn btn-outline-danger" id="btnClearBanHang" title="Xóa tất cả dữ liệu">
+                        <i data-lucide="trash-2"></i>
+                        <span>Xóa tất cả</span>
+                    </button>
+                    <button class="btn btn-success" id="btnSyncTPOS" title="Đồng bộ dữ liệu từ TPOS">
+                        <i data-lucide="cloud-download"></i>
+                        <span>Sync TPOS</span>
+                    </button>
+                    <input type="file" id="excelFileInputBanHang" accept=".xlsx,.xls" style="display: none;">
+                    <!-- Background sync indicator -->
+                    <div id="banhangBackgroundIndicator" class="background-sync-indicator" title="Đang đồng bộ dữ liệu từ TPOS...">
+                        <i data-lucide="cloud-download" class="sync-icon"></i>
+                        <span>Đang sync...</span>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="banhang-filters">
+                    <div class="banhang-filter-group">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="banhangSearchInput" placeholder="Tìm kiếm khách hàng, SĐT, mã HĐ...">
+                    </div>
+                    <div class="banhang-filter-group">
+                        <i data-lucide="filter"></i>
+                        <select id="banhangStatusFilter">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="paid">Đã thanh toán</option>
+                            <option value="draft">Nháp</option>
+                        </select>
+                    </div>
+                    <div class="banhang-filter-group">
+                        <i data-lucide="calendar"></i>
+                        <input type="date" id="banhangStartDate">
+                        <span>đến</span>
+                        <input type="date" id="banhangEndDate">
+                    </div>
+                    <div class="banhang-filter-group">
+                        <i data-lucide="list"></i>
+                        <select id="banhangPageSize">
+                            <option value="20">20 dòng</option>
+                            <option value="50" selected>50 dòng</option>
+                            <option value="100">100 dòng</option>
+                            <option value="200">200 dòng</option>
+                            <option value="1000">1000 dòng</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="banhang-pagination" id="banhangPagination">
+                    <div class="pagination-info">
+                        <span>Hiển thị <strong id="banhangShowingFrom">0</strong> - <strong id="banhangShowingTo">0</strong> / <strong id="banhangTotalRecords">0</strong> đơn</span>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="btn-page" id="banhangFirstPage" title="Trang đầu">
+                            <i data-lucide="chevrons-left"></i>
+                        </button>
+                        <button class="btn-page" id="banhangPrevPage" title="Trang trước">
+                            <i data-lucide="chevron-left"></i>
+                        </button>
+                        <span class="page-info">Trang <strong id="banhangCurrentPage">1</strong> / <strong id="banhangTotalPages">1</strong></span>
+                        <button class="btn-page" id="banhangNextPage" title="Trang sau">
+                            <i data-lucide="chevron-right"></i>
+                        </button>
+                        <button class="btn-page" id="banhangLastPage" title="Trang cuối">
+                            <i data-lucide="chevrons-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i data-lucide="table"></i>
+                            <h2>Danh Sách Bán Hàng</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="banhang-table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Khách hàng</th>
+                                        <th>Email</th>
+                                        <th>Facebook</th>
+                                        <th>Điện thoại</th>
+                                        <th>Địa chỉ</th>
+                                        <th>Số</th>
+                                        <th>Ngày bán</th>
+                                        <th>Ngày xác nhận</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Còn nợ</th>
+                                        <th>Trạng thái</th>
+                                        <th>Đối tác giao hàng</th>
+                                        <th>Mã vận đơn</th>
+                                        <th>COD</th>
+                                        <th>Phí ship GH</th>
+                                        <th>Tiền cọc</th>
+                                        <th>Trả trước</th>
+                                        <th>KL ship (g)</th>
+                                        <th>Trạng thái GH</th>
+                                        <th>Đối soát GH</th>
+                                        <th>Ghi chú GH</th>
+                                        <th>Ghi chú</th>
+                                        <th>Người bán</th>
+                                        <th>Nguồn</th>
+                                        <th>Kênh</th>
+                                        <th>Công ty</th>
+                                        <th>Tham chiếu</th>
+                                        <th>Phí giao hàng</th>
+                                        <th>Nhãn</th>
+                                        <th>Tiền giảm</th>
+                                        <th>Chiết khấu (%)</th>
+                                        <th>Thành tiền CK</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="banhangTableBody">
+                                    <!-- Data rows will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="banhang-loading" id="banhangLoadingState">
+                            <i data-lucide="loader-2"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div class="banhang-empty" id="banhangEmptyState">
+                            <i data-lucide="inbox"></i>
+                            <h3>Chưa có dữ liệu</h3>
+                            <p>Dữ liệu bán hàng sẽ hiển thị ở đây</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- End Bán Hàng Tab Content -->
+
+        <!-- Đối Soát Tab Content -->
+        <div class="tab-content" id="doiSoatTab">
+            <section class="doisoat-section">
+                <!-- Filters -->
+                <div class="doisoat-filters">
+                    <div class="doisoat-filter-group">
+                        <label>Ngày bắt đầu</label>
+                        <input type="datetime-local" id="doiSoatStartDate">
+                    </div>
+                    <div class="doisoat-filter-group">
+                        <label>Ngày kết thúc</label>
+                        <input type="datetime-local" id="doiSoatEndDate">
+                    </div>
+                    <div class="doisoat-filter-group">
+                        <label>Số HD</label>
+                        <input type="text" id="doiSoatNumber" placeholder="Nhập số HĐ">
+                    </div>
+                    <div class="doisoat-filter-group">
+                        <label>Mã đơn vận</label>
+                        <input type="text" id="doiSoatMaDonVan" placeholder="Nhập mã đơn vận">
+                    </div>
+                    <button class="btn btn-primary" id="btnSearchDoiSoat">
+                        <i data-lucide="search"></i>
+                        <span>Tìm kiếm</span>
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i data-lucide="table"></i>
+                            <h2>Lịch sử đối soát sản phẩm nhiều bán hàng</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="doisoat-table">
+                                <thead>
+                                    <tr>
+                                        <th>Số HD</th>
+                                        <th>Mã vận đơn</th>
+                                        <th>Nhân viên đối soát</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Trạng thái</th>
+                                        <th>Nội dung</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="doiSoatTableBody">
+                                    <!-- Data rows will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="doisoat-pagination" id="doiSoatPagination">
+                            <button class="btn btn-secondary" id="btnPrevDoiSoat" disabled>
+                                <i data-lucide="chevron-left"></i>
+                                <span>Trước</span>
+                            </button>
+                            <span id="doiSoatPageInfo">Trang 1</span>
+                            <button class="btn btn-secondary" id="btnNextDoiSoat">
+                                <span>Sau</span>
+                                <i data-lucide="chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="doisoat-loading" id="doiSoatLoadingState">
+                            <i data-lucide="loader-2"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div class="doisoat-empty" id="doiSoatEmptyState">
+                            <i data-lucide="inbox"></i>
+                            <h3>Chưa có dữ liệu</h3>
+                            <p>Dữ liệu đối soát sẽ hiển thị ở đây</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- End Đối Soát Tab Content -->
+
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>
+                    <i data-lucide="edit-3"></i>
+                    Chỉnh Sửa Đơn Hàng
+                </h2>
+                <button class="btn-icon modal-close" onclick="closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <i data-lucide="truck"></i>
+                            Kênh
+                        </label>
+                        <select id="editDelivery" required>
+                            <option value="J&T">J&T</option>
+                            <option value="TP">TP</option>
+                            <option value="BM">BM</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <i data-lucide="list"></i>
+                            Trường hợp
+                        </label>
+                        <select id="eidtScenario" required>
+                            <option value="BOOM">BOOM</option>
+                            <option value="Sửa COD">Sửa COD</option>
+                            <option value="Thu về">Thu về</option>
+                            <option value="Khách gửi">Khách gửi</option>
+                            <option value="Thay đổi thông tin">
+                                Thay đổi thông tin
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i data-lucide="user"></i>
+                        FB + SĐT
+                    </label>
+                    <input type="text" id="editInfo" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <i data-lucide="dollar-sign"></i>
+                            Số tiền
+                        </label>
+                        <input type="text" id="editAmount" />
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <i data-lucide="calendar"></i>
+                            Ngày đi đơn
+                        </label>
+                        <input type="text" id="editDate" placeholder="DD-MM-YY" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i data-lucide="message-square"></i>
+                        Lý do
+                    </label>
+                    <input type="text" id="editNote" />
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">
+                    <i data-lucide="x"></i>
+                    Hủy
+                </button>
+                <button class="btn btn-primary" id="saveButton">
+                    <i data-lucide="save"></i>
+                    Lưu Thay Đổi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Order Detail Modal -->
+    <div id="returnDetailModal" class="modal-overlay">
+        <div class="modal-container return-detail-modal">
+            <div class="modal-header">
+                <h2>
+                    <i data-lucide="file-text"></i>
+                    Chi Tiết Đơn Trả Hàng
+                </h2>
+                <button class="btn-icon modal-close" onclick="TraHangModule.closeDetailModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Loading state -->
+                <div class="return-detail-loading" id="returnDetailLoading">
+                    <i data-lucide="loader-2"></i>
+                    <p>Đang tải chi tiết...</p>
+                </div>
+
+                <!-- Content -->
+                <div class="return-detail-content" id="returnDetailContent">
+                    <!-- Tabs -->
+                    <div class="return-detail-tabs">
+                        <button class="return-tab-btn active" data-tab="info">Thông tin</button>
+                        <button class="return-tab-btn" data-tab="receiver">Thông tin người nhận</button>
+                        <button class="return-tab-btn" data-tab="other">Thông tin khác</button>
+                        <button class="return-tab-btn" data-tab="images">Hình ảnh đóng gói</button>
+                        <button class="return-tab-btn" data-tab="history">Lịch sử</button>
+                    </div>
+
+                    <!-- Info Tab Content -->
+                    <div class="return-tab-content active" id="returnTabInfo">
+                        <!-- Order Info -->
+                        <div class="return-info-grid">
+                            <div class="return-info-row">
+                                <div class="return-info-item">
+                                    <label>Khách hàng:</label>
+                                    <span class="return-customer-name" id="returnCustomerName">-</span>
+                                    <span class="return-customer-status" id="returnCustomerStatus">-</span>
+                                </div>
+                                <div class="return-info-item">
+                                    <label>Phương thức thanh toán:</label>
+                                    <span id="returnPaymentMethod">-</span>
+                                </div>
+                                <div class="return-info-item">
+                                    <label>Người giao hàng:</label>
+                                    <span id="returnDeliver">-</span>
+                                </div>
+                            </div>
+                            <div class="return-info-row">
+                                <div class="return-info-item">
+                                    <label>Nợ cũ:</label>
+                                    <span class="return-old-debt" id="returnOldDebt">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Lines Table -->
+                        <div class="return-lines-section">
+                            <table class="return-lines-table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Sản phẩm</th>
+                                        <th class="text-right">Số lượng</th>
+                                        <th class="text-right">Đơn giá</th>
+                                        <th class="text-right">Tổng</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="returnLinesBody">
+                                    <!-- Lines will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary -->
+                        <div class="return-summary">
+                            <div class="return-summary-row">
+                                <span class="return-summary-label">Tổng số lượng:</span>
+                                <span class="return-summary-value" id="returnTotalQty">0</span>
+                            </div>
+                            <div class="return-summary-row">
+                                <span class="return-summary-label">Tổng tiền:</span>
+                                <span class="return-summary-value return-total-amount" id="returnTotalAmount">0</span>
+                            </div>
+                            <div class="return-summary-row">
+                                <span class="return-summary-label">Số tiền trả:</span>
+                                <span class="return-summary-value" id="returnPaidAmount">0</span>
+                            </div>
+                            <div class="return-summary-row">
+                                <span class="return-summary-label">Còn nợ:</span>
+                                <span class="return-summary-value return-remaining" id="returnRemaining">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receiver Tab Content -->
+                    <div class="return-tab-content" id="returnTabReceiver">
+                        <div class="return-info-grid">
+                            <div class="return-info-row">
+                                <div class="return-info-item">
+                                    <label>Tên người nhận:</label>
+                                    <span id="returnReceiverName">-</span>
+                                </div>
+                                <div class="return-info-item">
+                                    <label>Số điện thoại:</label>
+                                    <span id="returnReceiverPhone">-</span>
+                                </div>
+                            </div>
+                            <div class="return-info-row">
+                                <div class="return-info-item full-width">
+                                    <label>Địa chỉ:</label>
+                                    <span id="returnReceiverAddress">-</span>
+                                </div>
+                            </div>
+                            <div class="return-info-row">
+                                <div class="return-info-item full-width">
+                                    <label>Ghi chú:</label>
+                                    <span id="returnReceiverNote">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Tab Content -->
+                    <div class="return-tab-content" id="returnTabOther">
+                        <div class="return-info-grid">
+                            <div class="return-info-row">
+                                <div class="return-info-item">
+                                    <label>Mã hóa đơn:</label>
+                                    <span id="returnInvoiceNumber">-</span>
+                                </div>
+                                <div class="return-info-item">
+                                    <label>Ngày hóa đơn:</label>
+                                    <span id="returnInvoiceDate">-</span>
+                                </div>
+                            </div>
+                            <div class="return-info-row">
+                                <div class="return-info-item">
+                                    <label>Kho hàng:</label>
+                                    <span id="returnWarehouse">-</span>
+                                </div>
+                                <div class="return-info-item">
+                                    <label>Nhân viên:</label>
+                                    <span id="returnUser">-</span>
+                                </div>
+                            </div>
+                            <div class="return-info-row">
+                                <div class="return-info-item full-width">
+                                    <label>Ghi chú:</label>
+                                    <span id="returnComment">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Images Tab Content -->
+                    <div class="return-tab-content" id="returnTabImages">
+                        <div class="return-images-grid" id="returnImagesGrid">
+                            <div class="return-no-images">
+                                <i data-lucide="image-off"></i>
+                                <p>Chưa có hình ảnh đóng gói</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History Tab Content -->
+                    <div class="return-tab-content" id="returnTabHistory">
+                        <div class="return-history-list" id="returnHistoryList">
+                            <div class="return-no-history">
+                                <i data-lucide="clock"></i>
+                                <p>Chưa có lịch sử giao hàng</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="TraHangModule.closeDetailModal()">
+                    <i data-lucide="x"></i>
+                    Đóng
+                </button>
+                <button class="btn btn-primary" id="btnOpenTpos" onclick="TraHangModule.openInTpos()">
+                    <i data-lucide="external-link"></i>
+                    Mở trong TPOS
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="auth.js"></script>
+    <script src="notification-system.js"></script>
+    <script src="hanghoan.js"></script>
+    <script src="trahang.js"></script>
+    <script src="banhang.js"></script>
+    <script src="doisoat.js"></script>
+</body>
+
+</html>

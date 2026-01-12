@@ -1,0 +1,284 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Lịch sử chỉnh sửa</title>
+        <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- External CSS -->
+        <link rel="stylesheet" href="modern.css" />
+        <link rel="stylesheet" href="history-custom.css" />
+
+        <!-- Lucide Icons -->
+        <!-- N2Store Optimization: Core Utilities Loader -->
+        <script src="../js/core-loader.js"></script>
+
+        <script src="https://unpkg.com/lucide@latest"></script>
+
+        <!-- Firebase SDKs -->
+        <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+        <!-- Scripts -->
+        <script src="../js/navigation-modern.js"></script>
+        <script src="../js/common-utils.js"></script>
+        <script src="auth.js"></script>
+    </head>
+
+    <body>
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i data-lucide="zap"></i>
+                    <span>N2Shop</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i data-lucide="panel-left-close"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav" id="sidebarNav">
+                <!-- Menu items will be auto-generated -->
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i data-lucide="user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Admin</div>
+                        <div class="user-role">Quản trị viên</div>
+                    </div>
+                </div>
+                <button class="btn-permissions" id="btnPermissions">
+                    <i data-lucide="shield-check"></i>
+                    <span>Xem Quyền Của Tôi</span>
+                </button>
+                <button class="btn-logout" id="btnLogout">
+                    <i data-lucide="log-out"></i>
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Fixed Toggle Button (shows when sidebar collapsed) -->
+        <button class="sidebar-toggle-fixed" id="sidebarToggleFixed">
+            <i data-lucide="menu"></i>
+        </button>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="btn-icon" id="menuToggle">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="breadcrumb">
+                        <i data-lucide="home"></i>
+                        <span>Lịch sử chỉnh sửa</span>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <button
+                        class="btn-icon"
+                        id="btnRefresh"
+                        title="Làm mới dữ liệu"
+                    >
+                        <i data-lucide="refresh-cw"></i>
+                    </button>
+                    <button
+                        class="btn-icon danger"
+                        id="btnClearFiltered"
+                        title="Xóa lịch sử đã lọc"
+                    >
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i data-lucide="activity"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalLogs">0</div>
+                        <div class="stat-label">Tổng hoạt động</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i data-lucide="calendar"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="todayLogs">0</div>
+                        <div class="stat-label">Hôm nay</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple">
+                        <i data-lucide="users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="activeUsers">0</div>
+                        <div class="stat-label">Người dùng</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i data-lucide="user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="currentUserLogs">0</div>
+                        <div class="stat-label">Của bạn</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filter Section -->
+            <section class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="filter"></i>
+                        <h2>Bộ lọc</h2>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="filter-container">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>
+                                    <i data-lucide="user"></i>
+                                    Người dùng
+                                </label>
+                                <select id="userFilter">
+                                    <option value="all">Tất cả</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <i data-lucide="layout"></i>
+                                    Trang
+                                </label>
+                                <select id="pageFilter">
+                                    <option value="all">Tất cả</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <i data-lucide="zap"></i>
+                                    Hành động
+                                </label>
+                                <select id="actionFilter">
+                                    <option value="all">Tất cả</option>
+                                    <option value="add">Thêm</option>
+                                    <option value="edit">Sửa</option>
+                                    <option value="delete">Xóa</option>
+                                    <option value="update">Cập nhật</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>
+                                    <i data-lucide="calendar-days"></i>
+                                    Từ ngày
+                                </label>
+                                <input type="date" id="startDate" />
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <i data-lucide="calendar-days"></i>
+                                    Đến ngày
+                                </label>
+                                <input type="date" id="endDate" />
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button
+                                class="btn btn-secondary"
+                                id="btnResetFilter"
+                            >
+                                <i data-lucide="x"></i>
+                                Xóa bộ lọc
+                            </button>
+                            <button class="btn btn-primary" id="btnApplyFilter">
+                                <i data-lucide="search"></i>
+                                Áp dụng
+                            </button>
+                        </div>
+                    </div>
+                    <div class="filter-info" id="filterInfo">
+                        Đang hiển thị <span id="filteredCount">0</span> kết quả
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Table -->
+            <section class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="history"></i>
+                        <h2>Lịch sử hoạt động</h2>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-wrapper">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Thời gian</th>
+                                    <th>Người dùng</th>
+                                    <th>Trang</th>
+                                    <th>Hành động</th>
+                                    <th>Mô tả</th>
+                                    <th>Dữ liệu cũ</th>
+                                    <th>Dữ liệu mới</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState">
+                        <i data-lucide="inbox"></i>
+                        <h3>Chưa có lịch sử</h3>
+                        <p>Chưa có hoạt động nào được ghi nhận</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Detail Modal -->
+        <div class="modal-overlay" id="detailModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Chi tiết thay đổi</h3>
+                    <button class="btn-icon" id="closeModal">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalDetailContent">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Scripts -->
+        <script src="notification-system.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>

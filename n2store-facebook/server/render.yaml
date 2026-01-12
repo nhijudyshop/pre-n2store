@@ -1,0 +1,16 @@
+# Render.com deployment configuration
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: n2store-facebook
+    env: node
+    plan: free
+    rootDir: n2store-facebook/server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: NODE_ENV
+        value: production

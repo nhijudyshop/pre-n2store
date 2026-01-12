@@ -1,0 +1,444 @@
+/* =====================================================
+   HÀNG HOÀN - ADDITIONAL STYLES
+   Extends modern.css with page-specific styling
+   ===================================================== */
+
+/* =====================================================
+   FILTER SECTION
+   ===================================================== */
+
+.filter-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.date-filter input[type="date"] {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    background: white;
+}
+
+.date-filter span {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* =====================================================
+   TABLE STYLES
+   ===================================================== */
+
+.table-responsive {
+    overflow-x: auto;
+    margin-top: var(--spacing-lg);
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.modern-table thead {
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--border);
+}
+
+.modern-table th {
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background-color var(--transition-fast);
+}
+
+.modern-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.modern-table tbody tr[style*="opacity: 0.5"] {
+    opacity: 0.5;
+}
+
+.modern-table td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.modern-table td:first-child {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Table action buttons with Lucide icons */
+.modern-table .edit-button,
+.modern-table .delete-button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.modern-table .edit-button {
+    background: var(--gray-100);
+    color: var(--primary);
+}
+
+.modern-table .edit-button:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.modern-table .edit-button i {
+    width: 18px;
+    height: 18px;
+}
+
+.modern-table .delete-button {
+    background: #fee2e2;
+    color: var(--danger);
+}
+
+.modern-table .delete-button:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.modern-table .delete-button i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Checkbox styling */
+.modern-table input[type="checkbox"].received-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--success);
+}
+
+/* =====================================================
+   MODAL STYLES
+   ===================================================== */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-container {
+    background: white;
+    border-radius: var(--radius-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: var(--spacing-xl);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.modal-header h2 i {
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+}
+
+.modal-close {
+    background: transparent !important;
+}
+
+.modal-body {
+    padding: var(--spacing-xl);
+}
+
+.modal-footer {
+    padding: var(--spacing-xl);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    position: sticky;
+    bottom: 0;
+    background: white;
+}
+
+/* =====================================================
+   EMPTY STATE
+   ===================================================== */
+
+.empty-state {
+    display: none;
+    text-align: center;
+    padding: var(--spacing-xl) 0;
+}
+
+.empty-state.show {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.empty-state i {
+    width: 64px;
+    height: 64px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+}
+
+/* =====================================================
+   SEARCH BOX ENHANCEMENT
+   ===================================================== */
+
+.search-box {
+    min-width: 250px;
+}
+
+/* =====================================================
+   STATS CUSTOMIZATION
+   ===================================================== */
+
+.stat-value {
+    font-size: 2rem;
+}
+
+/* =====================================================
+   FORM ENHANCEMENTS
+   ===================================================== */
+
+.upload-section.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =====================================================
+   RESPONSIVE ADJUSTMENTS
+   ===================================================== */
+
+@media (max-width: 1024px) {
+    .filter-section {
+        flex-direction: column;
+    }
+
+    .date-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modern-table {
+        font-size: 0.8125rem;
+    }
+
+    .modern-table th,
+    .modern-table td {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-container {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: var(--spacing-lg);
+    }
+
+    .stats-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .modern-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+
+    .top-bar-right .btn-primary span {
+        display: none;
+    }
+
+    .search-box {
+        min-width: 150px;
+    }
+}
+
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
+
+.text-success {
+    color: var(--success) !important;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
+
+.text-warning {
+    color: var(--warning) !important;
+}
+
+.bg-success {
+    background: var(--success) !important;
+}
+
+.bg-danger {
+    background: var(--danger) !important;
+}
+
+.bg-warning {
+    background: var(--warning) !important;
+}
+
+/* =====================================================
+   LOADING STATE
+   ===================================================== */
+
+.table-loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.table-loading i {
+    width: 48px;
+    height: 48px;
+    animation: spin 1s linear infinite;
+}
+
+/* =====================================================
+   PRINT STYLES
+   ===================================================== */
+
+@media print {
+    .sidebar,
+    .top-bar,
+    .filter-section,
+    .btn,
+    .btn-icon,
+    .modal-overlay {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .modern-table {
+        border: 1px solid #000;
+    }
+
+    .modern-table th,
+    .modern-table td {
+        border: 1px solid #000;
+    }
+}

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Customer 360 Hub - Customer Search</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2a79b2",
+                        "primary-dark": "#1d5a85",
+                        "primary-light": "#eaf4fa",
+                        "background-light": "#fafafa",
+                        "background-dark": "#21262c",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d333b",
+                        "border-light": "#e5e7eb",
+                        "border-dark": "#373e47",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.375rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for table container if needed */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark sticky top-0 z-50">
+<div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
+<!-- Logo Area -->
+<div class="flex items-center gap-3">
+<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined text-2xl">hub</span>
+</div>
+<h1 class="font-bold text-xl tracking-tight">Customer 360 Hub</h1>
+</div>
+<!-- Global Actions -->
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<div class="h-8 w-px bg-border-light dark:bg-border-dark mx-1"></div>
+<div class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 py-1.5 px-3 rounded-full transition-colors">
+<div class="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-300 text-[20px]">person</span>
+</div>
+<span class="text-sm font-medium hidden sm:block">Admin User</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 max-w-[1440px] w-full mx-auto px-6 py-8">
+<!-- Tab Navigation -->
+<div class="mb-8">
+<nav aria-label="Tabs" class="flex space-x-1 border-b border-border-light dark:border-border-dark">
+<a class="border-b-2 border-primary text-primary dark:text-white px-4 py-3 font-semibold text-sm flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]">search</span>
+                    Customer Search
+                </a>
+<a class="border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 px-4 py-3 font-medium text-sm flex items-center gap-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                    Transaction Activity
+                </a>
+<a class="border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 px-4 py-3 font-medium text-sm flex items-center gap-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">link_off</span>
+                    Unlinked Transactions
+                    <span class="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded-full ml-1">3</span>
+</a>
+</nav>
+</div>
+<!-- Search and Filter Section -->
+<div class="bg-surface-light dark:bg-surface-dark p-6 rounded-lg border border-border-light dark:border-border-dark shadow-sm mb-8">
+<div class="flex flex-col md:flex-row gap-4 items-end">
+<div class="flex-1 w-full">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" for="search-input">Search Customer</label>
+<div class="relative rounded-md shadow-sm">
+<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+<span class="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+</div>
+<input class="block w-full rounded-md border-border-light dark:border-border-dark pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary sm:text-sm" id="search-input" name="search" placeholder="Search by phone number or name..." type="text"/>
+<div class="absolute inset-y-0 right-0 flex items-center">
+<select class="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-7 text-slate-500 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm" id="search-type" name="search-type">
+<option>All Fields</option>
+<option>Phone</option>
+<option>Name</option>
+<option>Email</option>
+</select>
+</div>
+</div>
+</div>
+<div class="w-full md:w-48">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" for="status-filter">Status</label>
+<select class="block w-full rounded-md border-border-light dark:border-border-dark py-3 pl-3 pr-10 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary sm:text-sm" id="status-filter" name="status">
+<option>Any Status</option>
+<option>Active</option>
+<option>Inactive</option>
+<option>Pending</option>
+</select>
+</div>
+<div class="flex gap-3 w-full md:w-auto mt-2 md:mt-0">
+<button class="flex-1 md:flex-none items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                        Search
+                    </button>
+<button class="flex-none items-center justify-center rounded-md bg-white dark:bg-slate-700 px-3 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors" title="Advanced Filters">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Data Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
+<!-- Card Header -->
+<div class="px-6 py-5 border-b border-border-light dark:border-border-dark flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-surface-dark">
+<div>
+<h3 class="text-base font-semibold leading-6 text-slate-900 dark:text-white">Customer List</h3>
+<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Showing recent search results and active profiles.</p>
+</div>
+<div class="flex gap-2">
+<button class="inline-flex items-center rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" type="button">
+<span class="material-symbols-outlined text-[18px] mr-1.5 text-slate-500">download</span>
+                        Export
+                    </button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto custom-scrollbar">
+<table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
+<thead class="bg-slate-50 dark:bg-slate-800/50">
+<tr>
+<th class="py-3.5 pl-6 pr-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400" scope="col">Customer Name</th>
+<th class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400" scope="col">Phone Number</th>
+<th class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400" scope="col">Status</th>
+<th class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400" scope="col">Tier</th>
+<th class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400" scope="col">Last Activity</th>
+<th class="relative py-3.5 pl-3 pr-6" scope="col">
+<span class="sr-only">Actions</span>
+</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark bg-white dark:bg-surface-dark">
+<!-- Row 1 -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<td class="whitespace-nowrap py-4 pl-6 pr-3">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                                        JD
+                                    </div>
+<div class="ml-4">
+<div class="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">Jane Doe</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">ID: #8832910</div>
+</div>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-slate-400">call</span>
+                                    +1 (555) 123-4567
+                                </div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm">
+<span class="inline-flex items-center rounded-full bg-green-50 dark:bg-green-900/20 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
+                                    Active
+                                </span>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-amber-500" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="font-medium text-slate-700 dark:text-slate-200">Gold</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+                                2 mins ago
+                            </td>
+<td class="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+<button class="text-primary hover:text-primary-dark font-semibold border border-primary/20 hover:border-primary/50 bg-primary/5 hover:bg-primary/10 rounded px-3 py-1.5 transition-all text-xs uppercase tracking-wide">
+                                    View Profile
+                                </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<td class="whitespace-nowrap py-4 pl-6 pr-3">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold text-sm">
+                                        MS
+                                    </div>
+<div class="ml-4">
+<div class="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">Michael Smith</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">ID: #8832911</div>
+</div>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-slate-400">call</span>
+                                    +1 (555) 987-6543
+                                </div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm">
+<span class="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/10 dark:ring-slate-500/30">
+                                    Inactive
+                                </span>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-slate-400" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="font-medium text-slate-700 dark:text-slate-200">Silver</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+                                4 days ago
+                            </td>
+<td class="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+<button class="text-primary hover:text-primary-dark font-semibold border border-primary/20 hover:border-primary/50 bg-primary/5 hover:bg-primary/10 rounded px-3 py-1.5 transition-all text-xs uppercase tracking-wide">
+                                    View Profile
+                                </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<td class="whitespace-nowrap py-4 pl-6 pr-3">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm">
+                                        AJ
+                                    </div>
+<div class="ml-4">
+<div class="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">Alice Johnson</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">ID: #8832912</div>
+</div>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-slate-400">call</span>
+                                    +1 (555) 456-7890
+                                </div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm">
+<span class="inline-flex items-center rounded-full bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:text-yellow-400 ring-1 ring-inset ring-yellow-600/20">
+                                    Pending Review
+                                </span>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-cyan-500" style="font-variation-settings: 'FILL' 1;">diamond</span>
+<span class="font-medium text-slate-700 dark:text-slate-200">Platinum</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+                                1 week ago
+                            </td>
+<td class="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+<button class="text-primary hover:text-primary-dark font-semibold border border-primary/20 hover:border-primary/50 bg-primary/5 hover:bg-primary/10 rounded px-3 py-1.5 transition-all text-xs uppercase tracking-wide">
+                                    View Profile
+                                </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<td class="whitespace-nowrap py-4 pl-6 pr-3">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400 font-bold text-sm">
+                                        RB
+                                    </div>
+<div class="ml-4">
+<div class="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">Robert Brown</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">ID: #8832913</div>
+</div>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-slate-400">call</span>
+                                    +1 (555) 789-0123
+                                </div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm">
+<span class="inline-flex items-center rounded-full bg-green-50 dark:bg-green-900/20 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
+                                    Active
+                                </span>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-amber-500" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="font-medium text-slate-700 dark:text-slate-200">Gold</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+                                2 weeks ago
+                            </td>
+<td class="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+<button class="text-primary hover:text-primary-dark font-semibold border border-primary/20 hover:border-primary/50 bg-primary/5 hover:bg-primary/10 rounded px-3 py-1.5 transition-all text-xs uppercase tracking-wide">
+                                    View Profile
+                                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="flex items-center justify-between border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark px-4 py-3 sm:px-6">
+<div class="flex flex-1 justify-between sm:hidden">
+<a class="relative inline-flex items-center rounded-md border border-border-light bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" href="#">Previous</a>
+<a class="relative ml-3 inline-flex items-center rounded-md border border-border-light bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" href="#">Next</a>
+</div>
+<div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+<div>
+<p class="text-sm text-slate-700 dark:text-slate-300">
+                            Showing
+                            <span class="font-medium">1</span>
+                            to
+                            <span class="font-medium">4</span>
+                            of
+                            <span class="font-medium">24</span>
+                            results
+                        </p>
+</div>
+<div>
+<nav aria-label="Pagination" class="isolate inline-flex -space-x-px rounded-md shadow-sm">
+<a class="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0" href="#">
+<span class="sr-only">Previous</span>
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</a>
+<a aria-current="page" class="relative z-10 inline-flex items-center bg-primary px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" href="#">1</a>
+<a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 dark:ring-slate-600 dark:text-white dark:hover:bg-slate-700" href="#">2</a>
+<a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 dark:ring-slate-600 dark:text-white dark:hover:bg-slate-700" href="#">3</a>
+<span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-300 focus:outline-offset-0 dark:ring-slate-600 dark:text-slate-400">...</span>
+<a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 dark:ring-slate-600 dark:text-white dark:hover:bg-slate-700" href="#">6</a>
+<a class="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0" href="#">
+<span class="sr-only">Next</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

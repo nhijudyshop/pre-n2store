@@ -1,0 +1,967 @@
+/* =====================================================
+   TRẢ HÀNG - RETURN PRODUCT STYLES
+   Separate styles for Trả Hàng tab section
+   ===================================================== */
+
+/* =====================================================
+   TAB NAVIGATION
+   ===================================================== */
+
+.main-tabs {
+    display: flex;
+    gap: 0;
+    margin: 0 var(--spacing-xl);
+    margin-top: var(--spacing-lg);
+    border-bottom: 2px solid var(--border);
+}
+
+.main-tab-btn {
+    padding: var(--spacing-md) var(--spacing-xl);
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: var(--transition-fast);
+}
+
+.main-tab-btn:hover {
+    color: var(--primary);
+}
+
+.main-tab-btn.active {
+    color: var(--primary);
+}
+
+.main-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+}
+
+.main-tab-btn i {
+    width: 18px;
+    height: 18px;
+    margin-right: var(--spacing-sm);
+    vertical-align: middle;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* =====================================================
+   TRẢ HÀNG TABLE
+   ===================================================== */
+
+.trahang-section {
+    margin: var(--spacing-xl);
+}
+
+.trahang-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.trahang-table thead {
+    background: #f8f9fa;
+}
+
+.trahang-table th {
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.trahang-table th .th-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.trahang-table th .filter-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--primary);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: var(--transition-fast);
+}
+
+.trahang-table th .filter-icon:hover {
+    opacity: 1;
+}
+
+.trahang-table th .sort-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.trahang-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background-color var(--transition-fast);
+}
+
+.trahang-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.trahang-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.trahang-table td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+/* Checkbox column */
+.trahang-table .col-checkbox {
+    width: 50px;
+    text-align: center;
+}
+
+.trahang-table input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+/* Customer info column */
+.trahang-table .customer-info {
+    line-height: 1.5;
+}
+
+.trahang-table .customer-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    display: block;
+}
+
+.trahang-table .customer-phone-label {
+    color: var(--primary);
+    font-size: 0.8125rem;
+}
+
+.trahang-table .customer-phone {
+    color: var(--primary);
+    font-size: 0.8125rem;
+    text-decoration: none;
+}
+
+.trahang-table .customer-phone:hover {
+    text-decoration: underline;
+}
+
+/* Date column */
+.trahang-table .col-date {
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* Invoice number column */
+.trahang-table .col-invoice {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8125rem;
+}
+
+/* Reference column */
+.trahang-table .col-reference {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8125rem;
+}
+
+/* Amount columns */
+.trahang-table .col-amount {
+    text-align: right;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* Status column */
+.trahang-table .col-status {
+    text-align: center;
+}
+
+/* Returned checkbox column */
+.trahang-table .col-returned {
+    width: 100px;
+    text-align: center;
+}
+
+.trahang-table .returned-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #22c55e;
+}
+
+.trahang-status {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.trahang-status.confirmed {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.trahang-status.draft {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.trahang-status.cancelled {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Action buttons */
+.trahang-table .col-actions {
+    width: 50px;
+    text-align: center;
+}
+
+.trahang-table .action-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.trahang-table .action-btn i {
+    width: 18px;
+    height: 18px;
+}
+
+.trahang-table .btn-edit {
+    background: #22c55e;
+    color: white;
+}
+
+.trahang-table .btn-edit:hover {
+    background: #16a34a;
+}
+
+.trahang-table .btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+.trahang-table .btn-delete:hover {
+    background: #dc2626;
+}
+
+/* =====================================================
+   TRẢ HÀNG STATS
+   ===================================================== */
+
+.trahang-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.trahang-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.trahang-stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.trahang-stat-card .stat-icon i {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.trahang-stat-card .stat-icon.blue {
+    background: var(--primary);
+}
+
+.trahang-stat-card .stat-icon.green {
+    background: var(--success);
+}
+
+.trahang-stat-card .stat-icon.orange {
+    background: var(--warning);
+}
+
+.trahang-stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.trahang-stat-card .stat-label {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+/* =====================================================
+   TRẢ HÀNG FILTERS
+   ===================================================== */
+
+/* =====================================================
+   TRẢ HÀNG ACTION BUTTONS
+   ===================================================== */
+
+.trahang-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.trahang-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    transition: var(--transition-fast);
+    cursor: pointer;
+    border: none;
+}
+
+.trahang-actions .btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.trahang-actions .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.trahang-actions .btn-secondary {
+    background: var(--gray-100);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.trahang-actions .btn-secondary:hover {
+    background: var(--gray-200);
+}
+
+.trahang-actions .btn-outline-danger {
+    background: transparent;
+    color: #dc2626;
+    border: 1px solid #dc2626;
+}
+
+.trahang-actions .btn-outline-danger:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* =====================================================
+   TRẢ HÀNG FILTERS
+   ===================================================== */
+
+.trahang-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+}
+
+.trahang-filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.trahang-filter-group i {
+    width: 18px;
+    height: 18px;
+    color: var(--text-tertiary);
+}
+
+.trahang-filter-group select,
+.trahang-filter-group input {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    min-width: 120px;
+}
+
+.trahang-filter-group select:focus,
+.trahang-filter-group input:focus {
+    outline: none;
+}
+
+.trahang-filter-group input[type="date"] {
+    min-width: 140px;
+}
+
+/* =====================================================
+   TRẢ HÀNG EMPTY STATE
+   ===================================================== */
+
+.trahang-empty {
+    display: none;
+    text-align: center;
+    padding: var(--spacing-xl) * 2;
+    color: var(--text-secondary);
+}
+
+.trahang-empty.show {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px var(--spacing-xl);
+}
+
+.trahang-empty i {
+    width: 64px;
+    height: 64px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.trahang-empty h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* =====================================================
+   TRẢ HÀNG LOADING STATE
+   ===================================================== */
+
+.trahang-loading {
+    display: none;
+    text-align: center;
+    padding: 60px var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.trahang-loading.show {
+    display: block;
+}
+
+.trahang-loading i {
+    width: 48px;
+    height: 48px;
+    color: var(--primary);
+    animation: spin 1s linear infinite;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1024px) {
+    .main-tabs {
+        margin: 0 var(--spacing-md);
+        margin-top: var(--spacing-md);
+        overflow-x: auto;
+    }
+
+    .main-tab-btn {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+
+    .trahang-section {
+        margin: var(--spacing-md);
+    }
+
+    .trahang-filters {
+        flex-direction: column;
+    }
+
+    .trahang-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-tab-btn span {
+        display: none;
+    }
+
+    .main-tab-btn i {
+        margin-right: 0;
+    }
+
+    .trahang-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =====================================================
+   TEXT HELPERS
+   ===================================================== */
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.text-left {
+    text-align: left !important;
+}
+
+/* =====================================================
+   RETURN ORDER DETAIL MODAL
+   ===================================================== */
+
+.return-detail-modal {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.return-detail-modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+/* Loading state */
+.return-detail-loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px var(--spacing-xl);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.return-detail-loading.show {
+    display: flex;
+}
+
+.return-detail-loading i {
+    width: 48px;
+    height: 48px;
+    color: var(--primary);
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Content container */
+.return-detail-content {
+    display: none;
+}
+
+.return-detail-content.show {
+    display: block;
+}
+
+/* Detail Tabs */
+.return-detail-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--gray-50);
+    overflow-x: auto;
+}
+
+.return-tab-btn {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: var(--transition-fast);
+    white-space: nowrap;
+}
+
+.return-tab-btn:hover {
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.return-tab-btn.active {
+    color: var(--primary);
+    background: white;
+}
+
+.return-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+}
+
+/* Tab Content */
+.return-tab-content {
+    display: none;
+    padding: var(--spacing-lg);
+}
+
+.return-tab-content.active {
+    display: block;
+}
+
+/* Info Grid */
+.return-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.return-info-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.return-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.return-info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.return-info-item label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.return-info-item span {
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+}
+
+.return-customer-name {
+    color: var(--primary) !important;
+    font-weight: 500;
+    font-style: italic;
+}
+
+.return-customer-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    font-size: 0.75rem !important;
+    font-weight: 500;
+    background: #fee2e2;
+    color: #dc2626 !important;
+    margin-left: var(--spacing-sm);
+}
+
+.return-customer-status.status-good {
+    background: #dcfce7;
+    color: #16a34a !important;
+}
+
+.return-old-debt {
+    color: #dc2626 !important;
+    font-weight: 600;
+}
+
+/* Order Lines Table */
+.return-lines-section {
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.return-lines-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.return-lines-table thead {
+    background: var(--gray-100);
+}
+
+.return-lines-table th {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+.return-lines-table th.text-right {
+    text-align: right;
+}
+
+.return-lines-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border);
+}
+
+.return-lines-table td.text-right {
+    text-align: right;
+}
+
+.return-lines-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.return-lines-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.return-lines-table .col-stt {
+    width: 60px;
+    text-align: center;
+}
+
+.return-lines-table .col-qty {
+    width: 100px;
+}
+
+.return-lines-table .col-price {
+    width: 120px;
+}
+
+.return-lines-table .col-total {
+    width: 120px;
+}
+
+/* Summary */
+.return-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    background: var(--gray-50);
+    border-radius: var(--radius);
+}
+
+.return-summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-xl);
+    min-width: 250px;
+}
+
+.return-summary-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.return-summary-value {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+.return-summary-value.return-total-amount {
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.return-summary-value.return-remaining {
+    color: #dc2626;
+    font-size: 1rem;
+}
+
+/* Images Tab */
+.return-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.return-images-grid img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.return-images-grid img:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+.return-no-images,
+.return-no-history {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px var(--spacing-xl);
+    color: var(--text-tertiary);
+    text-align: center;
+}
+
+.return-no-images i,
+.return-no-history i {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-md);
+}
+
+/* History Tab */
+.return-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.return-history-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--gray-50);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--primary);
+}
+
+.return-history-item .history-date {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    min-width: 120px;
+}
+
+.return-history-item .history-content {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+/* Clickable row styling */
+.trahang-table tbody tr {
+    cursor: pointer;
+}
+
+.trahang-table tbody tr:hover {
+    background: var(--gray-100);
+}
+
+.trahang-table tbody tr:active {
+    background: var(--gray-200);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .return-detail-modal {
+        width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .return-detail-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .return-tab-btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 0.8125rem;
+    }
+
+    .return-info-row {
+        grid-template-columns: 1fr;
+    }
+
+    .return-summary {
+        align-items: stretch;
+    }
+
+    .return-summary-row {
+        min-width: auto;
+    }
+
+    .return-lines-section {
+        overflow-x: auto;
+    }
+
+    .return-lines-table {
+        min-width: 500px;
+    }
+}

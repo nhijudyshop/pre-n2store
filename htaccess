@@ -1,0 +1,7 @@
+
+# HTID:22420068: DO NOT REMOVE OR MODIFY THIS LINE AND THE LINES BELOW
+php_value display_errors 1
+# DO NOT REMOVE OR MODIFY THIS LINE AND THE LINES ABOVE HTID:22420068:
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000"
+</IfModule>

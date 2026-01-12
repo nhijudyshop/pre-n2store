@@ -1,0 +1,44 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "productAssignments": {
+      "$userId": {
+        ".indexOn": [
+          "_timestamp"
+        ]
+      }
+    },
+    "pancake_jwt_token": {
+      ".validate": "newData.hasChildren(['token', 'exp'])"
+    },
+    "tpos_token": {
+      ".validate": "newData.hasChildren(['access_token', 'expires_at'])"
+    },
+    "dropped_products": {
+      ".indexOn": [
+        "ProductId",
+        "addedAt"
+      ]
+    },
+    "dropped_products_history": {
+      ".indexOn": [
+        "timestamp"
+      ]
+    },
+    "savedProducts": {
+      ".indexOn": [
+        "addedAt",
+        "Id",
+        "soldQty"
+      ]
+    },
+    "savedProductsMeta": {
+      "sortedIds": {
+        ".indexOn": [
+          ".value"
+        ]
+      }
+    }
+  }
+}

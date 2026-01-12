@@ -1,0 +1,579 @@
+/* =====================================================
+   TRANSFER MANAGEMENT - MODERN DESIGN
+   Built on modern.css base styles
+   ===================================================== */
+
+/* =====================================================
+   TABLE STYLES
+   ===================================================== */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modern-table thead th {
+    padding: var(--spacing-lg);
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--primary-dark);
+}
+
+.modern-table thead th i {
+    width: 16px;
+    height: 16px;
+    margin-right: var(--spacing-sm);
+    vertical-align: middle;
+}
+
+.modern-table tbody tr {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    transition: all var(--transition);
+}
+
+.modern-table tbody tr:hover {
+    background: var(--gray-50);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+.modern-table tbody td {
+    padding: var(--spacing-lg);
+    vertical-align: middle;
+}
+
+/* Muted/Completed rows */
+.modern-table tbody tr.muted-row {
+    opacity: 0.4;
+    background-color: var(--gray-50);
+}
+
+.modern-table tbody tr.active-row {
+    opacity: 1;
+}
+
+/* Checkbox styling */
+.modern-table tbody td input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    appearance: none;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: white;
+    position: relative;
+    transition: all var(--transition);
+}
+
+.modern-table tbody td input[type="checkbox"]:hover {
+    border-color: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.modern-table tbody td input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-color: var(--primary);
+}
+
+.modern-table tbody td input[type="checkbox"]:checked::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Edit and Delete buttons */
+.edit-button,
+.delete-button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+}
+
+.edit-button {
+    background: linear-gradient(135deg, var(--info), #60a5fa);
+    color: white;
+}
+
+.edit-button:hover {
+    background: linear-gradient(135deg, #60a5fa, var(--info));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.edit-button i,
+.delete-button i {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+}
+
+.delete-button {
+    background: linear-gradient(135deg, var(--danger), #dc2626);
+    color: white;
+}
+
+.delete-button:hover {
+    background: linear-gradient(135deg, #dc2626, var(--danger));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* =====================================================
+   MODAL STYLES
+   ===================================================== */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    margin: 5% auto;
+    padding: 0;
+    width: 90%;
+    max-width: 600px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    animation: slideDown 0.3s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-xl);
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--gray-50), white);
+}
+
+.modal-header h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-header h2 i {
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+}
+
+.modal-body {
+    padding: var(--spacing-xl);
+}
+
+/* =====================================================
+   STATS CARDS ENHANCEMENTS
+   ===================================================== */
+
+.stat-value {
+    background: linear-gradient(135deg, var(--text-primary), var(--gray-700));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* =====================================================
+   FORM ENHANCEMENTS
+   ===================================================== */
+
+.form-section {
+    margin: var(--spacing-xl) 0;
+}
+
+.form-actions {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--border);
+}
+
+/* =====================================================
+   ANIMATIONS & TRANSITIONS
+   ===================================================== */
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-shimmer {
+    background: linear-gradient(
+        to right,
+        var(--gray-100) 4%,
+        var(--gray-200) 25%,
+        var(--gray-100) 36%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* =====================================================
+   VIRTUAL SCROLLING ENHANCEMENTS
+   ===================================================== */
+
+.virtual-row {
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* =====================================================
+   RESPONSIVE ADJUSTMENTS
+   ===================================================== */
+
+@media (max-width: 1024px) {
+    .modern-table {
+        font-size: 0.8125rem;
+    }
+
+    .modern-table thead th,
+    .modern-table tbody td {
+        padding: var(--spacing-md);
+    }
+}
+
+@media (max-width: 768px) {
+    .modern-table thead th {
+        font-size: 0.75rem;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .modern-table tbody td {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .edit-button,
+    .delete-button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+
+    .stat-card {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .modern-table {
+        font-size: 0.75rem;
+    }
+
+    .modern-table tbody td input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .edit-button,
+    .delete-button {
+        width: 28px;
+        height: 28px;
+    }
+
+    .edit-button::before,
+    .delete-button::before {
+        font-size: 14px;
+    }
+}
+
+/* =====================================================
+   PRINT STYLES
+   ===================================================== */
+
+@media print {
+    .sidebar,
+    .top-bar,
+    .edit-button,
+    .delete-button,
+    .btn,
+    .btn-icon {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .modern-table {
+        page-break-inside: avoid;
+    }
+
+    .modern-table thead {
+        background: white !important;
+        color: black !important;
+    }
+}
+
+/* =====================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ===================================================== */
+
+.modern-table tbody tr:focus-within {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+.edit-button:focus,
+.delete-button:focus,
+.modern-table tbody td input[type="checkbox"]:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .modern-table thead {
+        background: black;
+        color: white;
+    }
+
+    .modern-table tbody tr:hover {
+        background: yellow;
+        color: black;
+    }
+}
+
+/* =====================================================
+   PERFORMANCE OPTIMIZATIONS
+   ===================================================== */
+
+.modern-table,
+.modal-content,
+.stat-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+}
+
+/* GPU acceleration for smooth animations */
+.modern-table tbody tr,
+.edit-button,
+.delete-button,
+.modal {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* =====================================================
+   LOADING STATES
+   ===================================================== */
+
+.table-loading {
+    position: relative;
+    min-height: 200px;
+}
+
+.table-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 4px solid var(--gray-200);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =====================================================
+   EMPTY STATE
+   ===================================================== */
+
+.table-empty {
+    text-align: center;
+    padding: var(--spacing-xl) * 3;
+    color: var(--text-secondary);
+}
+
+.table-empty i {
+    width: 64px;
+    height: 64px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.table-empty h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.table-empty p {
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-muted {
+    color: var(--text-secondary);
+}
+
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+.bg-success {
+    background-color: var(--success);
+    color: white;
+}
+
+.bg-danger {
+    background-color: var(--danger);
+    color: white;
+}
+
+.bg-warning {
+    background-color: var(--warning);
+    color: white;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.p-0 {
+    padding: 0;
+}
+
+.d-none {
+    display: none;
+}
+
+.d-block {
+    display: block;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-sm {
+    gap: var(--spacing-sm);
+}
+
+.gap-md {
+    gap: var(--spacing-md);
+}
+
+.gap-lg {
+    gap: var(--spacing-lg);
+}
+
+/* Override colors */
+.date-item.selected {
+    background: linear-gradient(135deg, #your-color-1, #your-color-2);
+}
+
+.date-item.today {
+    border-color: #your-highlight-color;
+}

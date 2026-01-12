@@ -1,0 +1,227 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📒 Sổ Order Live - N2Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <button class="btn-toggle-sidebar d-md-none" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="logo">
+                <span class="logo-icon">📒</span>
+                <span class="logo-text">Sổ Order Live</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="sync-status" id="syncStatus">
+                <i class="bi bi-cloud-check"></i>
+                <span>Đã đồng bộ</span>
+            </div>
+            <button class="btn-history" onclick="toggleHistoryPanel()">
+                <i class="bi bi-clock-history"></i>
+                <span class="d-none d-md-inline">Lịch sử</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>📄 Danh sách trang</h3>
+                <button class="btn-add-sheet" onclick="createNewSheet()">
+                    <i class="bi bi-plus-lg"></i> Tạo mới
+                </button>
+            </div>
+            <div class="sheets-list" id="sheetsList">
+                <!-- Sheets will be rendered here -->
+                <div class="empty-state" id="emptySheets">
+                    <i class="bi bi-journal-plus"></i>
+                    <p>Chưa có trang nào</p>
+                    <button class="btn btn-primary btn-sm" onclick="createNewSheet()">
+                        Tạo trang đầu tiên
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Empty State when no sheet selected -->
+            <div class="no-sheet-selected" id="noSheetSelected">
+                <div class="empty-illustration">
+                    <i class="bi bi-journal-bookmark"></i>
+                </div>
+                <h2>Chọn hoặc tạo trang mới</h2>
+                <p>Chọn một trang từ danh sách bên trái hoặc tạo trang mới để bắt đầu</p>
+                <button class="btn btn-primary" onclick="createNewSheet()">
+                    <i class="bi bi-plus-lg"></i> Tạo trang mới
+                </button>
+            </div>
+
+            <!-- Sheet Content -->
+            <div class="sheet-content" id="sheetContent" style="display: none;">
+                <!-- Product Search -->
+                <div class="product-search-section">
+                    <div class="search-container">
+                        <div class="search-input-wrapper">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="productSearch" class="search-input"
+                                placeholder="Tìm kiếm sản phẩm (nhập mã hoặc tên)..." autocomplete="off">
+                            <div class="search-loading" id="searchLoading" style="display: none;">
+                                <div class="spinner-border spinner-border-sm"></div>
+                            </div>
+                        </div>
+                        <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
+                    </div>
+                </div>
+
+                <!-- Products Table -->
+                <div class="table-container">
+                    <table class="products-table" id="productsTable">
+                        <thead>
+                            <tr>
+                                <th class="col-product">📦 Sản phẩm</th>
+                                <th class="col-qty">📺 SL Live</th>
+                                <th class="col-qty">📥 SL Inbox</th>
+                                <th class="col-qty">📤 Gửi NCC</th>
+                                <th class="col-qty">✅ Nhận IB</th>
+                                <th class="col-qty">👥 Team IB</th>
+                                <th class="col-actions">🔧</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <!-- Products will be rendered here -->
+                        </tbody>
+                        <tfoot id="tableFoot" style="display: none;">
+                            <tr class="total-row">
+                                <td class="total-label">📊 Tổng cộng</td>
+                                <td class="total-value" id="totalLive">0</td>
+                                <td class="total-value" id="totalInbox">0</td>
+                                <td class="total-value" id="totalSentNCC">0</td>
+                                <td class="total-value" id="totalReceivedIB">0</td>
+                                <td class="total-value" id="totalTeamIB">0</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Empty Table State -->
+                    <div class="empty-table" id="emptyTable">
+                        <i class="bi bi-inbox"></i>
+                        <p>Chưa có sản phẩm nào</p>
+                        <span>Tìm kiếm và thêm sản phẩm ở ô phía trên</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- History Panel -->
+        <aside class="history-panel" id="historyPanel">
+            <div class="history-header">
+                <h3><i class="bi bi-clock-history"></i> Lịch sử thay đổi</h3>
+                <button class="btn-close-panel" onclick="toggleHistoryPanel()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="history-list" id="historyList">
+                <!-- History items will be rendered here -->
+                <div class="empty-history" id="emptyHistory">
+                    <i class="bi bi-clock"></i>
+                    <p>Chưa có lịch sử</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay" onclick="closePanels()"></div>
+
+    <!-- Modal: Create/Edit Sheet -->
+    <div class="modal fade" id="sheetModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sheetModalTitle">
+                        <i class="bi bi-journal-plus"></i> Tạo trang mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="sheetNameInput">Tên trang</label>
+                        <input type="text" id="sheetNameInput" class="form-control"
+                            placeholder="VD: Live 6/12, Đợt 1..." maxlength="50">
+                        <small class="text-muted">Tối đa 50 ký tự</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="sheetModalSaveBtn" onclick="saveSheet()">
+                        <i class="bi bi-check-lg"></i> Lưu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirm Delete -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Xác nhận xóa
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc muốn xóa trang <strong id="deleteSheetName"></strong>?</p>
+                    <p class="text-danger"><small>Hành động này không thể hoàn tác!</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteSheet()">
+                        <i class="bi bi-trash"></i> Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- XLSX for Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <!-- Shared modules -->
+    <script src="../orders-report/config.js"></script>
+    <script src="../orders-report/auth.js"></script>
+    <script src="../orders-report/api-config.js"></script>
+    <script src="../orders-report/cache.js"></script>
+    <!-- Main app -->
+    <script src="app.js"></script>
+</body>
+
+</html>

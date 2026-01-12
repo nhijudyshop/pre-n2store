@@ -1,0 +1,1322 @@
+<!--
+  Trang Bán hàng Social - Dành cho nhân viên bán qua Facebook/Social
+  Khác biệt với soluong-list.html:
+  - KHÔNG sync page/search với live (isSyncMode = false)
+  - CÓ sync data real-time (soldQty)
+  - Ghi log mỗi giao dịch với source + staffName
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bán hàng Social - N2Shop</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-helpers.js"></script>
+
+    <style>
+        :root {
+            /* Frame Layout CSS Variables */
+            --name-line-clamp: 2;
+
+            /* Image CSS Variables */
+            --image-border-radius: 8px;
+            --image-border-width: 2px;
+            --image-margin-bottom: 4px;
+
+            /* Name CSS Variables */
+            --name-font-size: 13px;
+            --name-font-weight: 700;
+            --name-margin: 3px;
+            --name-line-height: 1.2;
+
+            /* Stats CSS Variables */
+            --stats-value-size: 16px;
+            --stats-label-size: 9px;
+            --stats-padding: 3px;
+            --stats-gap: 4px;
+            --stats-border-radius: 6px;
+            --stats-margin-top: 4px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            min-height: 100vh;
+            width: 100vw;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Social Header - Staff info and source selector */
+        .social-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .staff-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .staff-icon {
+            font-size: 24px;
+        }
+
+        .staff-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .source-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .source-selector label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .source-selector select {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #1e88e5;
+            border-radius: 8px;
+            background: white;
+            color: #1e88e5;
+            cursor: pointer;
+        }
+
+        .source-selector select:focus {
+            outline: none;
+            border-color: #1565c0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Header Navigation Buttons */
+        .header-nav {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-nav-header {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 2px solid #1e88e5;
+            border-radius: 8px;
+            background: white;
+            color: #1e88e5;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-nav-header:hover {
+            background: #1e88e5;
+            color: white;
+        }
+
+        .btn-nav-header.active {
+            background: #1e88e5;
+            color: white;
+            cursor: default;
+        }
+
+        .btn-nav-header.btn-report {
+            border-color: #4caf50;
+            color: #4caf50;
+        }
+
+        .btn-nav-header.btn-report:hover {
+            background: #4caf50;
+            color: white;
+        }
+
+        .main-content {
+            width: 100%;
+            min-height: 100vh;
+            padding: 70px 15px 15px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 1900px;
+            touch-action: pan-y pinch-zoom;
+            user-select: none;
+            aspect-ratio: 4/2;
+        }
+
+        .grid-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 6px;
+            transition: all 0.3s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            min-height: 0;
+        }
+
+        .grid-item:hover {
+            border-color: #1e88e5;
+            box-shadow: 0 5px 20px rgba(30, 136, 229, 0.4);
+            transform: translateY(-3px);
+        }
+
+        .grid-item-image {
+            width: 100%;
+            height: 0;
+            object-fit: cover;
+            background: white;
+            border-radius: var(--image-border-radius, 8px);
+            margin-bottom: var(--image-margin-bottom, 4px);
+            border: var(--image-border-width, 2px) solid #1e88e5;
+            flex: 40 1 0%;
+            min-height: 0;
+        }
+
+        .grid-item-image.no-image {
+            background: linear-gradient(135deg, #e0e0e0 0%, #c0c0c0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #666;
+        }
+
+        .grid-item-name {
+            font-weight: var(--name-font-weight, 700);
+            color: #333;
+            margin-bottom: var(--name-margin, 3px);
+            font-size: var(--name-font-size, 13px);
+            line-height: var(--name-line-height, 1.2);
+            flex: 10 1 0%;
+            text-align: center;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .grid-item-name-text {
+            width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .grid-item-stats {
+            display: flex;
+            gap: 0;
+            margin-top: var(--stats-margin-top, 4px);
+            margin-bottom: 0;
+            flex: 50 1 0%;
+            min-height: 0;
+            border-radius: var(--stats-border-radius, 6px);
+            overflow: hidden;
+        }
+
+        .grid-stat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            border-right: 3px solid white;
+            padding: 8px 4px;
+        }
+
+        .grid-stat:last-child {
+            border-right: none;
+        }
+
+        .grid-stat-label {
+            font-size: var(--stats-label-size, 9px);
+            color: #555;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .grid-stat-value {
+            font-size: var(--stats-value-size, 16px);
+            font-weight: 900;
+            color: #333;
+            line-height: 1;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid-stat-total {
+            background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 100%);
+            position: relative;
+        }
+
+        .grid-stat-total .grid-stat-value {
+            font-size: 36px;
+        }
+
+        .grid-stat-sold {
+            background: linear-gradient(180deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+
+        .grid-stat-remaining {
+            background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+
+        .grid-stat-remaining .grid-stat-value {
+            font-size: 48px;
+        }
+
+        .qty-controls {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .qty-controls .grid-stat-value {
+            flex: 0 0 auto;
+            min-width: 40px;
+            text-align: center;
+            font-size: 36px;
+        }
+
+        .qty-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .qty-btn:hover {
+            background: #f57c00;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .qty-btn:active {
+            transform: scale(0.95);
+        }
+
+        .qty-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-nav {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e88e5;
+            border: 2px solid #1e88e5;
+            padding: 20px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .btn-nav:hover:not(:disabled),
+        .btn-nav.active:not(:disabled) {
+            background: #1e88e5;
+            color: white;
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 5px 20px rgba(30, 136, 229, 0.5);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .btn-nav:disabled {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            cursor: not-allowed;
+            pointer-events: none !important;
+        }
+
+        .nav-hover-area {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            z-index: 999;
+        }
+
+        .nav-hover-area.left {
+            left: 0;
+        }
+
+        .nav-hover-area.right {
+            right: 0;
+        }
+
+        #btnPrev {
+            left: 10px;
+        }
+
+        #btnNext {
+            right: 10px;
+        }
+
+        .page-info {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0.15;
+            transition: opacity 0.3s ease;
+        }
+
+        body:hover .page-info,
+        .page-info:hover {
+            opacity: 1;
+        }
+
+        /* Search Box Styles */
+        .search-hover-area {
+            position: fixed;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 80px;
+            z-index: 998;
+        }
+
+        .search-container {
+            position: fixed;
+            top: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-hover-area:hover ~ .search-container,
+        .search-container:hover,
+        .search-container.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 20px;
+            font-size: 15px;
+            border: 2px solid #1e88e5;
+            border-radius: 25px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(30, 136, 229, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #1565c0;
+            box-shadow: 0 5px 25px rgba(30, 136, 229, 0.5);
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #1e88e5;
+            pointer-events: none;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 45px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .search-clear:hover {
+            background: #c82333;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .search-clear.show {
+            display: flex;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 40px;
+        }
+
+        .empty-state h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (min-width: 1601px) {
+            .grid-item-name {
+                font-size: 15px;
+            }
+
+            .grid-stat-value {
+                font-size: 20px;
+            }
+
+            .grid-stat-total .grid-stat-value {
+                font-size: 38px;
+            }
+
+            .grid-stat-remaining .grid-stat-value {
+                font-size: 50px;
+            }
+
+            .qty-controls .grid-stat-value {
+                min-width: 50px;
+                font-size: 38px;
+            }
+
+            .grid-stat-label {
+                font-size: 12px;
+            }
+
+            .qty-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 18px;
+            }
+        }
+
+        @media (min-width: 1920px) {
+            .grid-item-name {
+                font-size: 16px;
+            }
+
+            .grid-stat-value {
+                font-size: 22px;
+            }
+
+            .grid-stat-total .grid-stat-value {
+                font-size: 42px;
+            }
+
+            .grid-stat-remaining .grid-stat-value {
+                font-size: 56px;
+            }
+
+            .qty-controls .grid-stat-value {
+                min-width: 60px;
+                font-size: 42px;
+            }
+
+            .grid-stat-label {
+                font-size: 13px;
+            }
+
+            .qty-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Social Header -->
+    <div class="social-header">
+        <div class="staff-info">
+            <span class="staff-icon">👤</span>
+            <span class="staff-name" id="staffName">Loading...</span>
+        </div>
+        <div class="header-actions">
+            <div class="header-nav">
+                <a href="index.html" class="btn-nav-header" id="btnGoLive">📺 Livestream</a>
+                <a href="social-sales.html" class="btn-nav-header active">📱 Social</a>
+                <a href="sales-report.html" class="btn-nav-header btn-report" onclick="saveReferrer()">📊 Báo cáo</a>
+            </div>
+            <div class="source-selector">
+                <label>📱 Nguồn:</label>
+                <select id="saleSource">
+                    <option value="facebook">Facebook</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <div class="product-grid" id="productGrid"></div>
+    </div>
+
+    <div class="nav-hover-area left"></div>
+    <button class="btn-nav" id="btnPrev">◀ Trước</button>
+    <div class="nav-hover-area right"></div>
+    <button class="btn-nav" id="btnNext">Sau ▶</button>
+
+    <!-- Search Box -->
+    <div class="search-hover-area"></div>
+    <div class="search-container" id="searchContainer">
+        <div class="search-input-wrapper">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Tìm kiếm sản phẩm..." autocomplete="off">
+            <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+            <span class="search-icon">🔍</span>
+        </div>
+    </div>
+
+    <span class="page-info" id="pageInfo">Trang 1/1</span>
+
+    <script src="../js/shared-auth-manager.js"></script>
+    <script src="../js/shared-cache-manager.js"></script>
+
+    <!-- Save referrer function for report navigation -->
+    <script>
+        function saveReferrer() {
+            sessionStorage.setItem('soluongReportReferrer', 'social-sales.html');
+        }
+
+        // Auto-redirect based on permissions
+        // If user only has "livestream" permission (not "social"), redirect to index.html
+        (function checkPermissionAndRedirect() {
+            try {
+                const authManager = new AuthManager();
+                const authData = authManager.getAuthData();
+
+                // If not logged in or no auth data, continue (will handle in main script)
+                if (!authData || !authData.detailedPermissions) {
+                    console.log('⚠️ No auth data, continuing on social-sales...');
+                    return;
+                }
+
+                const soluongPerms = authData.detailedPermissions['soluong-live'];
+
+                // If no soluong-live permissions at all, continue (default access)
+                if (!soluongPerms) {
+                    console.log('⚠️ No soluong-live permissions defined, continuing...');
+                    return;
+                }
+
+                const hasLivestream = soluongPerms.livestream === true;
+                const hasSocial = soluongPerms.social === true;
+
+                console.log('🔐 Permission check:', { hasLivestream, hasSocial });
+
+                // If user has livestream permission but NOT social, redirect to index.html
+                if (hasLivestream && !hasSocial) {
+                    console.log('🔄 Redirecting to index.html (livestream only)...');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // If user has social permission (or both), stay on social-sales.html
+                console.log('✅ User has social permission, staying on social-sales.html');
+            } catch (error) {
+                console.error('❌ Permission check error:', error);
+                // On error, continue on current page
+            }
+        })();
+    </script>
+
+    <script>
+        // ========================================
+        // SOCIAL SALES - MAIN SCRIPT
+        // Key difference: isSyncMode = false (no UI sync)
+        // ========================================
+
+        let soluongProducts = {};
+        let filteredProducts = [];
+        let searchKeyword = '';
+        let pageBeforeSearch = 1;
+        let currentPage = 1;
+        let itemsPerPage = 8;
+        let displaySettings = {
+            columns: 4,
+            rows: 2,
+            gap: 15,
+            itemHeight: 500,
+            nameMargin: 3
+        };
+
+        // KEY DIFFERENCE: isSyncMode always false for Social
+        let isSyncMode = false;
+        let isMergeVariants = false;
+        let isSyncingFromFirebase = false;
+
+        // Staff info from AuthManager
+        const authManager = new AuthManager();
+        let staffName = 'Unknown';
+        let staffUsername = 'unknown';
+
+        // Optimization: Cache normalized product names
+        let normalizedProductNames = new Map();
+        let searchInputDebounceTimer = null;
+        const SEARCH_INPUT_DEBOUNCE_MS = 300;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-legWlCgjMDEy70rsaTTwLK39F4ZCKhM",
+            authDomain: "n2shop-69e37.firebaseapp.com",
+            databaseURL: "https://n2shop-69e37-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "n2shop-69e37",
+            storageBucket: "n2shop-69e37-ne0q1",
+            messagingSenderId: "598906493303",
+            appId: "1:598906493303:web:46d6236a1fdc2eff33e972",
+            measurementId: "G-TEJH3S2T1D"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        async function loadSettings() {
+            try {
+                const cachedSettings = localStorage.getItem('soluongDisplaySettings');
+                if (cachedSettings) {
+                    const settings = JSON.parse(cachedSettings);
+                    displaySettings = settings;
+                    itemsPerPage = settings.itemsPerPage || (settings.columns * settings.rows);
+                    applySettings();
+                }
+            } catch (e) {
+                console.log('📋 No cached settings');
+            }
+
+            try {
+                const snapshot = await database.ref('soluongDisplaySettings').once('value');
+                const settings = snapshot.val();
+                if (settings) {
+                    displaySettings = settings;
+                    itemsPerPage = settings.itemsPerPage || (settings.columns * settings.rows);
+                    localStorage.setItem('soluongDisplaySettings', JSON.stringify(settings));
+                }
+            } catch (error) {
+                console.error('❌ Error loading settings:', error);
+            }
+            applySettings();
+        }
+
+        function applySettings() {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.style.gridTemplateColumns = `repeat(${displaySettings.columns}, 1fr)`;
+            productGrid.style.gridTemplateRows = `repeat(${displaySettings.rows}, 1fr)`;
+            productGrid.style.gap = `${displaySettings.gap}px`;
+        }
+
+        async function loadProducts() {
+            try {
+                soluongProducts = await loadAllProductsFromFirebase(database);
+                console.log('🔥 Loaded from Firebase:', Object.keys(soluongProducts).length, 'products');
+
+                if (Object.keys(soluongProducts).length === 0) {
+                    showEmptyState();
+                } else {
+                    updateProductGrid();
+                }
+            } catch (error) {
+                console.error('❌ Error loading from Firebase:', error);
+                soluongProducts = {};
+            }
+        }
+
+        function showEmptyState() {
+            const mainContent = document.getElementById('mainContent');
+            mainContent.innerHTML = `
+                <div class="empty-state">
+                    <h2>📦 Chưa có sản phẩm nào</h2>
+                    <p>Vui lòng thêm sản phẩm từ trang quản lý live</p>
+                </div>
+            `;
+
+            document.getElementById('btnPrev').style.display = 'none';
+            document.getElementById('btnNext').style.display = 'none';
+            document.getElementById('pageInfo').style.display = 'none';
+        }
+
+        function mergeProductsByTemplate(products) {
+            const groupedProducts = {};
+
+            products.forEach(product => {
+                const tmplId = product.ProductTmplId;
+                if (!tmplId) {
+                    const uniqueKey = `no-template-${product.Id}`;
+                    groupedProducts[uniqueKey] = [product];
+                    return;
+                }
+                if (!groupedProducts[tmplId]) {
+                    groupedProducts[tmplId] = [];
+                }
+                groupedProducts[tmplId].push(product);
+            });
+
+            const mergedProducts = [];
+
+            Object.entries(groupedProducts).forEach(([tmplId, variants]) => {
+                if (variants.length === 1) {
+                    mergedProducts.push(variants[0]);
+                } else {
+                    const firstVariant = variants[0];
+                    let commonName = firstVariant.NameGet;
+                    commonName = commonName.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+
+                    const totalQtyAvailable = variants.reduce((sum, v) => sum + (v.QtyAvailable || 0), 0);
+                    const totalSoldQty = variants.reduce((sum, v) => sum + (v.soldQty || 0), 0);
+
+                    const soldQtyList = variants.map(v => ({
+                        id: v.Id,
+                        name: v.NameGet,
+                        qty: v.soldQty || 0,
+                        maxQty: v.QtyAvailable || 0
+                    }));
+
+                    const remainingQtyList = variants.map(v => ({
+                        id: v.Id,
+                        name: v.NameGet,
+                        qty: v.remainingQty || 0
+                    }));
+
+                    const mostRecentAddedAt = Math.max(...variants.map(v => v.addedAt || 0));
+
+                    const mergedProduct = {
+                        ...firstVariant,
+                        NameGet: commonName,
+                        QtyAvailable: totalQtyAvailable,
+                        soldQty: totalSoldQty,
+                        remainingQty: 0,
+                        soldQtyList: soldQtyList,
+                        remainingQtyList: remainingQtyList,
+                        addedAt: mostRecentAddedAt,
+                        isMerged: true,
+                        variantCount: variants.length,
+                        variants: variants
+                    };
+
+                    mergedProducts.push(mergedProduct);
+                }
+            });
+
+            mergedProducts.sort((a, b) => {
+                const timeA = a.addedAt || 0;
+                const timeB = b.addedAt || 0;
+                return timeB - timeA;
+            });
+
+            return mergedProducts;
+        }
+
+        function updateProductGrid() {
+            const productGrid = document.getElementById('productGrid');
+            const pageInfo = document.getElementById('pageInfo');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+
+            btnPrev.style.display = 'block';
+            btnNext.style.display = 'block';
+            pageInfo.style.display = 'block';
+
+            const visibleProducts = Object.values(soluongProducts).filter(p => !p.isHidden);
+            let baseProducts = searchKeyword ? filteredProducts.filter(p => !p.isHidden) : visibleProducts;
+            const displayProducts = (isMergeVariants && !searchKeyword) ? mergeProductsByTemplate(baseProducts) : baseProducts;
+
+            const totalPages = Math.ceil(displayProducts.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const currentProducts = displayProducts.slice(startIndex, endIndex);
+
+            productGrid.innerHTML = currentProducts.map(product => {
+                const cacheVersion = product.lastRefreshed || product.addedAt || product.Id;
+                let imageUrlWithVersion = product.imageUrl;
+
+                if (imageUrlWithVersion && !imageUrlWithVersion.startsWith('data:')) {
+                    imageUrlWithVersion = `${imageUrlWithVersion}${imageUrlWithVersion.includes('?') ? '&' : '?'}v=${cacheVersion}`;
+                }
+
+                const imageHtml = imageUrlWithVersion
+                    ? `<img src="${imageUrlWithVersion}" class="grid-item-image" alt="${product.NameGet}">`
+                    : `<div class="grid-item-image no-image"><span class="icon-emoji">📦</span></div>`;
+
+                const isMerged = product.isMerged || false;
+                const disableEdit = isMerged ? 'disabled title="Tắt chế độ gộp để chỉnh sửa"' : '';
+
+                const productPrice = product.ListPrice || 0;
+                const productNameDisplay = productPrice > 0
+                    ? `${product.NameGet} ${productPrice / 1000}K`
+                    : product.NameGet;
+
+                return `
+                    <div class="grid-item" data-product-id="${product.Id}">
+                        ${imageHtml}
+                        <div class="grid-item-name">
+                            <span class="grid-item-name-text">${productNameDisplay}</span>
+                        </div>
+                        <div class="grid-item-stats">
+                            <div class="grid-stat grid-stat-total">
+                                <div class="grid-stat-label">📦 TỔNG</div>
+                                <div class="grid-stat-value">${product.QtyAvailable || 0}</div>
+                            </div>
+                            <div class="grid-stat grid-stat-sold">
+                                <div class="grid-stat-label">🛒 BÁN</div>
+                                <div class="qty-controls">
+                                    <button class="qty-btn" onclick="updateProductQty(${product.Id}, -1)" ${product.soldQty <= 0 || isMerged ? 'disabled' : ''} ${disableEdit}>−</button>
+                                    <div class="grid-stat-value">${product.soldQty || 0}</div>
+                                    <button class="qty-btn" onclick="updateProductQty(${product.Id}, 1)" ${product.soldQty >= product.QtyAvailable || isMerged ? 'disabled' : ''} ${disableEdit}>+</button>
+                                </div>
+                            </div>
+                            <div class="grid-stat grid-stat-remaining">
+                                <div class="grid-stat-label">✅ CÒN</div>
+                                <div class="grid-stat-value">${product.remainingQty || 0}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const searchInfo = searchKeyword ? ` - 🔍 "${searchKeyword}"` : '';
+            pageInfo.textContent = `Trang ${currentPage}/${totalPages || 1} (${displayProducts.length} sản phẩm)${searchInfo}`;
+            btnPrev.disabled = currentPage === 1;
+            btnNext.disabled = currentPage >= totalPages;
+        }
+
+        function changePage(direction) {
+            let baseProducts = searchKeyword ? filteredProducts : Object.values(soluongProducts);
+            const displayProducts = (isMergeVariants && !searchKeyword) ? mergeProductsByTemplate(baseProducts) : baseProducts;
+            const totalPages = Math.ceil(displayProducts.length / itemsPerPage);
+
+            if (direction === 'prev' && currentPage > 1) {
+                currentPage--;
+            } else if (direction === 'next' && currentPage < totalPages) {
+                currentPage++;
+            }
+
+            updateProductGrid();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function removeVietnameseTones(str) {
+            if (!str) return '';
+            str = str.toLowerCase();
+            str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, 'a');
+            str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, 'e');
+            str = str.replace(/ì|í|ị|ỉ|ĩ/g, 'i');
+            str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, 'o');
+            str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, 'u');
+            str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y');
+            str = str.replace(/đ/g, 'd');
+            return str;
+        }
+
+        function buildNormalizedCache(products) {
+            normalizedProductNames.clear();
+            products.forEach(product => {
+                if (product && product.Id && product.NameGet) {
+                    normalizedProductNames.set(product.Id, removeVietnameseTones(product.NameGet));
+                }
+            });
+        }
+
+        function getNormalizedName(product) {
+            if (!product || !product.Id) return '';
+            if (normalizedProductNames.has(product.Id)) {
+                return normalizedProductNames.get(product.Id);
+            }
+            const normalized = removeVietnameseTones(product.NameGet || '');
+            normalizedProductNames.set(product.Id, normalized);
+            return normalized;
+        }
+
+        function performSearch(keyword) {
+            searchKeyword = keyword.trim();
+
+            if (!searchKeyword) {
+                filteredProducts = [];
+                currentPage = pageBeforeSearch;
+                updateProductGrid();
+                return;
+            }
+
+            if (!filteredProducts.length) {
+                pageBeforeSearch = currentPage;
+            }
+
+            const searchLower = searchKeyword.toLowerCase();
+            const searchNoSign = removeVietnameseTones(searchKeyword);
+
+            const visibleProducts = Object.values(soluongProducts).filter(p => !p.isHidden);
+            const productsToSearch = isMergeVariants ? mergeProductsByTemplate(visibleProducts) : visibleProducts;
+
+            if (normalizedProductNames.size === 0) {
+                buildNormalizedCache(productsToSearch);
+            }
+
+            const matchedProducts = productsToSearch.filter(product => {
+                const nameNoSign = getNormalizedName(product);
+                const matchName = nameNoSign.includes(searchNoSign);
+                const matchNameOriginal = product.NameGet && product.NameGet.toLowerCase().includes(searchLower);
+                return matchName || matchNameOriginal;
+            });
+
+            matchedProducts.sort((a, b) => {
+                const extractBracket = (name) => {
+                    const match = name?.match(/\[([^\]]+)\]/);
+                    return match ? match[1].toLowerCase().trim() : '';
+                };
+
+                const aBracket = extractBracket(a.NameGet);
+                const bBracket = extractBracket(b.NameGet);
+
+                const aMatchInBracket = aBracket && aBracket.includes(searchLower);
+                const bMatchInBracket = bBracket && bBracket.includes(searchLower);
+
+                if (aMatchInBracket && !bMatchInBracket) return -1;
+                if (!aMatchInBracket && bMatchInBracket) return 1;
+
+                if (aMatchInBracket && bMatchInBracket) {
+                    const aExactMatch = aBracket === searchLower;
+                    const bExactMatch = bBracket === searchLower;
+                    if (aExactMatch && !bExactMatch) return -1;
+                    if (!aExactMatch && bExactMatch) return 1;
+                    if (aBracket.length !== bBracket.length) {
+                        return aBracket.length - bBracket.length;
+                    }
+                    return aBracket.localeCompare(bBracket);
+                }
+
+                return a.NameGet.localeCompare(b.NameGet);
+            });
+
+            filteredProducts = matchedProducts;
+
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            if (currentPage > totalPages && totalPages > 0) {
+                currentPage = totalPages;
+            }
+
+            updateProductGrid();
+        }
+
+        function clearSearch() {
+            searchKeyword = '';
+            filteredProducts = [];
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchClear').classList.remove('show');
+            currentPage = pageBeforeSearch;
+            updateProductGrid();
+        }
+
+        // KEY FUNCTION: Update quantity with logging
+        function updateProductQty(productId, change) {
+            const productKey = `product_${productId}`;
+            const product = soluongProducts[productKey];
+            if (!product) return;
+
+            const currentSoldQty = product.soldQty || 0;
+            const newSoldQty = Math.max(0, Math.min(product.QtyAvailable, currentSoldQty + change));
+            if (newSoldQty === currentSoldQty) return;
+
+            // Get sale source from dropdown
+            const source = document.getElementById('saleSource').value;
+
+            // Update with logging
+            updateProductQtyInFirebase(
+                database,
+                productId,
+                change,
+                soluongProducts,
+                {
+                    source: source,
+                    staffName: staffName,
+                    staffUsername: staffUsername
+                }
+            ).catch(error => {
+                console.error('❌ Lỗi sync products:', error);
+            });
+
+            if (searchKeyword) {
+                performSearch(searchKeyword);
+            } else {
+                updateProductGrid();
+            }
+        }
+
+        function setupFirebaseListeners() {
+            database.ref('soluongDisplaySettings').on('value', (snapshot) => {
+                const settings = snapshot.val();
+                if (settings && !isSyncingFromFirebase) {
+                    isSyncingFromFirebase = true;
+                    displaySettings = settings;
+                    itemsPerPage = settings.itemsPerPage || (settings.columns * settings.rows);
+                    localStorage.setItem('soluongDisplaySettings', JSON.stringify(settings));
+                    applySettings();
+                    updateProductGrid();
+                    setTimeout(() => { isSyncingFromFirebase = false; }, 100);
+                }
+            });
+
+            // Products listener - real-time sync
+            setupFirebaseChildListeners(database, soluongProducts, {
+                onProductAdded: (product) => {
+                    if (!isSyncingFromFirebase) {
+                        console.log('🔥 Product added:', product.NameGet);
+                        buildNormalizedCache(Object.values(soluongProducts));
+                        if (searchKeyword) {
+                            performSearch(searchKeyword);
+                        } else {
+                            updateProductGrid();
+                        }
+                    }
+                },
+                onProductChanged: (product) => {
+                    if (!isSyncingFromFirebase) {
+                        console.log('🔥 Product updated:', product.NameGet);
+                        buildNormalizedCache(Object.values(soluongProducts));
+                        if (searchKeyword) {
+                            performSearch(searchKeyword);
+                        } else {
+                            updateProductGrid();
+                        }
+                    }
+                },
+                onProductRemoved: (product) => {
+                    if (!isSyncingFromFirebase) {
+                        console.log('🔥 Product removed:', product.NameGet);
+                        buildNormalizedCache(Object.values(soluongProducts));
+                        if (searchKeyword) {
+                            performSearch(searchKeyword);
+                        } else {
+                            updateProductGrid();
+                        }
+                    }
+                },
+                onInitialLoadComplete: () => {
+                    console.log('✅ Firebase listeners setup complete');
+                }
+            });
+
+            // NOTE: We do NOT listen to soluongSyncCurrentPage or soluongSyncSearchData
+            // because Social page should NOT sync UI with live page
+        }
+
+        document.getElementById('btnPrev').addEventListener('click', () => changePage('prev'));
+        document.getElementById('btnNext').addEventListener('click', () => changePage('next'));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                changePage('prev');
+            } else if (e.key === 'ArrowRight') {
+                changePage('next');
+            }
+        });
+
+        // Hover areas for nav buttons
+        const hoverAreas = document.querySelectorAll('.nav-hover-area');
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+
+        hoverAreas.forEach(area => {
+            area.addEventListener('mouseenter', () => {
+                if (area.classList.contains('left') && !btnPrev.disabled) {
+                    btnPrev.classList.add('active');
+                } else if (area.classList.contains('right') && !btnNext.disabled) {
+                    btnNext.classList.add('active');
+                }
+            });
+
+            area.addEventListener('mouseleave', () => {
+                btnPrev.classList.remove('active');
+                btnNext.classList.remove('active');
+            });
+        });
+
+        [btnPrev, btnNext].forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                if (!btn.disabled) {
+                    btn.classList.add('active');
+                }
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                btn.classList.remove('active');
+            });
+        });
+
+        window.addEventListener('load', async () => {
+            // Get staff info from AuthManager
+            const userInfo = authManager.getUserInfo();
+            if (userInfo) {
+                staffName = userInfo.displayName || userInfo.username || 'Unknown';
+                staffUsername = userInfo.username || 'unknown';
+                document.getElementById('staffName').textContent = staffName;
+                console.log('👤 Staff logged in:', staffName);
+            } else {
+                // If not authenticated, show as guest but still allow access
+                document.getElementById('staffName').textContent = 'Khách';
+                staffName = 'Khách';
+                staffUsername = 'guest';
+                console.log('⚠️ User not authenticated, continuing as guest');
+            }
+
+            await loadSettings();
+            await loadProducts();
+            setupFirebaseListeners();
+
+            // Setup search input
+            const searchInput = document.getElementById('searchInput');
+            const searchClear = document.getElementById('searchClear');
+            const searchContainer = document.getElementById('searchContainer');
+
+            if (searchInput) {
+                searchContainer.addEventListener('click', () => {
+                    searchInput.focus();
+                });
+
+                searchInput.addEventListener('input', (e) => {
+                    const value = e.target.value;
+
+                    if (value) {
+                        searchClear.classList.add('show');
+                        searchContainer.classList.add('active');
+                    } else {
+                        searchClear.classList.remove('show');
+                        searchContainer.classList.remove('active');
+                    }
+
+                    if (searchInputDebounceTimer) {
+                        clearTimeout(searchInputDebounceTimer);
+                    }
+
+                    searchInputDebounceTimer = setTimeout(() => {
+                        performSearch(value);
+                    }, SEARCH_INPUT_DEBOUNCE_MS);
+                });
+
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        if (searchInputDebounceTimer) {
+                            clearTimeout(searchInputDebounceTimer);
+                        }
+                        performSearch(e.target.value);
+                    }
+                });
+
+                searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        clearSearch();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

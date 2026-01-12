@@ -1,0 +1,694 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theo Dõi Nhập Hàng SL</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="modern.css">
+
+    <!-- Navigation Manager -->
+    <script src="../js/core-loader.js"></script>
+    <script src="../js/navigation-modern.js"></script>
+    <script src="../js/common-utils.js"></script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <!-- XLSX for Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                <span>N2Shop</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+            <!-- Menu items auto-generated -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-lucide="user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="btn-permissions" id="btnPermissions">
+                <i data-lucide="shield-check"></i>
+                <span>Xem Quyền Của Tôi</span>
+            </button>
+            <button class="btn-logout" id="btnLogout">
+                <i data-lucide="log-out"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="btn-icon" id="menuToggle">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="breadcrumb">
+                    <i data-lucide="package-search"></i>
+                    <span>Theo Dõi Nhập Hàng SL</span>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <button class="btn btn-outline" id="langToggleButton" title="Chuyển đổi ngôn ngữ hiển thị">
+                    <span id="langToggleIcon">🇻🇳</span>
+                    <span id="langToggleText">Việt hóa</span>
+                </button>
+                <button class="btn btn-outline" id="exportButton">
+                    <i data-lucide="download"></i>
+                    <span>Xuất Excel</span>
+                </button>
+                <button class="btn-icon" id="refreshButton" title="Làm mới dữ liệu">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-tab="booking" id="tabBooking">
+                    <i data-lucide="shopping-cart"></i>
+                    <span>Đặt Hàng</span>
+                    <span class="tab-lock hidden" id="bookingLock">
+                        <i data-lucide="lock"></i>
+                    </span>
+                </button>
+                <button class="tab-btn" data-tab="tracking">
+                    <i data-lucide="package"></i>
+                    <span>Theo Dõi Đơn Hàng</span>
+                </button>
+                <button class="tab-btn" data-tab="finance" id="tabFinance">
+                    <i data-lucide="wallet"></i>
+                    <span>Công Nợ</span>
+                    <span class="tab-lock" id="financeLock">
+                        <i data-lucide="lock"></i>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab 1: Order Booking (Đặt Hàng) -->
+        <div class="tab-content active" id="tabContentBooking">
+            <!-- Filters Section - Inline Navigation Style -->
+            <div class="filters-navigation">
+                <div class="filters-nav-left">
+                    <!-- Quick date range buttons -->
+                    <div class="quick-date-buttons">
+                        <button class="btn-quick-date" id="btnBooking7Days" title="7 ngày gần nhất">7N</button>
+                        <button class="btn-quick-date" id="btnBooking15Days" title="15 ngày gần nhất">15N</button>
+                        <button class="btn-quick-date" id="btnBooking30Days" title="30 ngày gần nhất">30N</button>
+                    </div>
+
+                    <!-- Navigation arrows -->
+                    <button class="btn-icon btn-nav" id="btnBookingPrevDay" title="Ngày trước">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+
+                    <!-- Date Selector Dropdown -->
+                    <div class="date-selector-container">
+                        <input type="date" id="filterBookingDateInput" class="date-input-hidden" />
+                        <select class="date-selector" id="bookingDateSelector">
+                            <option value="current" id="bookingCurrentDateOption">Hôm nay</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="3days">3 ngày</option>
+                            <option value="7days">7 ngày</option>
+                            <option value="10days">10 ngày</option>
+                            <option value="single">1 ngày...</option>
+                            <option value="custom">Nhiều ngày...</option>
+                        </select>
+                    </div>
+
+                    <!-- Navigation arrows -->
+                    <button class="btn-icon btn-nav" id="btnBookingNextDay" title="Ngày sau">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+
+                    <!-- Hidden date inputs for custom range -->
+                    <input type="date" id="filterBookingDateFrom" class="date-input-hidden">
+                    <input type="date" id="filterBookingDateTo" class="date-input-hidden">
+
+                    <!-- NCC Filter -->
+                    <div class="filter-inline-item">
+                        <i data-lucide="building"></i>
+                        <select id="filterBookingNCC" class="filter-inline-select">
+                            <option value="all">Tất cả NCC</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="filter-inline-item">
+                        <i data-lucide="filter"></i>
+                        <select id="filterBookingStatus" class="filter-inline-select">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="pending">Đang chờ giao</option>
+                            <option value="received">Đã nhận hàng</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+
+                    <!-- Product Search -->
+                    <div class="filter-inline-item filter-search">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="filterBookingProduct" class="filter-inline-input" placeholder="Tìm mã SP...">
+                    </div>
+
+                    <!-- Clear Filter Button -->
+                    <button class="btn-clear-filters" id="btnClearBookingFilters" title="Xóa bộ lọc">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+
+                <div class="filters-nav-right">
+                    <span class="filter-count" id="filterBookingCount">0 đơn đặt hàng</span>
+                </div>
+            </div>
+
+            <!-- Add Order Booking Button -->
+            <div class="action-bar">
+                <button class="btn btn-primary" id="btnAddOrderBooking">
+                    <i data-lucide="plus"></i>
+                    <span>Thêm Đơn Đặt Hàng</span>
+                </button>
+            </div>
+
+            <!-- Order Bookings List -->
+            <section class="shipments-section" id="orderBookingsContainer">
+                <div class="loading-state" id="bookingLoadingState">
+                    <div class="loading-spinner"></div>
+                    <span>Đang tải dữ liệu...</span>
+                </div>
+                <div class="empty-state hidden" id="bookingEmptyState">
+                    <i data-lucide="shopping-cart"></i>
+                    <h3>Chưa có đơn đặt hàng nào</h3>
+                    <p>Bấm "Thêm Đơn Đặt Hàng" để bắt đầu</p>
+                </div>
+                <!-- Order booking cards will be rendered here -->
+            </section>
+        </div>
+
+        <!-- Tab 2: Tracking -->
+        <div class="tab-content" id="tabContentTracking">
+            <!-- Filters Section - Inline Navigation Style -->
+            <div class="filters-navigation">
+                <div class="filters-nav-left">
+                    <!-- Quick date range buttons -->
+                    <div class="quick-date-buttons">
+                        <button class="btn-quick-date" id="btn7Days" title="7 ngày gần nhất">7N</button>
+                        <button class="btn-quick-date" id="btn15Days" title="15 ngày gần nhất">15N</button>
+                        <button class="btn-quick-date" id="btn30Days" title="30 ngày gần nhất">30N</button>
+                    </div>
+
+                    <!-- Navigation arrows -->
+                    <button class="btn-icon btn-nav" id="btnTrackingPrevDay" title="Ngày trước">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+
+                    <!-- Date Selector Dropdown -->
+                    <div class="date-selector-container">
+                        <input type="date" id="filterTrackingDateInput" class="date-input-hidden" />
+                        <select class="date-selector" id="trackingDateSelector">
+                            <option value="current" id="trackingCurrentDateOption">Hôm nay</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="3days">3 ngày</option>
+                            <option value="7days">7 ngày</option>
+                            <option value="10days">10 ngày</option>
+                            <option value="single">1 ngày...</option>
+                            <option value="custom">Nhiều ngày...</option>
+                        </select>
+                    </div>
+
+                    <!-- Navigation arrows -->
+                    <button class="btn-icon btn-nav" id="btnTrackingNextDay" title="Ngày sau">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+
+                    <!-- Hidden date inputs for custom range -->
+                    <input type="date" id="filterDateFrom" class="date-input-hidden">
+                    <input type="date" id="filterDateTo" class="date-input-hidden">
+
+                    <!-- NCC Filter -->
+                    <div class="filter-inline-item">
+                        <i data-lucide="building"></i>
+                        <select id="filterNCC" class="filter-inline-select">
+                            <option value="all">Tất cả NCC</option>
+                        </select>
+                    </div>
+
+                    <!-- Product Search -->
+                    <div class="filter-inline-item filter-search">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="filterProduct" class="filter-inline-input" placeholder="Tìm mã SP...">
+                    </div>
+
+                    <!-- Clear Filter Button -->
+                    <button class="btn-clear-filters" id="btnClearFilters" title="Xóa bộ lọc">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+
+                <div class="filters-nav-right">
+                    <span class="filter-count" id="filterCount">0 đợt hàng</span>
+                </div>
+            </div>
+
+            <!-- Add Shipment Button -->
+            <div class="action-bar">
+                <button class="btn btn-primary" id="btnAddShipment">
+                    <i data-lucide="plus"></i>
+                    <span>Thêm Đợt Hàng</span>
+                </button>
+                <button class="btn btn-outline" id="btnExportTracking">
+                    <i data-lucide="download"></i>
+                    <span>Xuất Excel</span>
+                </button>
+            </div>
+
+            <!-- Shipments List -->
+            <section class="shipments-section" id="shipmentsContainer">
+                <div class="loading-state" id="loadingState">
+                    <div class="loading-spinner"></div>
+                    <span>Đang tải dữ liệu...</span>
+                </div>
+                <div class="empty-state hidden" id="emptyState">
+                    <i data-lucide="package-x"></i>
+                    <h3>Chưa có đợt hàng nào</h3>
+                    <p>Bấm "Thêm Đợt Hàng" để bắt đầu</p>
+                </div>
+                <!-- Shipment cards will be rendered here -->
+            </section>
+        </div>
+
+        <!-- Tab 2: Finance (Cong No) -->
+        <div class="tab-content" id="tabContentFinance">
+            <!-- Finance Header -->
+            <div class="finance-header">
+                <h2>
+                    <i data-lucide="wallet"></i>
+                    Quản Lý Tài Chính Chuyến Đi Lấy Hàng
+                </h2>
+                <div class="finance-actions">
+                    <button class="btn btn-success" id="btnAddPrepayment">
+                        <i data-lucide="plus"></i>
+                        <span>Thêm Thanh Toán</span>
+                    </button>
+                    <button class="btn btn-danger" id="btnAddExpense">
+                        <i data-lucide="minus"></i>
+                        <span>Chi Phí Khác</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Finance Table -->
+            <section class="finance-section card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="finance-table">
+                            <thead>
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Loại</th>
+                                    <th>Ghi Chú</th>
+                                    <th class="text-right">Số Tiền</th>
+                                    <th class="text-center">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financeTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        Đang tải dữ liệu...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Finance Summary -->
+            <section class="finance-summary card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="calculator"></i>
+                        <h2>Tổng Kết Công Nợ</h2>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="summary-grid">
+                        <div class="summary-item positive">
+                            <span class="summary-label">Tổng Thanh Toán Trước</span>
+                            <span class="summary-value" id="totalPrepayment">+0</span>
+                        </div>
+                        <div class="summary-item negative">
+                            <span class="summary-label">Tổng Tiền Hóa Đơn</span>
+                            <span class="summary-value" id="totalInvoice">-0</span>
+                        </div>
+                        <div class="summary-item negative">
+                            <span class="summary-label">Tổng Chi Phí Hàng Về</span>
+                            <span class="summary-value" id="totalShippingCost">-0</span>
+                        </div>
+                        <div class="summary-item negative">
+                            <span class="summary-label">Tổng Chi Phí Khác</span>
+                            <span class="summary-value" id="totalOtherExpense">-0</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-item total">
+                            <span class="summary-label">CÒN LẠI</span>
+                            <span class="summary-value" id="totalRemaining">0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal: Add/Edit Shipment -->
+    <div class="modal" id="modalShipment">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <h3 id="modalShipmentTitle">Thêm Đợt Hàng Mới</h3>
+                <button class="modal-close" id="btnCloseShipmentModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalShipmentBody">
+                <!-- Form content will be rendered by modal-shipment.js -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCancelShipment">Hủy</button>
+                <button class="btn btn-primary" id="btnSaveShipment">
+                    <i data-lucide="save"></i>
+                    Lưu Đợt Hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Prepayment -->
+    <div class="modal" id="modalPrepayment">
+        <div class="modal-overlay"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modalPrepaymentTitle">Thêm Thanh Toán Trước</h3>
+                <button class="modal-close" id="btnClosePrepaymentModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Ngày Thanh Toán</label>
+                    <input type="date" id="prepaymentDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Số Tiền</label>
+                    <input type="number" id="prepaymentAmount" class="form-input" placeholder="Nhập số tiền...">
+                </div>
+                <div class="form-group">
+                    <label>Ghi Chú</label>
+                    <input type="text" id="prepaymentNote" class="form-input" placeholder="Ghi chú (tùy chọn)...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCancelPrepayment">Hủy</button>
+                <button class="btn btn-success" id="btnSavePrepayment">
+                    <i data-lucide="save"></i>
+                    Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Other Expense -->
+    <div class="modal" id="modalExpense">
+        <div class="modal-overlay"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modalExpenseTitle">Thêm Chi Phí Khác</h3>
+                <button class="modal-close" id="btnCloseExpenseModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Ngày Chi</label>
+                    <input type="date" id="expenseDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Loại Chi Phí</label>
+                    <input type="text" id="expenseType" class="form-input" placeholder="VD: Tiền ăn, Tiền taxi...">
+                </div>
+                <div class="form-group">
+                    <label>Số Tiền</label>
+                    <input type="number" id="expenseAmount" class="form-input" placeholder="Nhập số tiền...">
+                </div>
+                <div class="form-group">
+                    <label>Ghi Chú</label>
+                    <input type="text" id="expenseNote" class="form-input" placeholder="Ghi chú (tùy chọn)...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCancelExpense">Hủy</button>
+                <button class="btn btn-danger" id="btnSaveExpense">
+                    <i data-lucide="save"></i>
+                    Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: View Invoice Detail -->
+    <div class="modal" id="modalInvoiceDetail">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-md">
+            <div class="modal-header">
+                <h3 id="modalInvoiceDetailTitle">Chi Tiết Tiền Hóa Đơn</h3>
+                <button class="modal-close" id="btnCloseInvoiceDetailModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalInvoiceDetailBody">
+                <!-- Content will be rendered dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCloseInvoiceDetail">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: View Shipping Cost Detail -->
+    <div class="modal" id="modalShippingDetail">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-md">
+            <div class="modal-header">
+                <h3 id="modalShippingDetailTitle">Chi Tiết Chi Phí Hàng Về</h3>
+                <button class="modal-close" id="btnCloseShippingDetailModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalShippingDetailBody">
+                <!-- Content will be rendered dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCloseShippingDetail">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Update Shortage -->
+    <div class="modal" id="modalShortage">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-md">
+            <div class="modal-header">
+                <h3 id="modalShortageTitle">Cập Nhật Số Món Thiếu</h3>
+                <button class="modal-close" id="btnCloseShortageModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalShortageBody">
+                <!-- Content will be rendered dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCancelShortage">Hủy</button>
+                <button class="btn btn-primary" id="btnSaveShortage">
+                    <i data-lucide="save"></i>
+                    Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Image Viewer -->
+    <div class="modal" id="modalImageViewer">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-xl">
+            <div class="modal-header">
+                <h3>Xem Ảnh Hóa Đơn</h3>
+                <button class="modal-close" id="btnCloseImageViewer">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body image-viewer-body" id="imageViewerBody">
+                <!-- Images will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: AI Invoice Preview -->
+    <div class="modal" id="modalAIPreview">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-xl">
+            <div class="modal-header">
+                <h3>Xem trước hóa đơn AI</h3>
+                <button class="modal-close" id="btnCloseAIPreviewModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalAIPreviewBody">
+                <!-- Content rendered by modal-ai-preview.js -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCancelAIPreview">Bỏ qua</button>
+                <button class="btn btn-outline" id="btnEditManually">Nhập thủ công</button>
+                <button class="btn btn-primary" id="btnConfirmAIPreview">
+                    <i data-lucide="check"></i> Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Order Booking -->
+    <div class="modal" id="modalOrderBooking">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <h3 id="modalOrderBookingTitle">Thêm Đơn Đặt Hàng</h3>
+                <button class="modal-close" id="btnCloseOrderBookingModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalOrderBookingBody">
+                <!-- Form content will be rendered by modal-order-booking.js -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCancelOrderBooking">Hủy</button>
+                <button class="btn btn-primary" id="btnSaveOrderBooking">
+                    <i data-lucide="save"></i>
+                    Lưu Đơn Đặt Hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Compare Order vs Received -->
+    <div class="modal" id="modalCompare">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <h3 id="modalCompareTitle">So Sánh Đặt Hàng vs Thực Nhận</h3>
+                <button class="modal-close" id="btnCloseCompareModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalCompareBody">
+                <!-- Content will be rendered by modal-compare.js -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCloseCompare">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Link Order to Shipment -->
+    <div class="modal" id="modalLinkShipment">
+        <div class="modal-overlay"></div>
+        <div class="modal-container modal-md">
+            <div class="modal-header">
+                <h3>Liên Kết Đợt Hàng Thực Nhận</h3>
+                <button class="modal-close" id="btnCloseLinkShipmentModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalLinkShipmentBody">
+                <!-- Content will be rendered dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCancelLinkShipment">Hủy</button>
+                <button class="btn btn-success" id="btnConfirmLinkShipment">
+                    <i data-lucide="link"></i>
+                    Xác Nhận Liên Kết
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="permission-helper.js"></script>
+    <script src="notification-system.js"></script>
+    <script src="data-loader.js"></script>
+    <script src="text-parser.js"></script>
+    <script src="balance-calculator.js"></script>
+    <script src="table-renderer.js"></script>
+    <script src="modal-shipment.js"></script>
+    <script src="modal-shortage.js"></script>
+    <script src="image-upload.js"></script>
+    <script src="crud-operations.js"></script>
+    <script src="finance-manager.js"></script>
+    <script src="modal-prepayment.js"></script>
+    <script src="modal-other-expense.js"></script>
+    <script src="modal-detail-invoice.js"></script>
+    <script src="modal-detail-shipping.js"></script>
+    <script src="filters.js"></script>
+    <script src="search.js"></script>
+    <script src="export.js"></script>
+    <script src="edit-history.js"></script>
+    <script src="order-booking-renderer.js"></script>
+    <script src="order-booking-crud.js"></script>
+    <script src="modal-order-booking.js"></script>
+    <script src="modal-compare.js"></script>
+
+    <!-- AI Invoice Processing -->
+    <script src="ai-invoice-processor.js"></script>
+    <script src="ai-queue-manager.js"></script>
+    <script src="modal-ai-preview.js"></script>
+
+    <script src="main.js"></script>
+</body>
+</html>

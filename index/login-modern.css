@@ -1,0 +1,816 @@
+/* =====================================================
+   N2 SHOP - MODERN LOGIN - NIGHT SKY STARLIGHT
+   FULL VERSION WITH ENHANCED ANIMATIONS
+   ===================================================== */
+
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #818cf8;
+    --secondary: #8b5cf6;
+    --success: #10b981;
+    --danger: #ef4444;
+
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-900: #111827;
+
+    --border: var(--gray-200);
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+    --radius-sm: 0.375rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+
+    --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =====================================================
+   BASE
+   ===================================================== */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(0.75rem, 3vw, 2rem);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Floating particles background */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(
+            circle at 10% 20%,
+            rgba(139, 92, 246, 0.15),
+            transparent 50%
+        ),
+        radial-gradient(
+            circle at 90% 80%,
+            rgba(99, 102, 241, 0.15),
+            transparent 50%
+        );
+    animation: float 15s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Enhanced Starlight Effect */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 10% 80%, white, transparent),
+        radial-gradient(1px 1px at 90% 40%, white, transparent);
+    background-size: 200px 200px;
+    animation:
+        twinkle 5s ease infinite,
+        starMove 20s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-30px) scale(1.1);
+    }
+}
+
+@keyframes twinkle {
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes starMove {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-200px);
+    }
+}
+
+/* =====================================================
+   LOGIN CONTAINER
+   ===================================================== */
+
+.login-container {
+    position: relative;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    padding: clamp(1rem, 2.5vw, 1.75rem) clamp(1rem, 2.5vw, 1.5rem);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-2xl);
+    width: 100%;
+    max-width: min(85vw, 380px);
+    max-height: 95vh;
+    text-align: center;
+    animation:
+        slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+        containerFloat 6s ease-in-out infinite 0.6s;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    z-index: 1;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes containerFloat {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* =====================================================
+   CRYPTO STATUS
+   ===================================================== */
+
+.crypto-status {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    opacity: 0;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.crypto-status.loaded {
+    color: var(--success);
+    opacity: 1;
+    animation: fadeInScale 0.4s ease;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.crypto-status svg {
+    width: 16px;
+    height: 16px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* =====================================================
+   BRAND
+   ===================================================== */
+
+.brand {
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.brand-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.5rem, 2vw, 1rem);
+    margin-bottom: 0.5rem;
+}
+
+.brand-logo {
+    width: clamp(48px, 12vw, 64px);
+    height: clamp(48px, 12vw, 64px);
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition);
+    animation: logoPulse 3s ease-in-out infinite;
+}
+
+.brand-logo:hover {
+    transform: scale(1.1) rotate(5deg);
+    animation: logoSpin 0.6s ease-in-out;
+}
+
+@keyframes logoPulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 10px 15px -3px rgb(99 102 241 / 0.3);
+    }
+}
+
+@keyframes logoSpin {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        transform: scale(1.15) rotate(180deg);
+    }
+    100% {
+        transform: scale(1.1) rotate(360deg);
+    }
+}
+
+.brand-text {
+    font-size: clamp(1.5rem, 5vw, 2.25rem);
+    font-weight: 700;
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+    animation: gradientShift 3s ease infinite;
+    background-size: 200% 200%;
+}
+
+@keyframes gradientShift {
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.brand p {
+    color: var(--text-secondary);
+    font-size: clamp(0.8125rem, 2vw, 0.875rem);
+    font-weight: 500;
+    animation: fadeIn 0.8s ease 0.3s both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =====================================================
+   FORM
+   ===================================================== */
+
+.login-box {
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: clamp(1rem, 3vw, 1.5rem);
+    text-align: left;
+    animation: fadeIn 0.6s ease both;
+}
+
+.form-group:nth-child(1) {
+    animation-delay: 0.4s;
+}
+
+.form-group:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+}
+
+.form-group label svg {
+    width: 18px;
+    height: 18px;
+    color: var(--primary);
+    stroke-width: 2.5;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: clamp(0.75rem, 2vw, 1rem) 1rem clamp(0.75rem, 2vw, 1rem)
+        clamp(2.75rem, 6vw, 3.25rem);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: clamp(0.875rem, 2vw, 0.9375rem);
+    font-family: inherit;
+    transition: all var(--transition);
+    background: white;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.input-wrapper input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    animation: inputFocus 0.3s ease;
+}
+
+@keyframes inputFocus {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.input-wrapper input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.input-wrapper > svg {
+    position: absolute;
+    left: clamp(0.875rem, 2vw, 1.125rem);
+    top: 50%;
+    transform: translateY(-50%);
+    width: clamp(18px, 4vw, 20px);
+    height: clamp(18px, 4vw, 20px);
+    color: var(--text-tertiary);
+    pointer-events: none;
+    transition: all var(--transition);
+    stroke-width: 2;
+}
+
+.input-wrapper input:focus ~ svg {
+    color: var(--primary);
+    animation: iconBounce 0.5s ease;
+}
+
+@keyframes iconBounce {
+    0%,
+    100% {
+        transform: translateY(-50%) scale(1);
+    }
+    50% {
+        transform: translateY(-50%) scale(1.2);
+    }
+}
+
+/* =====================================================
+   REMEMBER ME
+   ===================================================== */
+
+.remember-me-group {
+    margin-bottom: clamp(1rem, 3vw, 1.5rem);
+    text-align: left;
+    animation: fadeIn 0.6s ease 0.6s both;
+}
+
+.remember-me-container {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: clamp(0.8125rem, 2vw, 0.875rem);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem 0;
+    user-select: none;
+    transition: color var(--transition);
+}
+
+.remember-me-container:hover {
+    color: var(--text-primary);
+}
+
+.remember-me-container input[type="checkbox"] {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+    appearance: none;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: white;
+    transition: all var(--transition);
+    flex-shrink: 0;
+}
+
+.remember-me-container input[type="checkbox"]:hover {
+    border-color: var(--primary);
+    transform: scale(1.1);
+}
+
+.remember-me-container input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-color: var(--primary);
+    animation: checkboxCheck 0.3s ease;
+}
+
+@keyframes checkboxCheck {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2) rotate(10deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+.remember-me-container input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 6px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    animation: checkmarkDraw 0.3s ease 0.1s both;
+}
+
+@keyframes checkmarkDraw {
+    from {
+        height: 0;
+    }
+    to {
+        height: 10px;
+    }
+}
+
+.remember-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+.remember-duration {
+    font-size: clamp(0.6875rem, 1.5vw, 0.75rem);
+    color: var(--text-tertiary);
+    margin-top: 0.25rem;
+    padding-left: 26px;
+    display: none;
+}
+
+.remember-duration.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =====================================================
+   BUTTON
+   ===================================================== */
+
+#loginButton {
+    width: 100%;
+    padding: clamp(0.875rem, 2.5vw, 1rem) clamp(1rem, 3vw, 1.5rem);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: clamp(0.875rem, 2vw, 0.9375rem);
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    margin-top: 0.5rem;
+    position: relative;
+    animation: fadeIn 0.6s ease 0.7s both;
+    background-size: 200% 100%;
+}
+
+#loginButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    background-position: 100% 0;
+}
+
+#loginButton:active {
+    transform: translateY(0);
+    animation: buttonPress 0.2s ease;
+}
+
+@keyframes buttonPress {
+    0% {
+        transform: translateY(-2px) scale(1);
+    }
+    50% {
+        transform: translateY(1px) scale(0.98);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}
+
+#loginButton:disabled,
+#loginButton.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+#loginButton.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =====================================================
+   MESSAGES
+   ===================================================== */
+
+.error-message,
+.success-message {
+    padding: clamp(0.75rem, 2vw, 1rem);
+    border-radius: var(--radius-md);
+    margin-top: clamp(1rem, 2vw, 1.5rem);
+    font-size: clamp(0.8125rem, 2vw, 0.875rem);
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.error-message {
+    background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.success-message {
+    background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.error-message.show,
+.success-message.show {
+    opacity: 1;
+    transform: translateY(0);
+    animation: messageSlide 0.4s ease;
+}
+
+@keyframes messageSlide {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.9);
+    }
+    50% {
+        transform: translateY(5px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.error-message::before,
+.success-message::before {
+    font-size: 1.125rem;
+    flex-shrink: 0;
+    animation: iconPop 0.5s ease;
+}
+
+@keyframes iconPop {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.error-message::before {
+    content: "⚠";
+}
+
+.success-message::before {
+    content: "✓";
+}
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+
+.login-footer {
+    margin-top: clamp(1rem, 3vw, 2rem);
+    padding-top: clamp(1rem, 2vw, 1.5rem);
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: clamp(0.75rem, 1.8vw, 0.8125rem);
+    animation: fadeIn 0.8s ease 0.8s both;
+}
+
+.login-footer p {
+    margin-bottom: 0.5rem;
+}
+
+.version-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: clamp(0.75rem, 2vw, 1rem);
+}
+
+.version-badge {
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--secondary) 100%
+    );
+    color: white;
+    padding: 0.25rem clamp(0.5rem, 2vw, 1rem);
+    border-radius: var(--radius-lg);
+    font-size: clamp(0.625rem, 1.5vw, 0.6875rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(99, 102, 241, 0);
+    }
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-height: 600px) and (orientation: landscape) {
+    body {
+        padding: 0.75rem;
+    }
+
+    .login-container {
+        max-width: 500px;
+        padding: 1rem 1.5rem;
+    }
+
+    .brand {
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Accessibility */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* iOS zoom prevention */
+@supports (-webkit-touch-callout: none) {
+    input {
+        font-size: 16px !important;
+    }
+}
+
+/* Performance */
+.login-container {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}

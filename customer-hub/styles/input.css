@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for Customer 360 Hub */
+
+html.dark {
+    color-scheme: dark;
+}
+
+/* Custom styles for active link in sidebar */
+.active-link {
+    @apply bg-primary text-white;
+}
+
+.active-link:hover {
+    @apply bg-primary-dark text-white;
+}
+
+/* Material Symbols Adjustments */
+.material-symbols-outlined {
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+}
+
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-background-light rounded-lg;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-border-light rounded-lg;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary;
+}
+
+html.dark ::-webkit-scrollbar-track {
+    @apply bg-background-dark;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+    @apply bg-border-dark;
+}

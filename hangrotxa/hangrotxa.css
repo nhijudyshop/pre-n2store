@@ -1,0 +1,572 @@
+/* =====================================================
+   HÀNG RỚT XA - ADDITIONAL STYLES
+   Extends modern.css with page-specific styling
+   ===================================================== */
+
+/* =====================================================
+   IMAGE INPUT TABS
+   ===================================================== */
+
+.image-input-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 2px solid var(--border);
+}
+
+.tab-input {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: var(--transition-fast);
+}
+
+.tab-input i {
+    width: 18px;
+    height: 18px;
+}
+
+.tab-input:hover {
+    color: var(--primary);
+    background: var(--gray-50);
+}
+
+.tab-input.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* =====================================================
+   IMAGE INPUT CONTAINERS
+   ===================================================== */
+
+.image-input-container {
+    min-height: 200px;
+}
+
+.paste-area,
+.file-upload-container,
+.link-input-container {
+    display: none;
+    padding: var(--spacing-xl);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    transition: var(--transition-fast);
+}
+
+.paste-area.active,
+.file-upload-container.active,
+.link-input-container.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.paste-area {
+    min-height: 200px;
+    cursor: pointer;
+}
+
+.paste-area:hover {
+    border-color: var(--primary);
+    background: var(--gray-50);
+}
+
+.paste-area i {
+    width: 48px;
+    height: 48px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-md);
+}
+
+.paste-area p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.paste-area img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: var(--radius);
+    margin-top: var(--spacing-md);
+}
+
+/* File upload styling */
+.file-upload-container {
+    position: relative;
+}
+
+.file-upload-container input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+}
+
+.file-upload-label {
+    pointer-events: none;
+}
+
+.file-upload-label i {
+    width: 48px;
+    height: 48px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-md);
+}
+
+.file-upload-label p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.file-upload-container:hover {
+    border-color: var(--primary);
+    background: var(--gray-50);
+}
+
+/* Link input styling */
+.link-input-container {
+    padding: var(--spacing-lg);
+}
+
+.link-input-container input {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+}
+
+.link-input-container input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgb(99 102 241 / 0.1);
+}
+
+/* Image preview container */
+.image-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.image-preview-container img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+}
+
+/* =====================================================
+   FILTER SECTION
+   ===================================================== */
+
+.filter-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+}
+
+/* =====================================================
+   TABLE ENHANCEMENTS
+   ===================================================== */
+
+.table-responsive {
+    overflow-x: auto;
+    margin-top: var(--spacing-lg);
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.modern-table thead {
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--border);
+}
+
+.modern-table th {
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background-color var(--transition-fast);
+}
+
+.modern-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+/* Summary row styling */
+.modern-table tbody tr:first-child {
+    background: var(--gray-50);
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.modern-table td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.modern-table td:first-child {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Image in table */
+.modern-table td img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.modern-table td img:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+}
+
+/* Quantity input in table */
+.modern-table .quantity-input {
+    width: 80px;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.modern-table .quantity-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgb(99 102 241 / 0.1);
+}
+
+.modern-table .quantity-input:disabled {
+    background: var(--gray-100);
+    cursor: not-allowed;
+}
+
+/* Hide spinner arrows in quantity input */
+.modern-table .quantity-input::-webkit-outer-spin-button,
+.modern-table .quantity-input::-webkit-inner-spin-button,
+#soLuong::-webkit-outer-spin-button,
+#soLuong::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.modern-table .quantity-input[type="number"],
+#soLuong[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Edit & Delete buttons with Lucide icons */
+.modern-table .edit-button,
+.modern-table .delete-button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modern-table .edit-button {
+    background: var(--gray-100);
+    color: var(--primary);
+}
+
+.modern-table .edit-button:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.modern-table .edit-button i {
+    width: 18px;
+    height: 18px;
+}
+
+.modern-table .delete-button {
+    background: #fee2e2;
+    color: var(--danger);
+}
+
+.modern-table .delete-button:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.modern-table .delete-button i {
+    width: 18px;
+    height: 18px;
+}
+
+/* =====================================================
+   TOOLTIP
+   ===================================================== */
+
+.tooltip {
+    position: fixed;
+    display: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--gray-900);
+    color: white;
+    font-size: 0.75rem;
+    border-radius: var(--radius);
+    pointer-events: none;
+    z-index: 2000;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+/* =====================================================
+   EMPTY STATE
+   ===================================================== */
+
+.empty-state {
+    display: none;
+    text-align: center;
+    padding: var(--spacing-xl) 0;
+}
+
+.empty-state.show {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.empty-state i {
+    width: 64px;
+    height: 64px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+}
+
+/* =====================================================
+   STATS CUSTOMIZATION
+   ===================================================== */
+
+.stat-value {
+    font-size: 2rem;
+}
+
+/* =====================================================
+   FORM ENHANCEMENTS
+   ===================================================== */
+
+.upload-section.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =====================================================
+   LAZY LOADING PLACEHOLDER
+   ===================================================== */
+
+.modern-table td img[data-src] {
+    filter: blur(5px);
+    opacity: 0.5;
+}
+
+.modern-table td img.loaded {
+    filter: blur(0);
+    opacity: 1;
+    transition: all 0.3s ease;
+}
+
+/* =====================================================
+   RESPONSIVE ADJUSTMENTS
+   ===================================================== */
+
+@media (max-width: 1024px) {
+    .filter-section {
+        flex-direction: column;
+    }
+
+    .modern-table {
+        font-size: 0.8125rem;
+    }
+
+    .modern-table th,
+    .modern-table td {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .image-input-tabs {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .modern-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .paste-area,
+    .file-upload-container {
+        min-height: 150px;
+    }
+
+    .paste-area i,
+    .file-upload-label i {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+
+    .top-bar-right .btn-primary span {
+        display: none;
+    }
+
+    .search-box {
+        min-width: 150px;
+    }
+
+    .image-input-tabs {
+        font-size: 0.75rem;
+    }
+
+    .tab-input {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+}
+
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
+
+.text-success {
+    color: var(--success) !important;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
+
+.text-warning {
+    color: var(--warning) !important;
+}
+
+/* =====================================================
+   LOADING STATE
+   ===================================================== */
+
+.table-loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.table-loading i {
+    width: 48px;
+    height: 48px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =====================================================
+   PRINT STYLES
+   ===================================================== */
+
+@media print {
+    .sidebar,
+    .top-bar,
+    .filter-section,
+    .btn,
+    .btn-icon,
+    .upload-section {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .modern-table {
+        border: 1px solid #000;
+    }
+
+    .modern-table th,
+    .modern-table td {
+        border: 1px solid #000;
+    }
+
+    .modern-table .delete-button,
+    .modern-table .edit-button,
+    .modern-table .quantity-input {
+        display: none !important;
+    }
+}

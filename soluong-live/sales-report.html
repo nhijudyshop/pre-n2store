@@ -1,0 +1,621 @@
+<!--
+  Trang Báo cáo Bán hàng - Xem lịch sử giao dịch bán hàng
+  - Chọn ngày để xem log
+  - Lọc theo nguồn/nhân viên
+  - Thống kê tổng số bán
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo bán hàng - N2Shop</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-helpers.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-link {
+            color: #1e88e5;
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 16px;
+            border: 2px solid #1e88e5;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: #1e88e5;
+            color: white;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+
+        .btn-load {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-load:hover {
+            background: #1565c0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(30, 136, 229, 0.4);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .stat-card.total {
+            border-left: 4px solid #4caf50;
+        }
+
+        .stat-card.livestream {
+            border-left: 4px solid #9c27b0;
+        }
+
+        .stat-card.facebook {
+            border-left: 4px solid #1877f2;
+        }
+
+        .stat-card.negative {
+            border-left: 4px solid #f44336;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 900;
+            color: #333;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .log-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .log-header {
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-count {
+            font-size: 13px;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .log-table th,
+        .log-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .log-table th {
+            background: #fafafa;
+            font-weight: 700;
+            color: #555;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .log-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .log-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .change-positive {
+            color: #4caf50;
+            font-weight: 700;
+        }
+
+        .change-negative {
+            color: #f44336;
+            font-weight: 700;
+        }
+
+        .source-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .source-livestream {
+            background: #e1bee7;
+            color: #7b1fa2;
+        }
+
+        .source-facebook {
+            background: #bbdefb;
+            color: #1565c0;
+        }
+
+        .source-unknown {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .loading-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .loading-state .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #1e88e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .log-table {
+                font-size: 13px;
+            }
+
+            .log-table th,
+            .log-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Báo cáo bán hàng</h1>
+            <a href="#" class="back-link" id="backLink" onclick="goBack(); return false;">← Quay lại</a>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>📅 Ngày:</label>
+                <input type="date" id="reportDate">
+            </div>
+            <div class="control-group">
+                <label>📱 Nguồn:</label>
+                <select id="filterSource">
+                    <option value="">Tất cả nguồn</option>
+                    <option value="livestream">Livestream</option>
+                    <option value="facebook">Facebook</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>👤 Nhân viên:</label>
+                <select id="filterStaff">
+                    <option value="">Tất cả nhân viên</option>
+                </select>
+            </div>
+            <button class="btn-load" onclick="loadReport()">🔍 Xem báo cáo</button>
+        </div>
+
+        <div class="summary-stats" id="summaryStats">
+            <div class="stat-card total">
+                <div class="stat-value" id="totalSold">0</div>
+                <div class="stat-label">Tổng đã bán</div>
+            </div>
+            <div class="stat-card livestream">
+                <div class="stat-value" id="livestreamSold">0</div>
+                <div class="stat-label">Từ Livestream</div>
+            </div>
+            <div class="stat-card facebook">
+                <div class="stat-value" id="facebookSold">0</div>
+                <div class="stat-label">Từ Facebook</div>
+            </div>
+            <div class="stat-card negative">
+                <div class="stat-value" id="totalReturned">0</div>
+                <div class="stat-label">Đã hoàn trả</div>
+            </div>
+        </div>
+
+        <div class="log-container">
+            <div class="log-header">
+                <span>📝 Chi tiết giao dịch</span>
+                <span class="log-count" id="logCount">0 giao dịch</span>
+            </div>
+            <div id="logContent">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-legWlCgjMDEy70rsaTTwLK39F4ZCKhM",
+            authDomain: "n2shop-69e37.firebaseapp.com",
+            databaseURL: "https://n2shop-69e37-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "n2shop-69e37",
+            storageBucket: "n2shop-69e37-ne0q1",
+            messagingSenderId: "598906493303",
+            appId: "1:598906493303:web:46d6236a1fdc2eff33e972",
+            measurementId: "G-TEJH3S2T1D"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let allLogs = [];
+        let filteredLogs = [];
+        let staffList = new Set();
+
+        // Set default date to today
+        document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+
+        async function loadReport() {
+            const date = document.getElementById('reportDate').value;
+            const logContent = document.getElementById('logContent');
+
+            logContent.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Đang tải dữ liệu...</p>
+                </div>
+            `;
+
+            try {
+                allLogs = await getSalesLogByDate(database, date);
+                console.log('📊 Loaded logs:', allLogs.length);
+
+                // Build staff list for filter
+                staffList.clear();
+                allLogs.forEach(log => {
+                    if (log.staffName) {
+                        staffList.add(log.staffName);
+                    }
+                });
+                updateStaffFilter();
+
+                // Apply filters and display
+                applyFilters();
+            } catch (error) {
+                console.error('❌ Error loading logs:', error);
+                logContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">❌</div>
+                        <h3>Lỗi tải dữ liệu</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateStaffFilter() {
+            const filterStaff = document.getElementById('filterStaff');
+            const currentValue = filterStaff.value;
+
+            filterStaff.innerHTML = '<option value="">Tất cả nhân viên</option>';
+            staffList.forEach(staff => {
+                const option = document.createElement('option');
+                option.value = staff;
+                option.textContent = staff;
+                filterStaff.appendChild(option);
+            });
+
+            // Restore selected value if still valid
+            if (currentValue && staffList.has(currentValue)) {
+                filterStaff.value = currentValue;
+            }
+        }
+
+        function applyFilters() {
+            const sourceFilter = document.getElementById('filterSource').value;
+            const staffFilter = document.getElementById('filterStaff').value;
+
+            filteredLogs = allLogs.filter(log => {
+                if (sourceFilter && log.source !== sourceFilter) return false;
+                if (staffFilter && log.staffName !== staffFilter) return false;
+                return true;
+            });
+
+            updateStats();
+            renderLogTable();
+        }
+
+        function updateStats() {
+            let totalSold = 0;
+            let totalReturned = 0;
+            let livestreamSold = 0;
+            let facebookSold = 0;
+
+            filteredLogs.forEach(log => {
+                if (log.change > 0) {
+                    totalSold += log.change;
+                    if (log.source === 'livestream') livestreamSold += log.change;
+                    if (log.source === 'facebook') facebookSold += log.change;
+                } else {
+                    totalReturned += Math.abs(log.change);
+                }
+            });
+
+            document.getElementById('totalSold').textContent = totalSold;
+            document.getElementById('livestreamSold').textContent = livestreamSold;
+            document.getElementById('facebookSold').textContent = facebookSold;
+            document.getElementById('totalReturned').textContent = totalReturned;
+        }
+
+        function renderLogTable() {
+            const logContent = document.getElementById('logContent');
+            const logCount = document.getElementById('logCount');
+
+            logCount.textContent = `${filteredLogs.length} giao dịch`;
+
+            if (filteredLogs.length === 0) {
+                logContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <h3>Không có giao dịch</h3>
+                        <p>Không tìm thấy giao dịch nào cho ngày và bộ lọc đã chọn</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHtml = `
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Sản phẩm</th>
+                            <th>SL</th>
+                            <th>Nguồn</th>
+                            <th>Nhân viên</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredLogs.map(log => `
+                            <tr>
+                                <td>${formatTime(log.timestamp)}</td>
+                                <td>${escapeHtml(log.productName)}</td>
+                                <td class="${log.change > 0 ? 'change-positive' : 'change-negative'}">
+                                    ${log.change > 0 ? '+' : ''}${log.change}
+                                </td>
+                                <td>
+                                    <span class="source-badge source-${log.source || 'unknown'}">
+                                        ${getSourceLabel(log.source)}
+                                    </span>
+                                </td>
+                                <td>${escapeHtml(log.staffName || 'Unknown')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            logContent.innerHTML = tableHtml;
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function getSourceLabel(source) {
+            const labels = {
+                'livestream': 'Livestream',
+                'facebook': 'Facebook',
+                'zalo': 'Zalo',
+                'tiktok': 'TikTok'
+            };
+            return labels[source] || source || 'Unknown';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners for filters
+        document.getElementById('filterSource').addEventListener('change', applyFilters);
+        document.getElementById('filterStaff').addEventListener('change', applyFilters);
+        document.getElementById('reportDate').addEventListener('change', loadReport);
+
+        // Go back to referrer page (index.html or social-sales.html)
+        function goBack() {
+            const referrer = sessionStorage.getItem('soluongReportReferrer');
+            if (referrer) {
+                sessionStorage.removeItem('soluongReportReferrer');
+                window.location.href = referrer;
+            } else {
+                // Default to social-sales.html if no referrer saved
+                window.location.href = 'social-sales.html';
+            }
+        }
+
+        // Update back link text based on referrer
+        (function updateBackLinkText() {
+            const referrer = sessionStorage.getItem('soluongReportReferrer');
+            const backLink = document.getElementById('backLink');
+            if (referrer === 'index.html') {
+                backLink.textContent = '← Quay lại Livestream';
+            } else {
+                backLink.textContent = '← Quay lại Social';
+            }
+        })();
+
+        // Load report on page load
+        loadReport();
+    </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Customers collection - accessible by authenticated users, writable by admin
+    match /customers/{customerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Users collection - only admins can read/write
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Purchase Orders collection
+    match /purchase_orders/{orderId} {
+      // Anyone authenticated can read
+      allow read: if isAuthenticated();
+
+      // Anyone authenticated can create
+      allow create: if isAuthenticated();
+
+      // Can update if authenticated and order is not COMPLETED
+      allow update: if isAuthenticated()
+        && resource.data.status != 'COMPLETED';
+
+      // Can delete if authenticated and order is DRAFT or CANCELLED
+      allow delete: if isAuthenticated()
+        && resource.data.status in ['DRAFT', 'CANCELLED'];
+    }
+
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

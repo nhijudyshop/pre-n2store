@@ -1,0 +1,884 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Hệ Thống Quản Lý - N2Shop</title>
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- 🧹 Auto cleanup localStorage to prevent QuotaExceededError -->
+    <script>
+    (function() {
+        try {
+            var totalSize = 0;
+            for (var key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    totalSize += localStorage[key].length + key.length;
+                }
+            }
+            var sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+
+            // If over 4MB, clean up non-essential data
+            if (totalSize > 4 * 1024 * 1024) {
+                console.warn('[STORAGE] ⚠️ localStorage near quota (' + sizeMB + 'MB), auto cleaning...');
+                var cleaned = 0;
+                var keysToRemove = [];
+
+                for (var k in localStorage) {
+                    if (localStorage.hasOwnProperty(k)) {
+                        // Remove Firebase logs
+                        if (k.startsWith('firebase:')) keysToRemove.push(k);
+                        // Remove large caches
+                        if ((k === 'standard_price_cache' || k === 'product_excel_cache') && localStorage[k].length > 500000) {
+                            keysToRemove.push(k);
+                        }
+                        // Always remove phone debt/qr caches when near quota
+                        if (k === 'orders_phone_debt_cache' || k === 'orders_phone_qr_cache') {
+                            keysToRemove.push(k);
+                        }
+                    }
+                }
+
+                keysToRemove.forEach(function(key) {
+                    localStorage.removeItem(key);
+                    cleaned++;
+                });
+
+                console.log('[STORAGE] ✅ Auto cleaned ' + cleaned + ' items');
+            }
+        } catch (e) {
+            console.warn('[STORAGE] Cleanup error:', e);
+        }
+    })();
+    </script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="modern.css" />
+
+    <!-- N2Store Optimization: Core Utilities Loader -->
+    <script src="../js/core-loader.js"></script>
+
+    <!-- Auth must load BEFORE navigation -->
+    <script src="auth.js"></script>
+
+    <!-- Navigation Manager - Load sau khi load auth -->
+    <script src="../js/navigation-modern.js"></script>
+    <script src="../js/common-utils.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- XLSX.js for Excel parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        /* Tab Navigation */
+        .tab-navigation {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab-nav-content {
+            display: flex;
+            gap: 0;
+            padding: 0 var(--spacing-xl);
+        }
+
+        .tab-button {
+            padding: 16px 24px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-button:hover {
+            color: var(--primary);
+            background: var(--gray-50);
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+        }
+
+        .tab-button.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* iframe */
+        iframe {
+            width: 100%;
+            height: calc(100vh - 65px);
+            border: none;
+            background: white;
+        }
+
+        /* Sync indicator */
+        .sync-indicator {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--success);
+            z-index: 1000;
+        }
+
+        .sync-indicator.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Mobile Optimization Overrides */
+        @media (max-width: 768px) {
+
+            /* Force hide global mobile top bar */
+            .mobile-top-bar {
+                display: none !important;
+            }
+
+            /* Reset body padding from JS injection */
+            body {
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+
+            .main-content {
+                padding-top: 60px !important;
+                /* Space for new header */
+                padding-bottom: 0 !important;
+            }
+
+            /* Hide desktop tab nav */
+            .tab-navigation {
+                display: none !important;
+            }
+
+            /* Adjust iframe height for mobile */
+            iframe {
+                height: calc(100vh - 60px) !important;
+            }
+        }
+
+        .sync-icon {
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Campaign Badge */
+        .campaign-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: auto;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .campaign-badge.show {
+            display: flex;
+        }
+
+        .campaign-badge.match {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 1px solid #28a745;
+        }
+
+        .campaign-badge.mismatch {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border: 1px solid #dc3545;
+        }
+
+        .campaign-badge .badge-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .campaign-badge .badge-text {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .campaign-badge:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Campaign Tooltip */
+        .campaign-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 12px 16px;
+            font-size: 12px;
+            z-index: 1000;
+            min-width: 280px;
+            margin-top: 8px;
+        }
+
+        .campaign-badge:hover .campaign-tooltip {
+            display: block;
+        }
+
+        .campaign-tooltip .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .campaign-tooltip .tooltip-row:last-child {
+            border-bottom: none;
+        }
+
+        .campaign-tooltip .tooltip-label {
+            color: #666;
+        }
+
+        .campaign-tooltip .tooltip-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .campaign-badge-wrapper {
+            position: relative;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Tab Header (Dropdown Style) -->
+    <div class="mobile-tab-header" id="mobileTabHeader">
+        <div class="mobile-header-content" onclick="toggleMobileDropdown()">
+            <div class="mobile-header-left">
+                <i data-lucide="zap" class="mobile-logo-icon"></i>
+                <span class="mobile-header-title" id="mobileHeaderTitle">Quản Lý Đơn Hàng</span>
+            </div>
+            <i data-lucide="chevron-down" class="mobile-header-arrow" id="mobileHeaderArrow"></i>
+        </div>
+
+        <div class="mobile-tab-dropdown" id="mobileTabDropdown">
+            <div class="mobile-dropdown-item active" onclick="switchMobileTab('orders', 'Quản Lý Đơn Hàng')"
+                data-mobile-tab="orders">
+                <i data-lucide="shopping-cart"></i>
+                <span>Quản Lý Đơn Hàng</span>
+                <i data-lucide="check" class="check-icon"></i>
+            </div>
+            <div class="mobile-dropdown-item" onclick="switchMobileTab('product-assignment', 'Gán Sản Phẩm - STT')"
+                data-mobile-tab="product-assignment">
+                <i data-lucide="link"></i>
+                <span>Gán Sản Phẩm - STT</span>
+                <i data-lucide="check" class="check-icon"></i>
+            </div>
+            <div class="mobile-dropdown-item" onclick="switchMobileTab('statistics', 'Thống Kê')"
+                data-mobile-tab="statistics">
+                <i data-lucide="bar-chart-3"></i>
+                <span>Thống Kê</span>
+                <i data-lucide="check" class="check-icon"></i>
+            </div>
+            <div class="mobile-dropdown-item" onclick="switchMobileTab('overview', 'Báo Cáo Tổng Hợp')"
+                data-mobile-tab="overview">
+                <i data-lucide="file-bar-chart"></i>
+                <span>Báo Cáo Tổng Hợp</span>
+                <i data-lucide="check" class="check-icon"></i>
+            </div>
+            <div class="mobile-dropdown-item" onclick="window.location.href='../index.html'"
+                style="border-top: 1px solid #eee; margin-top: 4px; color: #ef4444;">
+                <i data-lucide="log-out"></i>
+                <span>Thoát Báo Cáo</span>
+            </div>
+        </div>
+        <div class="mobile-dropdown-overlay" id="mobileDropdownOverlay" onclick="closeMobileDropdown()"></div>
+    </div>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                <span>N2Shop</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+            <!-- Menu items auto-generated -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-lucide="user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="btn-permissions" id="btnPermissions">
+                <i data-lucide="shield-check"></i>
+                <span>Xem Quyền Của Tôi</span>
+            </button>
+            <button class="btn-logout" id="btnLogout">
+                <i data-lucide="log-out"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <div class="tab-nav-content">
+                <button class="tab-button active" onclick="switchTab('orders')" data-tab="orders">
+                    <i data-lucide="shopping-cart" class="tab-icon"></i>
+                    Quản Lý Đơn Hàng
+                </button>
+                <button class="tab-button" onclick="switchTab('product-assignment')" data-tab="product-assignment">
+                    <i data-lucide="link" class="tab-icon"></i>
+                    Gán Sản Phẩm - STT
+                </button>
+                <button class="tab-button" onclick="switchTab('statistics')" data-tab="statistics">
+                    <i data-lucide="bar-chart-3" class="tab-icon"></i>
+                    Thống Kê
+                </button>
+                <button class="tab-button" onclick="switchTab('overview')" data-tab="overview">
+                    <i data-lucide="file-bar-chart" class="tab-icon"></i>
+                    Báo Cáo Tổng Hợp
+                </button>
+
+                <!-- Campaign Firebase Badge -->
+                <div class="campaign-badge-wrapper">
+                    <div class="campaign-badge" id="campaignBadge">
+                        <i data-lucide="database" class="badge-icon"></i>
+                        <span class="badge-text" id="campaignBadgeText">Firebase: ---</span>
+                        <div class="campaign-tooltip" id="campaignTooltip">
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Chiến dịch hiện tại:</span>
+                                <span class="tooltip-value" id="tooltipCurrentCampaign">---</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Firebase data:</span>
+                                <span class="tooltip-value" id="tooltipFirebaseCampaign">---</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Thời gian lấy:</span>
+                                <span class="tooltip-value" id="tooltipFetchedAt">---</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Trạng thái:</span>
+                                <span class="tooltip-value" id="tooltipStatus">---</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="ordersTab" class="tab-content active">
+            <iframe id="ordersFrame" src="tab1-orders.html"></iframe>
+        </div>
+
+        <div id="statisticsTab" class="tab-content">
+            <iframe id="statisticsFrame" src="tab2-statistics.html"></iframe>
+        </div>
+
+
+        <div id="productAssignmentTab" class="tab-content">
+            <iframe id="productAssignmentFrame" src="tab3-product-assignment.html"></iframe>
+        </div>
+
+        <div id="overviewTab" class="tab-content">
+            <iframe id="overviewFrame" src="tab-overview.html"></iframe>
+        </div>
+
+        <div id="reportOnlineTab" class="tab-content">
+            <iframe id="reportOnlineFrame" src="https://nhijudyshop.github.io/n2store/orders-report/main.html"></iframe>
+        </div>
+    </main>
+
+    <!-- Sync Indicator -->
+    <div class="sync-indicator" id="syncIndicator">
+        <i data-lucide="refresh-cw" class="sync-icon"></i>
+        <span>Đang đồng bộ dữ liệu...</span>
+    </div>
+
+    <!-- Scripts -->
+    <!-- ONLY load minimal scripts for main.html -->
+    <!-- Auth already loaded in HEAD - business logic handled by tabs -->
+
+    <!-- Main.html only needs auth and tab navigation -->
+    <!-- DO NOT load: token-manager, cache, notification-system, pancake, chat managers -->
+    <!-- These are loaded in individual tabs to avoid duplicates -->
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Save current tab to localStorage
+            localStorage.setItem("currentTab", tabName);
+
+            // Update tab buttons (Desktop)
+            document.querySelectorAll(".tab-button").forEach((btn) => {
+                btn.classList.remove("active");
+            });
+            const desktopBtn = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+            if (desktopBtn) desktopBtn.classList.add("active");
+
+            // Update Mobile Header & Dropdown
+            updateMobileHeader(tabName);
+
+            // Update tab content
+            document.querySelectorAll(".tab-content").forEach((content) => {
+                content.classList.remove("active");
+            });
+
+            if (tabName === "orders") {
+                document.getElementById("ordersTab").classList.add("active");
+            } else if (tabName === "statistics") {
+                document.getElementById("statisticsTab").classList.add("active");
+                // Trigger statistics refresh when switching to it
+                refreshStatistics();
+            } else if (tabName === "product-assignment") {
+                document.getElementById("productAssignmentTab").classList.add("active");
+                // Send orders data to product assignment tab
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame && ordersFrame.contentWindow) {
+                    // Request orders data from tab1
+                    ordersFrame.contentWindow.postMessage(
+                        { type: "REQUEST_ORDERS_DATA" },
+                        "*"
+                    );
+                }
+            } else if (tabName === "overview") {
+                document.getElementById("overviewTab").classList.add("active");
+            } else if (tabName === "report-online") {
+                document.getElementById("reportOnlineTab").classList.add("active");
+            }
+
+            // Reinitialize icons after DOM change
+            setTimeout(() => lucide.createIcons(), 100);
+        }
+
+        // Mobile Functions
+        function toggleMobileDropdown() {
+            const dropdown = document.getElementById('mobileTabDropdown');
+            const overlay = document.getElementById('mobileDropdownOverlay');
+            const arrow = document.getElementById('mobileHeaderArrow');
+
+            if (dropdown.classList.contains('show')) {
+                closeMobileDropdown();
+            } else {
+                dropdown.classList.add('show');
+                overlay.classList.add('show');
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function closeMobileDropdown() {
+            const dropdown = document.getElementById('mobileTabDropdown');
+            const overlay = document.getElementById('mobileDropdownOverlay');
+            const arrow = document.getElementById('mobileHeaderArrow');
+
+            dropdown.classList.remove('show');
+            overlay.classList.remove('show');
+            arrow.style.transform = 'rotate(0deg)';
+        }
+
+        function switchMobileTab(tabName, title) {
+            switchTab(tabName);
+            closeMobileDropdown();
+        }
+
+        function updateMobileHeader(tabName) {
+            // Update Title
+            const titleMap = {
+                'orders': 'Quản Lý Đơn Hàng',
+                'product-assignment': 'Gán Sản Phẩm - STT',
+                'statistics': 'Thống Kê',
+                'overview': 'Báo Cáo Tổng Hợp',
+                'report-online': 'Báo Cáo Online'
+            };
+
+            const titleElement = document.getElementById('mobileHeaderTitle');
+            if (titleElement) {
+                titleElement.textContent = titleMap[tabName] || 'Báo Cáo';
+            }
+
+            // Update Active State in Dropdown
+            document.querySelectorAll('.mobile-dropdown-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.mobileTab === tabName) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // Listen for filter changes from Tab 1
+        window.addEventListener("storage", function (e) {
+            if (e.key === "tab1_filter_data") {
+                showSyncIndicator();
+                // Notify Tab 2 about data change
+                const statisticsFrame =
+                    document.getElementById("statisticsFrame");
+                if (statisticsFrame && statisticsFrame.contentWindow) {
+                    statisticsFrame.contentWindow.postMessage(
+                        {
+                            type: "FILTER_UPDATE",
+                            data: JSON.parse(e.newValue),
+                        },
+                        "*",
+                    );
+                }
+            }
+        });
+
+        // Listen for messages from iframes
+        window.addEventListener("message", function (e) {
+            if (e.data.type === "FILTER_CHANGED") {
+                // Tab 1 filter changed
+                localStorage.setItem(
+                    "tab1_filter_data",
+                    JSON.stringify(e.data.filter),
+                );
+                showSyncIndicator();
+            } else if (e.data.type === "REQUEST_FILTER_DATA") {
+                // Tab 2 requesting current filter data
+                const filterData = localStorage.getItem("tab1_filter_data");
+                if (filterData) {
+                    e.source.postMessage(
+                        {
+                            type: "FILTER_DATA",
+                            data: JSON.parse(filterData),
+                        },
+                        "*",
+                    );
+                }
+            } else if (e.data.type === "SWITCH_TO_TAB1") {
+                // Switch to orders tab
+                switchTab("orders");
+            } else if (e.data.type === "REQUEST_ORDERS_DATA_FROM_TAB3") {
+                // Tab 3 requesting orders data
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame && ordersFrame.contentWindow) {
+                    // Request orders data from tab1
+                    ordersFrame.contentWindow.postMessage(
+                        { type: "REQUEST_ORDERS_DATA" },
+                        "*"
+                    );
+                }
+            } else if (e.data.type === "REQUEST_ORDERS_DATA_FROM_OVERVIEW") {
+                // Overview tab requesting orders data - forward directly to Tab1
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame && ordersFrame.contentWindow) {
+                    ordersFrame.contentWindow.postMessage(
+                        { type: "REQUEST_ORDERS_DATA_FROM_OVERVIEW" },
+                        "*"
+                    );
+                }
+            } else if (e.data.type === "ORDERS_DATA_RESPONSE_TAB3") {
+                // Forward orders data from Tab 1 to Tab 3 ONLY
+                const productAssignmentFrame = document.getElementById("productAssignmentFrame");
+                if (productAssignmentFrame && productAssignmentFrame.contentWindow) {
+                    productAssignmentFrame.contentWindow.postMessage(e.data, "*");
+                }
+            } else if (e.data.type === "ORDERS_DATA_RESPONSE_OVERVIEW") {
+                // Forward orders data from Tab 1 to Overview ONLY
+                const overviewFrame = document.getElementById("overviewFrame");
+                if (overviewFrame && overviewFrame.contentWindow) {
+                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                }
+            } else if (e.data.type === "FETCH_CONVERSATIONS_FOR_ORDERS") {
+                // Forward request from Overview to Tab1 to fetch conversations
+                console.log('[MAIN] 📨 Forwarding FETCH_CONVERSATIONS_FOR_ORDERS to Tab1');
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame && ordersFrame.contentWindow) {
+                    ordersFrame.contentWindow.postMessage(e.data, "*");
+                }
+            } else if (e.data.type === "RELOAD_TAB1_ONLY") {
+                // Tab3 requested reload Tab1 only - Tab3 will receive data via ORDERS_DATA_RESPONSE
+                console.log('[MAIN] 🔄 Reloading Tab1 only (Tab3 will receive data when ready)...');
+
+                // Reload Tab1 để fetch fresh data từ API
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame) {
+                    ordersFrame.src = ordersFrame.src;
+                    console.log('[MAIN] ✅ Tab1 (ordersFrame) reloading...');
+                }
+                // Tab3 KHÔNG reload - sẽ tự động nhận data khi Tab1 load xong
+            } else if (e.data.type === "RELOAD_TAB1_AND_TAB3") {
+                // Legacy: Tab3 requested reload with cache clear (kept for backward compatibility)
+                console.log('[MAIN] 🔄 Reloading Tab1 and Tab3 (cache already cleared)...');
+
+                // Reload Tab1 trước để fetch fresh data từ API
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame) {
+                    ordersFrame.src = ordersFrame.src;
+                    console.log('[MAIN] ✅ Tab1 (ordersFrame) reloading...');
+                }
+
+                // Reload Tab3 sau 3500ms để Tab1 có thời gian init và fetch data
+                setTimeout(() => {
+                    const productAssignmentFrame = document.getElementById("productAssignmentFrame");
+                    if (productAssignmentFrame) {
+                        productAssignmentFrame.src = productAssignmentFrame.src;
+                        console.log('[MAIN] ✅ Tab3 (productAssignmentFrame) reloading...');
+                    }
+                }, 3500);
+            } else if (e.data.type === "CAMPAIGN_STATUS_UPDATE") {
+                // Update campaign badge from overview tab
+                updateCampaignBadge(e.data);
+            } else if (e.data.type === "REQUEST_TOKEN_FROM_OVERVIEW") {
+                // Overview tab requesting token - forward to Tab1
+                console.log('[MAIN] 🔑 Forwarding token request to Tab1');
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame && ordersFrame.contentWindow) {
+                    ordersFrame.contentWindow.postMessage(
+                        { type: "REQUEST_TOKEN", requestId: e.data.requestId },
+                        "*"
+                    );
+                }
+            } else if (e.data.type === "TOKEN_RESPONSE") {
+                // Forward token response from Tab1 to Overview
+                console.log('[MAIN] 🔑 Forwarding token response to Overview');
+                const overviewFrame = document.getElementById("overviewFrame");
+                if (overviewFrame && overviewFrame.contentWindow) {
+                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                }
+            } else if (e.data.type === "TABLE_NAME_CHANGED") {
+                // Forward table name change from Tab1 to Overview
+                const overviewFrame = document.getElementById("overviewFrame");
+                if (overviewFrame && overviewFrame.contentWindow) {
+                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                    console.log('[MAIN] 📡 Forwarded TABLE_NAME_CHANGED to overview:', e.data.tableName);
+                }
+            } else if (e.data.type === "REQUEST_EMPLOYEE_RANGES") {
+                // Forward request from Overview to Tab1 for employee ranges
+                console.log('[MAIN] 📨 Forwarding REQUEST_EMPLOYEE_RANGES to Tab1');
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame && ordersFrame.contentWindow) {
+                    ordersFrame.contentWindow.postMessage(e.data, "*");
+                }
+            } else if (e.data.type === "EMPLOYEE_RANGES_RESPONSE") {
+                // Forward employee ranges response from Tab1 to Overview
+                console.log('[MAIN] 📨 Forwarding EMPLOYEE_RANGES_RESPONSE to Overview');
+                const overviewFrame = document.getElementById("overviewFrame");
+                if (overviewFrame && overviewFrame.contentWindow) {
+                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                }
+            } else if (e.data.type === "REQUEST_CAMPAIGN_INFO") {
+                // Forward request from Overview to Tab1 for campaign info
+                console.log('[MAIN] 📨 Forwarding REQUEST_CAMPAIGN_INFO to Tab1');
+                const ordersFrame = document.getElementById("ordersFrame");
+                if (ordersFrame && ordersFrame.contentWindow) {
+                    ordersFrame.contentWindow.postMessage(e.data, "*");
+                }
+            } else if (e.data.type === "CAMPAIGN_INFO_RESPONSE") {
+                // Forward campaign info response from Tab1 to Overview
+                console.log('[MAIN] 📨 Forwarding CAMPAIGN_INFO_RESPONSE to Overview');
+                const overviewFrame = document.getElementById("overviewFrame");
+                if (overviewFrame && overviewFrame.contentWindow) {
+                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                }
+            }
+        });
+
+        // Campaign Badge Functions
+        function updateCampaignBadge(data) {
+            const badge = document.getElementById('campaignBadge');
+            const badgeText = document.getElementById('campaignBadgeText');
+            const tooltipCurrent = document.getElementById('tooltipCurrentCampaign');
+            const tooltipFirebase = document.getElementById('tooltipFirebaseCampaign');
+            const tooltipFetchedAt = document.getElementById('tooltipFetchedAt');
+            const tooltipStatus = document.getElementById('tooltipStatus');
+
+            // Show badge
+            badge.classList.add('show');
+
+            // Update tooltip values
+            tooltipCurrent.textContent = data.currentCampaign || '---';
+            tooltipFirebase.textContent = data.firebaseCampaign || 'Chưa có';
+            tooltipFetchedAt.textContent = data.firebaseFetchedAt
+                ? new Date(data.firebaseFetchedAt).toLocaleString('vi-VN')
+                : '---';
+
+            // Update badge style based on match status
+            if (data.firebaseCampaign) {
+                if (data.isMatching) {
+                    badge.classList.remove('mismatch');
+                    badge.classList.add('match');
+                    badgeText.textContent = `✓ Firebase: ${truncateCampaignName(data.firebaseCampaign)}`;
+                    tooltipStatus.textContent = '✅ Khớp chiến dịch';
+                    tooltipStatus.style.color = '#28a745';
+                } else {
+                    badge.classList.remove('match');
+                    badge.classList.add('mismatch');
+                    badgeText.textContent = `⚠ Firebase: ${truncateCampaignName(data.firebaseCampaign)}`;
+                    tooltipStatus.textContent = '⚠️ Khác chiến dịch hiện tại!';
+                    tooltipStatus.style.color = '#dc3545';
+                }
+            } else {
+                badge.classList.remove('match', 'mismatch');
+                badge.classList.add('mismatch');
+                badgeText.textContent = 'Firebase: Chưa có data';
+                tooltipStatus.textContent = '❌ Chưa tải dữ liệu';
+                tooltipStatus.style.color = '#dc3545';
+            }
+
+            // Reinitialize icons
+            setTimeout(() => lucide.createIcons(), 50);
+
+            console.log('[MAIN] 📊 Campaign badge updated:', data);
+        }
+
+        function truncateCampaignName(name, maxLength = 20) {
+            if (!name) return '---';
+            return name.length > maxLength ? name.substring(0, maxLength) + '...' : name;
+        }
+
+        function refreshStatistics() {
+            const statisticsFrame =
+                document.getElementById("statisticsFrame");
+            if (statisticsFrame && statisticsFrame.contentWindow) {
+                const filterData = localStorage.getItem("tab1_filter_data");
+                if (filterData) {
+                    statisticsFrame.contentWindow.postMessage(
+                        {
+                            type: "REFRESH_DATA",
+                            data: JSON.parse(filterData),
+                        },
+                        "*",
+                    );
+                }
+            }
+        }
+
+        function showSyncIndicator() {
+            const indicator = document.getElementById("syncIndicator");
+            indicator.classList.add("show");
+            setTimeout(() => {
+                indicator.classList.remove("show");
+            }, 2000);
+        }
+
+        // Logout handler
+        document
+            .getElementById("btnLogout")
+            .addEventListener("click", function () {
+                if (confirm("Bạn có chắc muốn đăng xuất?")) {
+                    // Clear ONLY auth data, preserve tokens and other data
+                    sessionStorage.removeItem('loginindex_auth');
+                    localStorage.removeItem('loginindex_auth');
+                    window.location.href = "../index.html";
+                }
+            });
+
+        // Tab management
+        window.addEventListener("DOMContentLoaded", function () {
+            // Restore last active tab or default to orders
+            const savedTab = localStorage.getItem("currentTab");
+            if (savedTab && ["orders", "statistics", "product-assignment", "overview", "report-online"].includes(savedTab)) {
+                switchTab(savedTab);
+            } else {
+                switchTab("orders");
+            }
+
+            // Reinitialize icons after everything loads
+            setTimeout(() => lucide.createIcons(), 200);
+        });
+    </script>
+</body>
+
+</html>

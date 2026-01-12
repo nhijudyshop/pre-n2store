@@ -1,0 +1,115 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Đăng Nhập</title>
+        <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <!-- External CSS -->
+        <link rel="stylesheet" href="./index/login-modern.css" />
+
+        <!-- N2Store Optimization: Core Utilities Loader -->
+        <script src="./js/core-loader.js"></script>
+    </head>
+
+    <body>
+        <div class="login-container">
+            <div id="cryptoStatus" class="crypto-status">Loading...</div>
+
+            <div class="brand">
+                <div class="brand-inner">
+                    <img src="./index/logo.jpg" alt="Logo" class="brand-logo" />
+                    <h1 class="brand-text">N2 SHOP</h1>
+                </div>
+                <p>Hệ thống quản lý bán hàng</p>
+            </div>
+
+            <div class="login-box">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Tài khoản</label>
+                        <div class="input-wrapper username">
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                placeholder="Nhập tài khoản"
+                                required
+                                autocomplete="username"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Mật khẩu</label>
+                        <div class="input-wrapper password">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Nhập mật khẩu"
+                                required
+                                autocomplete="current-password"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="remember-me-group">
+                        <label class="remember-me-container">
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                                name="rememberMe"
+                                checked
+                                disabled
+                            />
+                            <span class="remember-text">Ghi nhớ đăng nhập</span>
+                        </label>
+                        <div
+                            class="remember-duration show"
+                            id="rememberDuration"
+                        >
+                            Sẽ giữ đăng nhập trong 30 ngày
+                        </div>
+                    </div>
+
+                    <button type="submit" id="loginButton">Đăng nhập</button>
+                </form>
+
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
+            </div>
+
+            <div class="login-footer">
+                <div style="text-align: center">
+                    <p>© 2025 N2 Shop 2.0</p>
+                </div>
+                <div class="version-info">
+                    <span>Phiên bản 2.0</span>
+                    <span class="version-badge">Beta</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+        <!-- Crypto Libraries -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+
+        <!-- Login Script -->
+        <script src="./index/login.js"></script>
+    </body>
+</html>

@@ -1,0 +1,45 @@
+{
+  "name": "n2store",
+  "version": "2.0.0",
+  "description": "N2 Shop - Hệ thống quản lý bán hàng",
+  "scripts": {
+    "dev": "echo 'Development server - Open index.html in browser'",
+    "build": "node build-scripts/minify-all.js",
+    "build:customer-hub": "postcss customer-hub/styles/input.css -o customer-hub/styles/tailwind.css --config customer-hub",
+    "minify": "node build-scripts/minify-all.js",
+    "optimize": "node build-scripts/optimize.js",
+    "lint": "eslint js/**/*.js --fix",
+    "format": "prettier --write \"**/*.{js,html,css}\"",
+    "clean": "node build-scripts/clean.js",
+    "test": "echo 'No tests yet - TODO: Add Jest/Vitest'",
+    "serve": "npx http-server -p 8080 -c-1"
+  },
+  "keywords": [
+    "ecommerce",
+    "management",
+    "firebase",
+    "inventory"
+  ],
+  "author": "N2 Shop Team",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "autoprefixer": "^10.4.23",
+    "clean-css-cli": "^5.6.3",
+    "eslint": "^8.57.0",
+    "html-minifier-terser": "^7.2.0",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.19",
+    "terser": "^5.31.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

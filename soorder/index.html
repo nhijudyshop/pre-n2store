@@ -1,0 +1,553 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Sổ Order</title>
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="../hangrotxa/modern.css" />
+    <link rel="stylesheet" href="soorder.css" />
+
+    <!-- Navigation Manager -->
+    <script src="../js/core-loader.js"></script>
+    <script src="../js/navigation-modern.js"></script>
+    <script src="../js/common-utils.js"></script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                <span>N2Shop</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+            <!-- Menu items auto-generated -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-lucide="user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="btn-permissions" id="btnPermissions">
+                <i data-lucide="shield-check"></i>
+                <span>Xem Quyền Của Tôi</span>
+            </button>
+            <button class="btn-logout" id="btnLogout">
+                <i data-lucide="log-out"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="btn-icon" id="menuToggle">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="breadcrumb">
+                    <i data-lucide="notebook-pen"></i>
+                    <span>Sổ Order</span>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <button class="btn-icon" id="btnManageNCC" title="Quản lý tên NCC">
+                    <i data-lucide="building-2"></i>
+                </button>
+                <button class="btn-icon" id="btnManageHolidays" title="Quản lý ngày nghỉ">
+                    <i data-lucide="calendar"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Date Navigation -->
+            <div class="date-navigation">
+                <div class="date-nav-left">
+                    <!-- Quick date range buttons -->
+                    <div class="quick-date-buttons">
+                        <button class="btn-quick-date" id="btn7Days" title="7 ngày gần nhất">7N</button>
+                        <button class="btn-quick-date" id="btn15Days" title="15 ngày gần nhất">15N</button>
+                        <button class="btn-quick-date" id="btn30Days" title="30 ngày gần nhất">30N</button>
+                    </div>
+                    <button class="btn-icon btn-nav" id="btnPrevDay" title="Ngày trước (←)">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    <div class="date-selector-container">
+                        <input type="date" id="dateInput" class="date-input" />
+                        <select class="date-selector" id="dateSelector">
+                            <option value="current" id="currentDateOption">Hôm nay</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="3days">3 ngày</option>
+                            <option value="7days">7 ngày</option>
+                            <option value="10days">10 ngày</option>
+                            <option value="single">1 ngày...</option>
+                            <option value="custom">Nhiều ngày...</option>
+                        </select>
+                    </div>
+                    <button class="btn-icon btn-nav" id="btnNextDay" title="Ngày sau (→)">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                    <label class="unpaid-filter-checkbox" id="unpaidFilterLabel">
+                        <input type="checkbox" id="unpaidFilterCheckbox" />
+                        <span>Chỉ chưa thanh toán</span>
+                    </label>
+                    <label class="unpaid-filter-checkbox" id="discrepancyFilterLabel">
+                        <input type="checkbox" id="discrepancyFilterCheckbox" />
+                        <span>Chênh lệch</span>
+                    </label>
+                    <div class="ncc-filter-container">
+                        <input type="text" id="nccFilterInput" class="ncc-filter-input" placeholder="Lọc NCC..."
+                            autocomplete="off" />
+                        <button class="btn-icon btn-clear-filter" id="btnClearNCCFilter" title="Xóa bộ lọc"
+                            style="display: none;">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="date-nav-right" id="holidayBadge" style="display: none;">
+                    <span class="badge badge-holiday">
+                        <i data-lucide="palm-tree"></i>
+                        Ngày nghỉ
+                    </span>
+                </div>
+            </div>
+
+            <!-- Add Order Form (Inline, hidden by default) -->
+            <div class="add-order-form-container" id="addOrderFormContainer" style="display: none;">
+                <div class="add-order-form">
+                    <div class="form-header">
+                        <h3>
+                            <i data-lucide="plus-circle"></i>
+                            Thêm đơn hàng mới
+                        </h3>
+                        <button class="btn-icon" id="btnCloseAddForm">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <div class="form-body">
+                        <div class="form-row">
+                            <div class="form-group required">
+                                <label>NCC <span class="required-mark">*</span></label>
+                                <div class="ncc-input-wrapper">
+                                    <input type="text" id="addSupplier" placeholder="Nhập tên nhà cung cấp"
+                                        autocomplete="off" />
+                                    <div class="ncc-suggestions" id="addSupplierSuggestions"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Thành tiền</label>
+                                <input type="number" id="addAmount" placeholder="0" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Chênh lệch</label>
+                                <input type="number" id="addDifference" placeholder="0" />
+                            </div>
+                            <div class="form-group">
+                                <label>Ghi chú</label>
+                                <input type="text" id="addNote" placeholder="Ghi chú..." />
+                            </div>
+                        </div>
+                        <!-- Holiday-specific fields (shown only on holidays) -->
+                        <div class="form-row" id="holidayFieldsAdd" style="display: none;">
+                            <div class="form-group">
+                                <label>Người thực hiện</label>
+                                <input type="text" id="addPerformer" placeholder="Tên người thực hiện" />
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="addIsReconciled" />
+                                    <span>Đã đối soát</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-footer">
+                        <button class="btn-secondary" id="btnCancelAdd">Hủy</button>
+                        <button class="btn-primary" id="btnSubmitAdd">
+                            <i data-lucide="plus"></i>
+                            Thêm đơn hàng
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toggle Add Form Button -->
+            <div class="action-bar">
+                <button class="btn-primary" id="btnToggleAddForm">
+                    <i data-lucide="plus"></i>
+                    Thêm đơn hàng
+                </button>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <i data-lucide="package-open"></i>
+                <p>Chưa có đơn hàng nào trong ngày</p>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="table-container" id="tableContainer">
+                <table class="order-table">
+                    <thead>
+                        <tr id="tableHeader">
+                            <th style="width: 50px;">STT</th>
+                            <th style="width: 150px;">NCC</th>
+                            <th style="width: 200px; text-align: left;">Thành Tiền</th>
+                            <th style="width: 130px; text-align: right;">Chênh Lệch</th>
+                            <th>Ghi Chú</th>
+                            <!-- Holiday columns (shown only on holidays) -->
+                            <th style="width: 150px;" class="holiday-col">Người thực hiện</th>
+                            <th style="width: 100px; text-align: center;" class="holiday-col">Đối soát</th>
+                            <th style="width: 100px; text-align: center;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderTableBody">
+                        <!-- Rows will be generated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Summary -->
+            <div class="footer-summary" id="footerSummary" style="display: none;">
+                <div class="summary-item">
+                    <span class="summary-label">Tổng thành tiền:</span>
+                    <span class="summary-value" id="totalAmount">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Tổng chênh lệch:</span>
+                    <span class="summary-value" id="totalDifference">0</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Order Modal -->
+    <div class="modal" id="editOrderModal" style="display: none;">
+        <div class="modal-overlay" id="editModalOverlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="edit"></i>
+                    Chỉnh sửa đơn hàng
+                </h3>
+                <button class="btn-icon" id="btnCloseEditModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group required">
+                    <label>NCC <span class="required-mark">*</span></label>
+                    <div class="ncc-input-wrapper">
+                        <input type="text" id="editSupplier" placeholder="Nhập tên nhà cung cấp" autocomplete="off" />
+                        <div class="ncc-suggestions" id="editSupplierSuggestions"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Thành tiền</label>
+                    <input type="number" id="editAmount" placeholder="0" />
+                </div>
+                <div class="form-group">
+                    <label>Chênh lệch</label>
+                    <input type="number" id="editDifference" placeholder="0" />
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú</label>
+                    <input type="text" id="editNote" placeholder="Ghi chú..." />
+                </div>
+                <!-- Holiday-specific fields -->
+                <div id="holidayFieldsEdit" style="display: none;">
+                    <div class="form-group">
+                        <label>Người thực hiện</label>
+                        <input type="text" id="editPerformer" placeholder="Tên người thực hiện" />
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="editIsReconciled" />
+                            <span>Đã đối soát</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelEdit">Hủy</button>
+                <button class="btn-primary" id="btnSubmitEdit">
+                    <i data-lucide="save"></i>
+                    Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holiday Management Modal -->
+    <div class="modal" id="holidayModal" style="display: none;">
+        <div class="modal-overlay" id="holidayModalOverlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="calendar"></i>
+                    Quản lý ngày nghỉ
+                </h3>
+                <button class="btn-icon" id="btnCloseHolidayModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="calendar-controls">
+                    <button class="btn-icon" id="btnPrevMonth">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    <h4 id="calendarMonthYear">Tháng 12, 2025</h4>
+                    <button class="btn-icon" id="btnNextMonth">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar will be generated here -->
+                </div>
+                <div class="calendar-legend">
+                    <span class="legend-item">
+                        <span class="legend-box today"></span>
+                        Hôm nay
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-box holiday"></span>
+                        Ngày nghỉ
+                    </span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelHoliday">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal" id="deleteConfirmModal" style="display: none;">
+        <div class="modal-overlay" id="deleteModalOverlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="alert-triangle"></i>
+                    Xác nhận xóa
+                </h3>
+                <button class="btn-icon" id="btnCloseDeleteModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa đơn hàng này?</p>
+                <p class="text-muted">Thao tác này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelDelete">Hủy</button>
+                <button class="btn-danger" id="btnConfirmDelete">
+                    <i data-lucide="trash-2"></i>
+                    Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Difference Note Modal -->
+    <div class="modal" id="differenceNoteModal" style="display: none;">
+        <div class="modal-overlay" id="differenceNoteModalOverlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="file-check"></i>
+                    Ghi chú xử lý chênh lệch
+                </h3>
+                <button class="btn-icon" id="btnCloseDifferenceNoteModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Ghi chú cách xử lý <span class="required-mark">*</span></label>
+                    <textarea id="differenceNoteInput" class="form-control" rows="3"
+                        placeholder="Nhập ghi chú về cách xử lý chênh lệch..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelDifferenceNote">Hủy</button>
+                <button class="btn-primary" id="btnSaveDifferenceNote">
+                    <i data-lucide="check"></i>
+                    Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Range Picker Modal -->
+    <div class="modal" id="dateRangeModal" style="display: none;">
+        <div class="modal-overlay" id="dateRangeModalOverlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="calendar-range"></i>
+                    Chọn khoảng thời gian
+                </h3>
+                <button class="btn-icon" id="btnCloseDateRangeModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Từ ngày</label>
+                    <input type="date" id="startDateInput" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Đến ngày</label>
+                    <input type="date" id="endDateInput" class="form-control" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelDateRange">Hủy</button>
+                <button class="btn-primary" id="btnApplyDateRange">
+                    <i data-lucide="check"></i>
+                    Áp dụng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NCC Management Modal -->
+    <div class="modal" id="nccManageModal" style="display: none;">
+        <div class="modal-overlay" id="nccManageModalOverlay"></div>
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="building-2"></i>
+                    Quản lý tên NCC
+                </h3>
+                <button class="btn-icon" id="btnCloseNCCManageModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Danh sách các nhà cung cấp đã lưu (định dạng: Ax + tên gợi nhớ)</p>
+
+                <!-- Fetch from TPOS button -->
+                <div class="ncc-fetch-tpos-section" style="margin-bottom: 15px;">
+                    <button class="btn-primary" id="btnFetchFromTPOS" style="width: 100%;">
+                        <i data-lucide="download-cloud"></i>
+                        Tải danh sách NCC từ TPOS
+                    </button>
+                </div>
+
+                <!-- Add new NCC input -->
+                <div class="ncc-add-form">
+                    <div class="ncc-add-input-wrapper">
+                        <input type="text" id="nccManualInput" placeholder="Nhập tên NCC mới (VD: A1 Tên gợi nhớ)"
+                            autocomplete="off" />
+                    </div>
+                    <button class="btn-primary" id="btnAddNCCManual">
+                        <i data-lucide="plus"></i>
+                        Thêm
+                    </button>
+                </div>
+
+                <div class="ncc-list" id="nccList">
+                    <!-- NCC items will be generated here -->
+                </div>
+                <div class="ncc-empty-state" id="nccEmptyState" style="display: none;">
+                    <i data-lucide="inbox"></i>
+                    <p>Chưa có tên NCC nào được lưu</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelNCCManage">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NCC Conflict Confirmation Modal -->
+    <div class="modal" id="nccConflictModal" style="display: none;">
+        <div class="modal-overlay" id="nccConflictModalOverlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>
+                    <i data-lucide="alert-triangle"></i>
+                    Xung đột tên NCC
+                </h3>
+                <button class="btn-icon" id="btnCloseNCCConflictModal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Mã NCC này đã tồn tại với tên khác. Vui lòng chọn tên chính xác:</p>
+                <div class="ncc-conflict-options">
+                    <div class="ncc-conflict-option" id="nccConflictNewOption">
+                        <label>
+                            <input type="radio" name="nccConflictChoice" value="new" checked />
+                            <span class="ncc-conflict-label">Tên mới:</span>
+                            <span class="ncc-conflict-name" id="nccConflictNewName"></span>
+                        </label>
+                    </div>
+                    <div class="ncc-conflict-option" id="nccConflictExistingOption">
+                        <label>
+                            <input type="radio" name="nccConflictChoice" value="existing" />
+                            <span class="ncc-conflict-label">Tên đã lưu:</span>
+                            <span class="ncc-conflict-name" id="nccConflictExistingName"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCancelNCCConflict">Hủy</button>
+                <button class="btn-primary" id="btnConfirmNCCConflict">
+                    <i data-lucide="check"></i>
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="auth.js"></script>
+    <script src="soorder-config.js"></script>
+    <script src="soorder-utils.js"></script>
+    <script src="soorder-crud.js"></script>
+    <script src="soorder-supplier-loader.js"></script>
+    <script src="soorder-ui.js"></script>
+    <script src="soorder-main.js"></script>
+</body>
+
+</html>

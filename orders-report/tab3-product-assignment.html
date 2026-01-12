@@ -1,0 +1,708 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gán Sản Phẩm - STT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="decoding-utility.js"></script>
+
+    <link rel="stylesheet" href="tab3-product-assignment.css" />
+</head>
+
+<body>
+    <!-- Main Container -->
+    <div class="container-fluid p-4">
+        <!-- Header -->
+        <div class="header-section mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-link"></i> Gán Sản Phẩm - Số Thứ Tự Đơn Hàng</h2>
+                    <p class="text-muted mb-0">Liên kết sản phẩm với số thứ tự đơn hàng</p>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-primary me-2" onclick="openUploadHistoryV2Modal()">
+                        <i class="fas fa-history"></i> Lịch Sử Upload v2
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="reloadWithCacheClear()"
+                        title="Xóa cache và reload Tab1 + Tab3 để lấy dữ liệu mới nhất">
+                        <i class="fas fa-redo"></i> Reload Page
+                    </button>
+                    <button class="btn btn-sm btn-success me-2" onclick="openExportExcelModal()"
+                        title="Xuất danh sách đơn hàng từ TPOS ra file Excel">
+                        <i class="fas fa-file-excel"></i> Xuất Excel
+                    </button>
+                    <button class="btn btn-sm btn-warning me-2" onclick="openRemoveProductModal()"
+                        title="Gỡ sản phẩm khỏi đơn hàng">
+                        <i class="fas fa-minus-circle"></i> Gỡ Sản Phẩm
+                    </button>
+                    <span class="badge bg-info ms-2" id="ordersCountBadge">
+                        <i class="fas fa-database"></i> <span id="ordersCount">0</span> đơn hàng
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment Table -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-table"></i> Danh sách gán (<span id="assignmentCount">0</span>)</h5>
+                <button class="btn btn-light btn-sm" onclick="clearAllAssignments()">
+                    <i class="fas fa-trash"></i> Xóa tất cả
+                </button>
+            </div>
+
+            <!-- Product Search Section (inside Assignment Table) -->
+            <div class="card-body bg-light border-bottom">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="search-wrapper position-relative">
+                            <input type="text" class="form-control form-control-lg" id="productSearch"
+                                placeholder="🔍 Tìm kiếm sản phẩm (nhập mã hoặc barcode)..." autocomplete="off" />
+                            <div class="suggestions-dropdown" id="productSuggestions"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control form-control-lg" id="assignmentSearch"
+                            placeholder="🔎 Lọc danh sách (mã SP, tên SP, STT)..." autocomplete="off"
+                            oninput="filterAssignments(this.value)" />
+                    </div>
+                </div>
+                <div id="loadingIndicator" class="text-center mt-3" style="display: none;">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <small class="d-block mt-2 text-muted">Đang tải dữ liệu sản phẩm...</small>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50%">Sản phẩm</th>
+                                <th style="width: 40%">STT Đơn Hàng</th>
+                                <th style="width: 10%">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignmentTableBody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    Chưa có sản phẩm nào được gán. Hãy tìm kiếm và thêm sản phẩm.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================= -->
+        <!-- UPLOAD SECTION - NEW FEATURE -->
+        <!-- ========================================= -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-upload"></i> Upload Sản Phẩm Lên TPOS</h5>
+                    <div class="btn-group btn-group-sm view-mode-toggle" role="group">
+                        <button type="button" class="btn btn-light" id="viewByOrderBtn" onclick="switchViewMode('order')">
+                            <i class="fas fa-list"></i> Theo Đơn
+                        </button>
+                        <button type="button" class="btn btn-light active" id="viewByProductBtn" onclick="switchViewMode('product')">
+                            <i class="fas fa-box"></i> Theo Sản Phẩm
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Upload Stats -->
+                <div class="upload-stats mb-3">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="stat-card bg-danger-subtle">
+                                <i class="fas fa-shopping-cart text-danger"></i>
+                                <div class="stat-value" id="totalItems">0</div>
+                                <div class="stat-label">Tổng Items</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-success-subtle">
+                                <i class="fas fa-box text-success"></i>
+                                <div class="stat-value" id="totalProducts">0</div>
+                                <div class="stat-label">Tổng Sản Phẩm</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-info-subtle">
+                                <i class="fas fa-hashtag text-info"></i>
+                                <div class="stat-value" id="totalOrders">0</div>
+                                <div class="stat-label">Tổng STT</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-warning-subtle">
+                                <i class="fas fa-check-square text-warning"></i>
+                                <div class="stat-value" id="selectedCount">0</div>
+                                <div class="stat-label">Đã Chọn</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Table Container -->
+                <div class="table-responsive" id="uploadTableContainer">
+                    <table class="table table-hover mb-0" id="uploadTable">
+                        <thead class="table-light" id="uploadTableHead">
+                            <!-- Will be populated by JavaScript -->
+                        </thead>
+                        <tbody id="uploadTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    Chưa có sản phẩm nào để upload. Hãy gán sản phẩm ở bảng trên.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button class="btn btn-outline-secondary btn-sm" id="selectAllUploadBtn" onclick="selectAllUpload()">
+                            <i class="fas fa-check-double"></i> Chọn Tất Cả
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" id="deselectAllUploadBtn" onclick="deselectAllUpload()">
+                            <i class="fas fa-times"></i> Bỏ Chọn Tất Cả
+                        </button>
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-sm" id="previewUploadBtn" onclick="previewUpload()" disabled>
+                            <i class="fas fa-cloud-upload-alt"></i> Upload TPOS
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- PREVIEW MODAL -->
+    <!-- ========================================= -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye"></i> Xem Trước Upload
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="previewModalBody">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-2">Đang tải preview...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmUploadBtn" onclick="confirmUpload()">
+                        <i class="fas fa-check"></i> Xác Nhận Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- FINALIZE SESSION MODAL -->
+    <!-- ========================================= -->
+    <div class="modal fade" id="finalizeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="fas fa-flag-checkered"></i> Finalize Session
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Chú ý:</strong> Finalize session sẽ lưu tất cả dữ liệu hiện tại vào lịch sử và xóa toàn bộ assignments.
+                        Bạn có chắc chắn muốn tiếp tục?
+                    </div>
+
+                    <div class="finalize-summary">
+                        <h6><i class="fas fa-info-circle"></i> Thống Kê Hiện Tại:</h6>
+                        <ul>
+                            <li>Tổng STT: <strong id="finalizeTotalSTT">0</strong></li>
+                            <li>Tổng Sản Phẩm: <strong id="finalizeTotalProducts">0</strong></li>
+                            <li>Tổng Items: <strong id="finalizeTotalItems">0</strong></li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="finalizeNote" class="form-label">Ghi chú (tùy chọn):</label>
+                        <textarea class="form-control" id="finalizeNote" rows="3" placeholder="Nhập ghi chú cho session này..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-warning" id="confirmFinalizeBtn" onclick="confirmFinalize()">
+                        <i class="fas fa-check"></i> Xác Nhận Finalize
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload History Modal -->
+    <div class="modal fade" id="uploadHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-history"></i> Lịch Sử Upload TPOS
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Filters -->
+                    <div class="history-filters mb-3">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="historyStatusFilter"
+                                    onchange="filterUploadHistory()">
+                                    <option value="all">Tất cả trạng thái</option>
+                                    <option value="completed">✅ Thành công</option>
+                                    <option value="partial">⚠️ Thành công một phần</option>
+                                    <option value="failed">❌ Thất bại</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="date" class="form-control form-control-sm" id="historyDateFrom"
+                                    onchange="filterUploadHistory()" placeholder="Từ ngày">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="date" class="form-control form-control-sm" id="historyDateTo"
+                                    onchange="filterUploadHistory()" placeholder="Đến ngày">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control form-control-sm" id="historySearchSTT"
+                                    oninput="filterUploadHistory()" placeholder="🔍 Tìm STT...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History List Container -->
+                    <div id="historyListContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Đang tải lịch sử...</p>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="historyPagination" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload History Detail Modal -->
+    <div class="modal fade" id="uploadHistoryDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="historyDetailModalTitle">
+                        <i class="fas fa-info-circle"></i> Chi Tiết Upload
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="historyDetailModalBody">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Cart History Modal -->
+    <div class="modal fade" id="compareCartHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-balance-scale"></i> So Sánh Giỏ Hàng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="compareCartHistoryModalBody">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- UPLOAD HISTORY V2 MODAL (GIỐNG 100% TAB-UPLOAD-TPOS) -->
+    <!-- ========================================= -->
+    <div class="modal fade" id="uploadHistoryV2Modal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-history"></i> Lịch Sử Upload TPOS v2
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Filters -->
+                    <div class="history-filters mb-3">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="historyV2UserFilter"
+                                    onchange="loadUploadHistoryV2()">
+                                    <option value="current">👤 Lịch sử của tôi</option>
+                                    <option value="all">👥 Tất cả người dùng</option>
+                                    <!-- User options will be populated by JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="historyV2StatusFilter"
+                                    onchange="filterUploadHistoryV2()">
+                                    <option value="all">Tất cả trạng thái</option>
+                                    <option value="completed">✅ Thành công</option>
+                                    <option value="partial">⚠️ Thành công một phần</option>
+                                    <option value="failed">❌ Thất bại</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="datetime-local" class="form-control form-control-sm" id="historyV2DateFrom"
+                                    onchange="filterUploadHistoryV2()" placeholder="Từ ngày">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="datetime-local" class="form-control form-control-sm" id="historyV2DateTo"
+                                    onchange="filterUploadHistoryV2()" placeholder="Đến ngày">
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-2">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control form-control-sm" id="historyV2SearchSTT"
+                                    oninput="filterUploadHistoryV2()" placeholder="🔍 Tìm STT...">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control form-control-sm" id="historyV2SearchProduct"
+                                    oninput="filterUploadHistoryV2()" placeholder="🔍 Tìm mã sản phẩm...">
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-check form-switch h-100 d-flex align-items-center">
+                                    <input class="form-check-input" type="checkbox" id="historyV2GroupBySTT"
+                                        onchange="toggleGroupBySTTView()">
+                                    <label class="form-check-label ms-2" for="historyV2GroupBySTT">Lọc theo STT</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History List Container -->
+                    <div id="historyV2ListContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Đang tải lịch sử...</p>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="historyV2Pagination" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload History V2 Detail Modal -->
+    <div class="modal fade" id="uploadHistoryV2DetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="historyV2DetailModalTitle">
+                        <i class="fas fa-info-circle"></i> Chi Tiết Upload
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="historyV2DetailModalBody">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Cart History V2 Modal -->
+    <div class="modal fade" id="compareCartHistoryV2Modal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-balance-scale"></i> So Sánh Giỏ Hàng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="compareCartHistoryV2ModalBody">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Info Tooltip (Hidden by default) -->
+    <div class="order-tooltip" id="orderTooltip"></div>
+
+    <!-- Export Excel Modal -->
+    <div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="exportExcelModalLabel">
+                        <i class="fas fa-file-excel"></i> Xuất Excel Đơn Hàng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="exportSkipRange" class="form-label fw-bold">Chọn khoảng tải:</label>
+                        <select class="form-select form-select-lg" id="exportSkipRange">
+                            <option value="0" selected>3000 đơn đầu tiên</option>
+                            <option value="3000">3000 đơn tiếp theo (3001 - 6000)</option>
+                            <option value="6000">3000 đơn thứ 3 (6001 - 9000)</option>
+                            <option value="9000">3000 đơn thứ 4 (9001 - 12000)</option>
+                            <option value="12000">3000 đơn thứ 5 (12001 - 15000)</option>
+                        </select>
+                        <div class="form-text text-muted mt-2">
+                            <i class="fas fa-info-circle"></i> Dữ liệu được tải trực tiếp từ TPOS, sắp xếp theo ngày tạo mới nhất.
+                        </div>
+                    </div>
+                    <!-- Export Progress -->
+                    <div id="exportProgress" style="display: none;">
+                        <div class="d-flex align-items-center justify-content-center py-3">
+                            <div class="spinner-border text-success me-3" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <span id="exportProgressText">Đang tải đơn hàng từ TPOS...</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                                 role="progressbar" id="exportProgressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" id="exportModalFooter">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" id="exportExcelBtn" onclick="exportOrdersToExcel()">
+                        <i class="fas fa-download"></i> Xuất Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Product Modal -->
+    <div class="modal fade" id="removeProductModal" tabindex="-1" aria-labelledby="removeProductModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); color: white;">
+                    <h5 class="modal-title" id="removeProductModalLabel">
+                        <i class="fas fa-minus-circle"></i> Gỡ Sản Phẩm Khỏi Đơn Hàng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closeRemoveProductModal()"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Product Search Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-search"></i> Tìm Kiếm Sản Phẩm Cần Gỡ</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="search-wrapper position-relative">
+                                <input type="text" class="form-control form-control-lg" id="removalProductSearch"
+                                    placeholder="🔍 Nhập mã sản phẩm (vd: n77, n1769) để tìm kiếm..."
+                                    autocomplete="off"
+                                    spellcheck="false" />
+                                <div class="suggestions-dropdown" id="removalProductSuggestions"></div>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                💡 <strong>Gợi ý:</strong> Nhập ít nhất 2 ký tự để tìm kiếm sản phẩm
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Removals Table -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-list"></i> Danh Sách Gỡ (<span id="removalCount">0</span>)</h6>
+                            <button class="btn btn-sm btn-outline-dark" onclick="clearAllRemovals()">
+                                <i class="fas fa-trash"></i> Xóa Tất Cả
+                            </button>
+                        </div>
+                        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover table-sm" id="removalTable">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th style="width: 40%">Sản Phẩm</th>
+                                        <th style="width: 35%">STT Đơn Hàng</th>
+                                        <th style="width: 15%" class="text-center">SL Hiện Tại</th>
+                                        <th style="width: 10%" class="text-center">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="removalTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-2"></i>
+                                            <p class="mb-0">Chưa có sản phẩm nào</p>
+                                            <small>Vui lòng tìm kiếm và thêm sản phẩm cần gỡ</small>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Preview Section -->
+                    <div class="card" id="removalPreviewCard" style="display: none;">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-eye"></i> Preview Gỡ Sản Phẩm</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- View Mode Toggle -->
+                            <div class="btn-group mb-3" role="group">
+                                <button type="button" class="btn btn-outline-primary" id="removalViewByProduct" onclick="switchRemovalViewMode('product')">
+                                    <i class="fas fa-box"></i> Theo Sản Phẩm
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="removalViewByOrder" onclick="switchRemovalViewMode('order')">
+                                    <i class="fas fa-shopping-cart"></i> Theo Đơn Hàng
+                                </button>
+                            </div>
+
+                            <!-- Preview Area -->
+                            <div id="removalPreviewArea" style="max-height: 500px; overflow-y: auto;">
+                                <!-- Will be populated by JS -->
+                            </div>
+
+                            <!-- Selection Summary -->
+                            <div class="alert alert-info mt-3" id="removalSelectionSummary" style="display: none;">
+                                <strong>Đã chọn:</strong> <span id="removalSelectedCount">0</span> STT
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeRemoveProductModal()">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="previewRemoval()">
+                        <i class="fas fa-eye"></i> Xem Trước
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="executeRemoval()" id="executeRemovalBtn" style="display: none;">
+                        <i class="fas fa-minus-circle"></i> Gỡ Sản Phẩm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Removal Progress Modal -->
+    <div class="modal fade" id="removalProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="spinner-border text-danger mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Đang xử lý...</span>
+                    </div>
+                    <h5 id="removalProgressText">Đang gỡ sản phẩm...</h5>
+                    <p id="removalProgressDetail" class="text-muted mb-0">0 / 0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Removal Results Modal -->
+    <div class="modal fade" id="removalResultsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-chart-bar"></i> Kết Quả Gỡ Sản Phẩm</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="removalResultsBody">
+                    <!-- Will be populated by JS -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="api-config.js"></script>
+    <script src="token-manager.js"></script>
+    <script src="cache.js"></script>
+    <script src="auth.js"></script>
+    <script src="user-storage-manager.js"></script>
+    <script src="notification-system.js"></script>
+    <!-- Version checker is now in navigation-modern.js (loaded in main.html) -->
+    <!-- Note: TPOS token caching is now handled server-side (Cloudflare Worker & Render.com) -->
+
+    <script src="tab3-product-assignment.js"></script>
+</body>
+
+</html>

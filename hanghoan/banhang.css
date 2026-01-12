@@ -1,0 +1,565 @@
+/* =====================================================
+   BÁN HÀNG - SALES STYLES
+   Separate styles for Bán Hàng tab section
+   ===================================================== */
+
+/* =====================================================
+   BÁN HÀNG TABLE
+   ===================================================== */
+
+.banhang-section {
+    margin: var(--spacing-xl);
+}
+
+.banhang-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.banhang-table thead {
+    background: #f8f9fa;
+}
+
+.banhang-table th {
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.banhang-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background-color var(--transition-fast);
+    cursor: pointer;
+}
+
+.banhang-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.banhang-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.banhang-table td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+/* Address column */
+.banhang-table .col-address {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Note columns */
+.banhang-table .col-note {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Make table scrollable */
+.banhang-table {
+    min-width: 2500px;
+}
+
+.banhang-table th,
+.banhang-table td {
+    white-space: nowrap;
+}
+
+/* Phone link */
+.banhang-table .phone-link {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.banhang-table .phone-link:hover {
+    text-decoration: underline;
+}
+
+/* Status badges */
+.banhang-status {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.banhang-status.confirmed {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.banhang-status.paid {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.banhang-status.draft {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.banhang-status.cancelled {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Delivery status badges */
+.banhang-status-gh {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.banhang-status-gh.delivered {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.banhang-status-gh.shipping {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.banhang-status-gh.pending {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.banhang-status-gh.failed {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* =====================================================
+   BÁN HÀNG STATS
+   ===================================================== */
+
+.banhang-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.banhang-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.banhang-stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.banhang-stat-card .stat-icon i {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.banhang-stat-card .stat-icon.blue {
+    background: var(--primary);
+}
+
+.banhang-stat-card .stat-icon.green {
+    background: var(--success);
+}
+
+.banhang-stat-card .stat-icon.orange {
+    background: var(--warning);
+}
+
+.banhang-stat-card .stat-icon.purple {
+    background: #8b5cf6;
+}
+
+.banhang-stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.banhang-stat-card .stat-label {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+/* =====================================================
+   BÁN HÀNG ACTION BUTTONS
+   ===================================================== */
+
+.banhang-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.banhang-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    transition: var(--transition-fast);
+    cursor: pointer;
+    border: none;
+}
+
+.banhang-actions .btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.banhang-actions .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.banhang-actions .btn-secondary {
+    background: var(--gray-100);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.banhang-actions .btn-secondary:hover {
+    background: var(--gray-200);
+}
+
+.banhang-actions .btn-outline-danger {
+    background: transparent;
+    color: #dc2626;
+    border: 1px solid #dc2626;
+}
+
+.banhang-actions .btn-outline-danger:hover {
+    background: #dc2626;
+    color: white;
+}
+
+.banhang-actions .btn-success {
+    background: #10b981;
+    color: white;
+    border: 1px solid #10b981;
+}
+
+.banhang-actions .btn-success:hover {
+    background: #059669;
+    border-color: #059669;
+}
+
+/* Background Sync Indicator */
+.background-sync-indicator {
+    display: none;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin-left: auto;
+    animation: pulse-bg 2s ease-in-out infinite;
+}
+
+.background-sync-indicator.show {
+    display: flex;
+}
+
+.background-sync-indicator .sync-icon {
+    width: 16px;
+    height: 16px;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes pulse-bg {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        opacity: 0.85;
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+/* =====================================================
+   BÁN HÀNG FILTERS
+   ===================================================== */
+
+.banhang-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+}
+
+.banhang-filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.banhang-filter-group i {
+    width: 18px;
+    height: 18px;
+    color: var(--text-tertiary);
+}
+
+.banhang-filter-group select,
+.banhang-filter-group input {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    min-width: 120px;
+}
+
+.banhang-filter-group select:focus,
+.banhang-filter-group input:focus {
+    outline: none;
+}
+
+.banhang-filter-group input[type="date"] {
+    min-width: 140px;
+}
+
+/* =====================================================
+   BÁN HÀNG PAGINATION
+   ===================================================== */
+
+.banhang-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.banhang-pagination .pagination-info {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.banhang-pagination .pagination-info strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.banhang-pagination .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.banhang-pagination .page-info {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: 0 var(--spacing-md);
+}
+
+.banhang-pagination .page-info strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.banhang-pagination .btn-page {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    color: var(--text-primary);
+}
+
+.banhang-pagination .btn-page:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.banhang-pagination .btn-page:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.banhang-pagination .btn-page i {
+    width: 18px;
+    height: 18px;
+}
+
+/* =====================================================
+   BÁN HÀNG EMPTY STATE
+   ===================================================== */
+
+.banhang-empty {
+    display: none;
+    text-align: center;
+    padding: var(--spacing-xl) * 2;
+    color: var(--text-secondary);
+}
+
+.banhang-empty.show {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px var(--spacing-xl);
+}
+
+.banhang-empty i {
+    width: 64px;
+    height: 64px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.banhang-empty h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* =====================================================
+   BÁN HÀNG LOADING STATE
+   ===================================================== */
+
+.banhang-loading {
+    display: none;
+    text-align: center;
+    padding: 60px var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.banhang-loading.show {
+    display: block;
+}
+
+.banhang-loading i {
+    width: 48px;
+    height: 48px;
+    color: var(--primary);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =====================================================
+   TEXT HELPERS
+   ===================================================== */
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.text-left {
+    text-align: left !important;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1024px) {
+    .banhang-section {
+        margin: var(--spacing-md);
+    }
+
+    .banhang-filters {
+        flex-direction: column;
+    }
+
+    .banhang-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .banhang-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .banhang-actions {
+        flex-direction: column;
+    }
+
+    .banhang-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

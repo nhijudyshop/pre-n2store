@@ -1,0 +1,29 @@
+fetch("https://tomato.tpos.vn/odata/FastSaleOrder/ODataService.ActionRefund", {
+  "headers": {
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "en-US,en;q=0.9,vi;q=0.8",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6InRtdFdlYkFwcCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYWU1YzcwYTEtODk4Yy00ZTlmLWIyNDgtYWNjMTBiNzAzNmJjIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Im52a3QiLCJEaXNwbGF5TmFtZSI6Im52a3QiLCJBdmF0YXJVcmwiOiIiLCJTZWN1cml0eVN0YW1wIjoiMmY0ZDgyZGUtYjkyMy00ZTIwLWFjNGUtNTc0YWQ3N2NmZDliIiwiQ29tcGFueUlkIjoiMSIsIlRlbmFudElkIjoidG9tYXRvLnRwb3Mudm4iLCJSb2xlSWRzIjoiNzMxNTQzNTgtZDUwYi00MDllLTk5ZmQtYTk4NDAxM2I0ZWE1LDc2MzlhMDQ4LTdjZmUtNDBiNS1hNDFkLWFlM2YwMDNiODlkZixiMmE1Mjc5ZC0zZjZkLTQ4MzQtOThmZS1hZTNmMDAzYjk5OGMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOlsiQWRtaW5pc3RyYXRvcnMiLCJDU0tIIC0gTMOgaSIsIlNBTEUiXSwianRpIjoiYjcwNmZlNzctNzVhMi00YzFkLWI1ZjMtOTRmMTUxZGUzZjU0IiwiaWF0IjoiMTc2NzUxODg0NyIsIm5iZiI6MTc2NzUxODg0NywiZXhwIjoxNzY4ODE0ODQ3LCJpc3MiOiJodHRwczovL3RvbWF0by50cG9zLnZuIiwiYXVkIjoiaHR0cHM6Ly90b21hdG8udHBvcy52bixodHRwczovL3Rwb3Mudm4ifQ.ys0AYW2NIdvANdD9A5cL6e0x0AxIynqcxEUqrnq7bC8",
+    "cache-control": "no-cache",
+    "content-type": "application/json;charset=UTF-8",
+    "pragma": "no-cache",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"macOS\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "tposappversion": "5.12.29.1",
+    "x-tpos-lang": "vi",
+    "cookie": "_gcl_au=1.1.9100278.1762732268; _ga=GA1.2.1911418678.1762732268; _fbp=fb.1.1762732268764.74014680859252055; _ga_QPVNYJP5ZS=GS2.2.s1762732269$o1$g0$t1762732269$j60$l0$h0; _ga_W2HG99HGVW=GS2.1.s1762732268$o1$g1$t1762732741$j60$l0$h0; _ga_LG5D4JJQN2=GS2.1.s1762732268$o1$g1$t1762732741$j60$l0$h0",
+    "Referer": "https://tomato.tpos.vn/"
+  },
+  "body": "{\"id\":409596}",
+  "method": "POST"
+});
+
+response:
+{
+    "@odata.context": "http://tomato.tpos.vn/odata/$metadata#Edm.Int64",
+    "value": 409602
+}

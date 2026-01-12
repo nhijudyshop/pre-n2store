@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Customer 360 Hub - Unlinked Transactions</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#286ddc",
+                        "primary-dark": "#1d52a8",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#121720",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e2430",
+                        "border-light": "#e5e7eb",
+                        "border-dark": "#374151",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for table container */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+        }
+    </style>
+</head>
+<body class="relative flex flex-col min-h-screen w-full bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 overflow-x-hidden transition-colors duration-200">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-6 py-3 sticky top-0 z-50 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="size-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl">hub</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Customer 360 Hub</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-9 ring-2 ring-primary/10" data-alt="User profile avatar showing a professional smiling" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuByStCuirOEGPcEBsdW1wLwJoISTFQ0MRLa6D4jxqWofu2UI6KbGLP_LpI7hpFF-AZBczGGz2m65HYKUnissYqsiShzav7mCyIeXZGhm80SJ8pHf7MGXgEFEF4KQGnkSMAC17WGs1PoAmWvvLJfEmyoUCxopLk2WQWnqv_K_h2zIk2dEFfqC5LSA8J306aW2N1YFfWR8KrzjsnVne7KltCWA83s93tEV98hJ2QlsnuUw2vnrPEmzYIQuKAYdJJ_BVQdpZ9u4zAP7NkO");'></div>
+<div class="hidden md:flex flex-col">
+<span class="text-sm font-semibold text-slate-900 dark:text-white">Alex Morgan</span>
+<span class="text-xs text-slate-500 dark:text-slate-400">Financial Analyst</span>
+</div>
+</div>
+<button class="flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+</header>
+<div class="flex flex-1 flex-col max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Tabs & Page Header Container -->
+<div class="flex flex-col gap-6 mb-8">
+<!-- Tabs -->
+<nav class="flex border-b border-border-light dark:border-border-dark w-full overflow-x-auto no-scrollbar">
+<a class="group flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 whitespace-nowrap transition-all" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">search</span>
+                    Customer Search
+                </a>
+<a class="group flex items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 whitespace-nowrap transition-all" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">history</span>
+                    Transaction Activity
+                </a>
+<a aria-current="page" class="group flex items-center gap-2 border-b-2 border-primary px-4 py-3 text-sm font-bold text-primary dark:text-primary whitespace-nowrap transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">link_off</span>
+                    Unlinked Transactions
+                    <span class="ml-2 bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+</a>
+</nav>
+<!-- Heading & Description -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="flex flex-col gap-2">
+<h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Unlinked Bank Transactions</h1>
+<p class="text-slate-500 dark:text-slate-400 max-w-2xl text-base">
+                        Review incoming bank records that haven't been automatically matched to a customer profile. Use the tools below to manually map them.
+                    </p>
+</div>
+<!-- Action / Export (Optional but adds realism) -->
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Export CSV
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm shadow-primary/20">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                        Refresh Data
+                    </button>
+</div>
+</div>
+</div>
+<!-- Main Content Area: Filter & Table -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm flex flex-col overflow-hidden flex-1">
+<!-- Filters Toolbar -->
+<div class="p-4 border-b border-border-light dark:border-border-dark bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row gap-4 justify-between items-center">
+<!-- Search -->
+<div class="relative w-full sm:max-w-md">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2.5 border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-lg leading-5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm transition-all shadow-sm" placeholder="Filter by amount, bank code, or description..." type="text"/>
+</div>
+<!-- Secondary Filters -->
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<div class="relative group">
+<button class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>All Dates</span>
+<span class="material-symbols-outlined text-[18px] text-slate-400">arrow_drop_down</span>
+</button>
+</div>
+<div class="relative group">
+<button class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+<span>More Filters</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto custom-scrollbar flex-1">
+<table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
+<thead class="bg-slate-50 dark:bg-slate-800/50">
+<tr>
+<th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[140px]" scope="col">Date</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[160px]" scope="col">Bank Code</th>
+<th class="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[140px]" scope="col">Amount</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Raw Description</th>
+<th class="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[200px]" scope="col">Action</th>
+</tr>
+</thead>
+<tbody class="bg-surface-light dark:bg-surface-dark divide-y divide-border-light dark:divide-border-dark">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300 font-medium">Oct 24, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
+                                    CHASE-994
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white font-bold text-right font-mono">$1,250.00</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-slate-400">receipt_long</span>
+<span class="truncate max-w-[300px] block" title="ACH TRANSFER REF #8839200">ACH TRANSFER REF #8839200</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary text-primary hover:bg-primary hover:text-white rounded-md text-sm font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+                                    Link
+                                </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300 font-medium">Oct 23, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
+                                    BOA-102
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white font-bold text-right font-mono">$45.99</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-slate-400">shopping_bag</span>
+<span class="truncate max-w-[300px] block" title="POS PURCHASE WALMART SUPERCENTER #821">POS PURCHASE WALMART SUPERCENTER #821</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary text-primary hover:bg-primary hover:text-white rounded-md text-sm font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+                                    Link
+                                </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300 font-medium">Oct 22, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
+                                    WELLS-551
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white font-bold text-right font-mono">$500.00</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-slate-400">move_to_inbox</span>
+<span class="truncate max-w-[300px] block" title="WIRE INCOMING DOMESTIC REF: Q29983">WIRE INCOMING DOMESTIC REF: Q29983</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary text-primary hover:bg-primary hover:text-white rounded-md text-sm font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+                                    Link
+                                </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300 font-medium">Oct 21, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
+                                    CITI-882
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white font-bold text-right font-mono">$12.50</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-slate-400">payments</span>
+<span class="truncate max-w-[300px] block" title="MONTHLY SERVICE FEE MAINTENANCE">MONTHLY SERVICE FEE MAINTENANCE</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary text-primary hover:bg-primary hover:text-white rounded-md text-sm font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+                                    Link
+                                </button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300 font-medium">Oct 20, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
+                                    AMEX-921
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white font-bold text-right font-mono">$2,450.00</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-slate-400">credit_card</span>
+<span class="truncate max-w-[300px] block" title="CREDIT CARD PAYMENT THANK YOU">CREDIT CARD PAYMENT THANK YOU</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary text-primary hover:bg-primary hover:text-white rounded-md text-sm font-semibold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+                                    Link
+                                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer / Pagination -->
+<div class="px-6 py-4 border-t border-border-light dark:border-border-dark flex items-center justify-between bg-white dark:bg-surface-dark">
+<div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+<div>
+<p class="text-sm text-slate-600 dark:text-slate-400">
+                            Showing <span class="font-bold text-slate-900 dark:text-white">1</span> to <span class="font-bold text-slate-900 dark:text-white">5</span> of <span class="font-bold text-slate-900 dark:text-white">12</span> results
+                        </p>
+</div>
+<div>
+<nav aria-label="Pagination" class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+<a class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">
+<span class="sr-only">Previous</span>
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</a>
+<a aria-current="page" class="z-10 bg-primary/10 border-primary text-primary relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">1</a>
+<a class="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">2</a>
+<a class="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">3</a>
+<a class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">
+<span class="sr-only">Next</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Mobile Pagination View -->
+<div class="flex items-center justify-between w-full sm:hidden">
+<button class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                        Previous
+                     </button>
+<button class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                        Next
+                     </button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

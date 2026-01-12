@@ -1,0 +1,15 @@
+# Render.com deployment configuration
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: tpos-pancake-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: NODE_ENV
+        value: production

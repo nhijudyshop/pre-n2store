@@ -1,0 +1,667 @@
+fetch("https://tomato.tpos.vn/fastsaleorder/PrintRefund/409602", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9,vi;q=0.8",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6InRtdFdlYkFwcCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYWU1YzcwYTEtODk4Yy00ZTlmLWIyNDgtYWNjMTBiNzAzNmJjIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Im52a3QiLCJEaXNwbGF5TmFtZSI6Im52a3QiLCJBdmF0YXJVcmwiOiIiLCJTZWN1cml0eVN0YW1wIjoiMmY0ZDgyZGUtYjkyMy00ZTIwLWFjNGUtNTc0YWQ3N2NmZDliIiwiQ29tcGFueUlkIjoiMSIsIlRlbmFudElkIjoidG9tYXRvLnRwb3Mudm4iLCJSb2xlSWRzIjoiNzMxNTQzNTgtZDUwYi00MDllLTk5ZmQtYTk4NDAxM2I0ZWE1LDc2MzlhMDQ4LTdjZmUtNDBiNS1hNDFkLWFlM2YwMDNiODlkZixiMmE1Mjc5ZC0zZjZkLTQ4MzQtOThmZS1hZTNmMDAzYjk5OGMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOlsiQWRtaW5pc3RyYXRvcnMiLCJDU0tIIC0gTMOgaSIsIlNBTEUiXSwianRpIjoiYjcwNmZlNzctNzVhMi00YzFkLWI1ZjMtOTRmMTUxZGUzZjU0IiwiaWF0IjoiMTc2NzUxODg0NyIsIm5iZiI6MTc2NzUxODg0NywiZXhwIjoxNzY4ODE0ODQ3LCJpc3MiOiJodHRwczovL3RvbWF0by50cG9zLnZuIiwiYXVkIjoiaHR0cHM6Ly90b21hdG8udHBvcy52bixodHRwczovL3Rwb3Mudm4ifQ.ys0AYW2NIdvANdD9A5cL6e0x0AxIynqcxEUqrnq7bC8",
+    "cache-control": "no-cache",
+    "pragma": "no-cache",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"macOS\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "tposappversion": "5.12.29.1",
+    "x-requested-with": "XMLHttpRequest",
+    "cookie": "_gcl_au=1.1.9100278.1762732268; _ga=GA1.2.1911418678.1762732268; _fbp=fb.1.1762732268764.74014680859252055; _ga_QPVNYJP5ZS=GS2.2.s1762732269$o1$g0$t1762732269$j60$l0$h0; _ga_W2HG99HGVW=GS2.1.s1762732268$o1$g1$t1762732741$j60$l0$h0; _ga_LG5D4JJQN2=GS2.1.s1762732268$o1$g1$t1762732741$j60$l0$h0",
+    "Referer": "https://tomato.tpos.vn/"
+  },
+  "body": null,
+  "method": "GET"
+});
+
+response:
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu trả h&#224;ng - TPOS.VN</title>
+    <style>
+        @page {
+            margin: 1mm  0;
+        }
+        html, body {
+            width: 80mm;
+            margin: auto;
+            color: #000 !important;
+            font-size:  13px;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height:1.2
+        }
+        /*---*/
+        html {
+            font-family: Arial, Helvetica, sans-serif;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        .word-break {
+            word-break: break-word;
+        }
+
+        *, *:before, *:after {
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        .container {
+            padding-right: 10px;
+            padding-left: 10px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        .row {
+            margin: 0 !important;
+        }
+
+        .form-horizontal .form-group {
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+
+            .form-horizontal .form-group:before, .form-horizontal .form-group:after {
+                display: table;
+                content: " ";
+            }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-muted {
+            color: black;
+        }
+
+        .hidden {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        label {
+            display: inline-block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        code {
+            padding: 2px 4px;
+            font-size: 90%;
+            color: black;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+            font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+            font-weight: 500;
+            line-height: 1.1;
+        }
+
+        h3 {
+            display: block;
+            font-size: 1.17em;
+            margin-block-start: 1em;
+            margin-block-end: 1em;
+            margin-inline-start: 0px;
+            margin-inline-end: 0px;
+            font-weight: bold;
+        }
+
+        table {
+            max-width: 100%;
+            background-color: transparent;
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        .table {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .img-responsive {
+            display: block;
+            height: auto;
+            max-width: 100%;
+        }
+
+        img {
+            vertical-align: middle;
+        }
+
+        img {
+            border: 0;
+        }
+
+        .image_header img {
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+        /*---*/
+        .size-18 {
+            font-size: 18px;
+        }
+
+        .size-20 {
+            font-size: 20px;
+        }
+        .size-16 {
+            font-size: 16px;
+        }
+        .size-12 {
+            font-size: 12px;
+        }
+        .size-13 {
+            font-size: 13px;
+        }
+        .size-18pt {
+            font-size: 18pt;
+        }
+        .size-15pt {
+            font-size: 15pt;
+        }
+        .size-14pt {
+            font-size: 14pt;
+        }
+        .size-11pt {
+            font-size: 11pt;
+        }
+        .size-trackingRef {
+            font-size: 1.2em;
+        }
+
+        .inline-cs > div {
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+
+        .table-custom > thead > tr > th {
+            vertical-align: middle !important;
+            text-align: center;
+        }
+
+        .table-custom > tbody > tr > td {
+            vertical-align: middle !important;
+        }
+
+        .table.print-header, .table.print-header td, .table.print-header th {
+            border: none !important;
+            padding: 0 !important;
+        }
+
+            .table.print-header th {
+                font-weight: 500;
+            }
+
+            .table.print-header h1 {
+                font-size: 28px;
+            }
+
+        h3 {
+            font-size: 15px !important;
+        }
+
+        .table .table-heading {
+            text-transform: uppercase;
+        }
+
+        .dataBody {
+            margin-top: 0;
+        }
+
+        .price_text {
+            display: inline-block;
+        }
+
+            .price_text:first-letter {
+                text-transform: uppercase;
+            }
+
+        .table tbody > tr > td.numberPadding {
+            padding-top: 0px;
+            padding-bottom: 2px;
+            border-top: none !important;
+        }
+
+        .table tbody > tr > td.PaddingProduct {
+            padding-top: 2px;
+            padding-bottom: 2px;
+            border-bottom: none !important;
+        }
+
+        .table tbody > tr > td {
+            padding: 1px;
+        }
+
+        .table tfoot > tr > td {
+            padding: 1px;
+        }
+
+        .table thead > tr > th {
+            padding: 1px;
+        }
+
+        .table thead > tr > th {
+            border-top: 2px solid #ddd !important
+        }
+
+        .table tfoot > tr > td {
+            font-weight: bold !important;
+        }
+
+        .oe_page {
+            page-break-after: always;
+        }
+
+        .form-control-static {
+            padding-top: 0;
+            padding-bottom: 0;
+            margin:0;
+        }
+
+        .pre-wrap {
+            white-space: pre-wrap !important;
+        }
+
+        .footer-cs {
+            margin-bottom: 0 !important;
+        }
+
+        .column20 {
+            float: left;
+            width: 20%;
+        }
+
+        .column80 {
+            float: left;
+            width: 80%;
+            padding-left: 10px;
+        }
+
+        /*.image_header {
+            margin-top: -15px;
+        }*/
+
+        .image_header img {
+            width: 100%;
+        }
+        /* Clear floats after the columns */
+        .row {
+            margin: 0 !important;
+        }
+
+            .row:after {
+                content: "";
+                display: table;
+                clear: both;
+            }
+
+        table tbody.border-none > tr > td {
+            border: none;
+        }
+
+        .border-top {
+            border-top: 1px solid black !important;
+        }
+
+        .border-bottom {
+            border-bottom: 1px solid black !important;
+        }
+        /*.table-cs >th > tr {
+            border-top: 1px solid black !important;
+            border-bottom: 1px solid black !important;
+        }*/
+        .table-cs > tbody > tr > td, .table-cs > thead > tr > th {
+            border-top: 1px solid gray !important;
+            border-bottom: 1px solid gray !important;
+        }
+
+        .table-cs > tfoot > tr > td {
+            border: none !important
+        }
+
+        .logo-center img {
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 180px !important;
+            max-height: 180px !important;
+        }
+
+        hr.dash-cs {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            border-top: 1px dashed black;
+        }
+
+        .bottom_0 {
+            margin-bottom: 0;
+        }
+
+        .bottom-size {
+            font-size: 16pt !important;
+        }
+
+        .ship-font {
+            font-size:  14px;
+        }
+
+        .font-ship-bexinh {
+            font-size: 14px;
+        }
+        /*.pos .pos-receipt-container {
+            text-align: center;
+        }*/
+        /*.receipt-total, receipt-paymentlines, receipt-change {
+            width: 100%
+        }*/
+        table {
+            width: 100%;
+        }
+
+        .pos .pos-sale-ticket {
+            text-align: left;
+            background-color: white;
+            font-size: 13px;
+            /*display: inline-block;*/
+            /*font-family: "Inconsolata";*/
+            /*border: solid 1px rgb(220, 220, 220);*/
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .pos .pos-center-align {
+            text-align: center;
+        }
+
+        .pos .pos-right-align {
+            text-align: right;
+        }
+
+        .pos .pos-sale-ticket h3 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 20px;
+        }
+
+        .pos .pos-sale-ticket p {
+            margin-bottom: 5px;
+        }
+
+        table.receipt-orderlines > tbody > tr.border-top {
+            border-top: 1px solid #ccc !important;
+        }
+
+        table.receipt-orderlines > tbody > tr.border-bottom {
+            border-bottom: 1px solid #ccc !important;
+        }
+
+        .pos .pos-sale-ticket table {
+            width: 100%;
+            border: 0;
+            table-layout: auto;
+        }
+            .pos .pos-sale-ticket table tr th,
+            .pos .pos-sale-ticket table tr td {
+                padding-right: 2px;
+            }
+
+            .pos .pos-sale-ticket table td {
+                border: 0;
+                word-wrap: break-word;
+            }
+
+            .pos .pos-sale-ticket table.receipt-orderlines tr td.product-name {
+                /*border-top: 1px dashed #333;*/
+            }
+
+        .pos .pos-disc-font {
+            font-size: 12px;
+            font-style: italic;
+            color: #808080;
+        }
+
+        .pos .pos-sale-ticket .emph {
+            font-size: 14px;
+            margin: 5px;
+        }
+
+        .pos .pos-sale-ticket hr {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            border: 0;
+            border-top: 1px dashed #333;
+        }
+
+        .text-uppercase {
+            text-transform: uppercase;
+        }
+
+        .content-thuchi {
+            margin-top: 15px;
+        }
+
+            .content-thuchi div {
+                margin-bottom: 10px;
+            }
+        .ship-group .form-group{
+        margin-bottom: 5px
+        }
+
+         .flex-ship {
+            display: flex;
+            flex-flow: column;
+            width: 100%;
+            height: 50mm;
+
+            margin-left: 0;
+            margin-right: 0;
+            font-size:12px;
+        }
+
+         .flex-ship-80 {
+            display: flex;
+            flex-flow: column;
+            width: 100%;
+            height: 78mm;
+
+            margin-left: 0;
+            margin-right: 0;
+            font-size: 11px !important;
+            border: 1px solid;
+        }
+         .flex-ship-80x35 {
+            display: flex;
+            flex-flow: column;
+            width: 100%;
+            height: 34mm;
+
+            margin-left: 0;
+            margin-right: 0;
+            font-size: 11px !important;
+        }
+        .ship-top {
+            flex: 1;
+        }
+
+        .ship-mid {
+            flex: 1;
+            text-align: center;
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .ship-bottom {
+            font-size:  12px;
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+        }
+       .ship-bottom .form-group, .ship-top .form-group  {
+        margin-bottom: 0 !important;
+        }
+
+        .border-bottom{
+        border-bottom: 1px solid;
+        }
+        .container {
+            padding-right: 10px;
+            padding-left: 10px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+      .col-xs-1, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9, .col-xs-10, .col-xs-11, .col-xs-12, .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12, .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12, .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12 {
+    position: relative;
+    min-height: 1px;
+    padding-right: 5px;
+    padding-left: 5px;
+        }
+        .font-bold {
+            font-weight: bold;
+        }
+    .text-clamp {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* number of lines to show */
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    strong {
+        font-weight: bold !important;
+    }
+    </style>
+</head>
+<body>
+    <div class="container body-content">
+        
+
+<table class="table print-header table-bordered">
+    <thead>
+        <tr>
+            <th class="text-center">
+                <div>
+                    <strong>NJD Live</strong>
+                </div>
+                <div>
+                    <strong><span style="white-space:pre-wrap; word-break:break-word"></span></strong>
+                </div>
+                    <div><p class="pre-wrap">39/9A đường TMT 9A, Khu phố 2, Phường Trung Mỹ T&#226;y, Quận 12,&#160;Hồ Ch&#237; Minh</p> </div>
+                                    <div>
+                        19003357
+                    </div>
+                                                <hr class="b-b dash-cs" />
+
+            </th>
+
+        </tr>
+        <tr>
+            <th colspan="2" class="text-center">
+                <h3 style="text-transform:uppercase">Phiếu trả h&#224;ng</h3>
+            </th>
+        </tr>
+        <tr>
+
+            <th class="text-center">
+                <div>
+                    <strong>Số phiếu:</strong> RINV/2026/1470
+                </div>
+                <div>
+                    <strong>Ng&#224;y: </strong> 05/01/2026 17:58
+                </div>
+                <hr class="b-b dash-cs" />
+            </th>
+
+        </tr>
+        <tr>
+            <th class="text-left">
+                <div>
+                    <strong>Kh&#225;ch h&#224;ng:</strong> Nguyễn T&#226;m
+                </div>
+                <div>
+                    <strong>Địa chỉ:</strong> 1 phạm văn chi&#234;u, p8, g&#242; vấp
+                </div>
+                <div>
+                    <strong>Điện thoại:</strong> 0123456788
+                </div>
+                <div>
+                    <strong>Nh&#226;n vi&#234;n:</strong> nvkt
+                </div>
+            </th>
+
+        </tr>
+    </thead>
+</table>
+<table class="table table-cs dataBody">
+    <thead>
+        <tr>
+            <th width="80">Kh&#225;ch h&#224;ng</th>
+            <th class="text-right" width="60">Gi&#225;</th>
+            <th class="text-right" width="60">CK</th>
+            <th class="text-right" width="80">Tổng</th>
+        </tr>
+    </thead>
+    <tbody>
+            <tr>
+                <td class="PaddingProduct" colspan="4" style="border-bottom:none">
+                    <label>0510 A3 &#193;O 2D FENDY HỒNG</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="text-center numberPadding">
+                    1 C&#225;i
+                </td>
+                <td class="text-right numberPadding">
+                    180.000
+                </td>
+                <td class="text-right numberPadding">
+                            <span>0%</span>
+                </td>
+                <td class="text-right numberPadding">
+                    180.000
+                </td>
+            </tr>
+    </tbody>
+    <tfoot>
+
+        
+        <tr>
+            <td colspan="3" class="text-right">
+                <strong>Tổng tiền:</strong>
+            </td>
+            <td class="text-right">180.000</td>
+        </tr>
+        
+    </tfoot>
+</table>
+
+    </div>
+</body>
+</html>

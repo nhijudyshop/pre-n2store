@@ -1,0 +1,1206 @@
+<!--
+  📖 GHI CHÚ CHO LẬP TRÌNH VIÊN:
+  Khi code phải đọc thư mục https://github.com/nhijudyshop/n2store/tree/main/docs trước!
+  Đọc các file SHARED_*.md để hiểu cách sử dụng shared modules.
+-->
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Gemini AI Assistant</title>
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="../hanghoan/modern.css" />
+
+    <!-- Animate.css for ready-to-use CSS animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <!-- Core Utilities Loader -->
+    <script src="../js/core-loader.js"></script>
+    <script src="../js/navigation-modern.js"></script>
+    <script src="../js/common-utils.js"></script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Marked for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Anime.js for smooth animations -->
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+
+    <style>
+        /* Chat specific styles */
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - var(--topbar-height) - 2rem);
+            margin: var(--spacing-lg) var(--spacing-xl);
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-lg);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 3px;
+        }
+
+        .message {
+            max-width: 80%;
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            line-height: 1.6;
+        }
+
+        .message p {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .message p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message pre {
+            background: var(--gray-800);
+            color: #e5e7eb;
+            padding: var(--spacing-md);
+            border-radius: var(--radius);
+            overflow-x: auto;
+            margin: var(--spacing-md) 0;
+        }
+
+        .message code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.875em;
+        }
+
+        .message pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        .user-msg {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: var(--spacing-xs);
+        }
+
+        .user-msg code {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .ai-msg {
+            background: var(--gray-50);
+            color: var(--text-primary);
+            margin-right: auto;
+            border: 1px solid var(--border);
+            border-bottom-left-radius: var(--spacing-xs);
+        }
+
+        .chat-input-section {
+            display: flex;
+            gap: var(--spacing-md);
+            padding: var(--spacing-lg);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
+        .chat-input-section textarea {
+            flex: 1;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 0.9375rem;
+            resize: none;
+            min-height: 48px;
+            max-height: 200px;
+            transition: var(--transition-fast);
+        }
+
+        .chat-input-section textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgb(99 102 241 / 0.1);
+        }
+
+        .chat-input-section .btn {
+            align-self: flex-end;
+            min-width: 100px;
+        }
+
+        .loading-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .loading-indicator .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--gray-300);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .loading-indicator .loading-text {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* Typing dots - like Messenger */
+        .typing-dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-right: 8px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            --animate-duration: 1.4s;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Welcome message styling */
+        .welcome-msg {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-secondary);
+        }
+
+        .welcome-msg i {
+            width: 64px;
+            height: 64px;
+            color: var(--primary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .welcome-msg h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .welcome-msg p {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .model-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-md);
+            background: var(--gray-100);
+            border-radius: var(--radius);
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        .model-badge i {
+            width: 16px;
+            height: 16px;
+            color: var(--success);
+        }
+
+        /* Model Selector Styles */
+        .model-selector {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .model-selector select {
+            padding: var(--spacing-xs) var(--spacing-md);
+            padding-right: 32px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            font-size: 0.8125rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            min-width: 200px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .model-selector select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgb(99 102 241 / 0.1);
+        }
+
+        .model-selector select option {
+            padding: var(--spacing-sm);
+        }
+
+        .rate-limit-info {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--gray-100);
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .rate-limit-info .limit-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .rate-limit-info .limit-item::after {
+            content: '|';
+            margin: 0 var(--spacing-xs);
+            color: var(--gray-300);
+        }
+
+        .rate-limit-info .limit-item:last-child::after {
+            display: none;
+        }
+
+        .rate-limit-info .limit-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .rate-limit-info .limit-value {
+            color: var(--success);
+        }
+
+        /* Clear chat button */
+        .btn-clear {
+            background: var(--gray-100);
+            color: var(--text-secondary);
+        }
+
+        .btn-clear:hover {
+            background: var(--gray-200);
+            color: var(--danger);
+        }
+
+        /* Attachment Styles */
+        .attachment-container {
+            display: flex;
+            align-items: flex-end;
+            gap: var(--spacing-sm);
+        }
+
+        .btn-attach {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .btn-attach:hover {
+            background: var(--gray-100);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-attach i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .attachment-preview {
+            display: none;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: var(--gray-50);
+            border-top: 1px solid var(--border);
+        }
+
+        .attachment-preview.has-files {
+            display: flex;
+        }
+
+        .attachment-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.8125rem;
+        }
+
+        .attachment-item img {
+            width: 32px;
+            height: 32px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .attachment-item .file-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--text-secondary);
+        }
+
+        .attachment-item .file-name {
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .attachment-item .btn-remove {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border: none;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .attachment-item .btn-remove:hover {
+            background: #dc2626;
+        }
+
+        /* Message with attachment */
+        .message-attachments {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .message-attachments img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: var(--radius);
+            cursor: pointer;
+        }
+
+        .message-attachments img:hover {
+            opacity: 0.9;
+        }
+
+        .message-attachments .file-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                <span>N2Shop</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+            <!-- Menu items auto-generated -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-lucide="user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="btn-permissions" id="btnPermissions">
+                <i data-lucide="shield-check"></i>
+                <span>Xem Quyền Của Tôi</span>
+            </button>
+            <button class="btn-logout" id="btnLogout">
+                <i data-lucide="log-out"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="btn-icon" id="menuToggle">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="breadcrumb">
+                    <i data-lucide="bot"></i>
+                    <span>Gemini AI Assistant</span>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <div class="model-selector">
+                    <i data-lucide="cpu"></i>
+                    <select id="modelSelect">
+                        <!-- Gemini 3 - Latest (Preview) -->
+                        <optgroup label="⭐ Gemini 3 (Preview)">
+                            <option value="gemini-3-flash-preview" data-rpm="1K" data-tpm="1M" data-rpd="10K">
+                                gemini-3-flash-preview (RPM: 1K | TPM: 1M | RPD: 10K)</option>
+                            <option value="gemini-3-pro-preview" data-rpm="25" data-tpm="1M" data-rpd="250">
+                                gemini-3-pro-preview (RPM: 25 | TPM: 1M | RPD: 250)</option>
+                            <option value="gemini-3-pro-image-preview" data-rpm="20" data-tpm="100K" data-rpd="250">
+                                gemini-3-pro-image-preview (RPM: 20 | TPM: 100K | RPD: 250)</option>
+                        </optgroup>
+                        <!-- Gemini 2.5 (Stable) -->
+                        <optgroup label="Gemini 2.5 (Stable)">
+                            <option value="gemini-2.5-flash" data-rpm="1K" data-tpm="1M" data-rpd="10K">gemini-2.5-flash
+                                (RPM: 1K | TPM: 1M | RPD: 10K)</option>
+                            <option value="gemini-2.5-flash-lite" data-rpm="4K" data-tpm="4M" data-rpd="Unlimited">
+                                gemini-2.5-flash-lite (RPM: 4K | Unlimited)</option>
+                            <option value="gemini-2.5-pro" data-rpm="150" data-tpm="2M" data-rpd="10K">gemini-2.5-pro
+                                (RPM: 150 | TPM: 2M | RPD: 10K)</option>
+                            <option value="gemini-2.5-flash-image" data-rpm="500" data-tpm="500K" data-rpd="2K">
+                                gemini-2.5-flash-image (RPM: 500 | RPD: 2K)</option>
+                            <option value="gemini-2.5-flash-preview-tts" data-rpm="10" data-tpm="10K" data-rpd="100">
+                                gemini-2.5-flash-preview-tts (TTS)</option>
+                            <option value="gemini-2.5-pro-preview-tts" data-rpm="10" data-tpm="10K" data-rpd="50">
+                                gemini-2.5-pro-preview-tts (TTS)</option>
+                            <option value="gemini-2.5-flash-native-audio-preview-12-2025" data-rpm="Unlimited"
+                                data-tpm="1M" data-rpd="Unlimited">gemini-2.5-flash-live (Audio/Live)</option>
+                        </optgroup>
+                        <!-- Gemini 2.0 -->
+                        <optgroup label="Gemini 2.0">
+                            <option value="gemini-2.0-flash" data-rpm="2K" data-tpm="4M" data-rpd="Unlimited">
+                                gemini-2.0-flash (RPM: 2K | TPM: 4M | Unlimited) ⚡</option>
+                            <option value="gemini-2.0-flash-lite" data-rpm="4K" data-tpm="4M" data-rpd="Unlimited">
+                                gemini-2.0-flash-lite (RPM: 4K | TPM: 4M | Unlimited)</option>
+                            <option value="gemini-2.0-flash-exp" data-rpm="10" data-tpm="250K" data-rpd="500">
+                                gemini-2.0-flash-exp (RPM: 10 | RPD: 500)</option>
+                        </optgroup>
+                        <!-- Agents -->
+                        <optgroup label="Agents">
+                            <option value="deep-research-pro-preview" data-rpm="1" data-tpm="500K" data-rpd="1.44K">
+                                deep-research-pro-preview (RPM: 1 | RPD: 1.44K)</option>
+                            <option value="computer-use-preview" data-rpm="150" data-tpm="2M" data-rpd="10K">
+                                computer-use-preview (RPM: 150 | RPD: 10K)</option>
+                        </optgroup>
+                        <!-- Gemma Models -->
+                        <optgroup label="Gemma 3">
+                            <option value="gemma-3-27b" data-rpm="30" data-tpm="15K" data-rpd="14.4K">gemma-3-27b (RPM:
+                                30 | RPD: 14.4K)</option>
+                            <option value="gemma-3-12b" data-rpm="30" data-tpm="15K" data-rpd="14.4K">gemma-3-12b (RPM:
+                                30 | RPD: 14.4K)</option>
+                            <option value="gemma-3-4b" data-rpm="30" data-tpm="15K" data-rpd="14.4K">gemma-3-4b (RPM: 30
+                                | RPD: 14.4K)</option>
+                            <option value="gemma-3-2b" data-rpm="30" data-tpm="15K" data-rpd="14.4K">gemma-3-2b (RPM: 30
+                                | RPD: 14.4K)</option>
+                            <option value="gemma-3-1b" data-rpm="30" data-tpm="15K" data-rpd="14.4K">gemma-3-1b (RPM: 30
+                                | RPD: 14.4K)</option>
+                        </optgroup>
+                        <!-- Image/Video Generation -->
+                        <optgroup label="Image/Video Generation">
+                            <option value="imagen-4.0-fast-generate" data-rpm="10" data-tpm="N/A" data-rpd="70">
+                                imagen-4.0-fast-generate (RPM: 10 | RPD: 70)</option>
+                            <option value="imagen-4.0-generate" data-rpm="10" data-tpm="N/A" data-rpd="70">
+                                imagen-4.0-generate (RPM: 10 | RPD: 70)</option>
+                            <option value="imagen-4.0-ultra-generate" data-rpm="5" data-tpm="N/A" data-rpd="30">
+                                imagen-4.0-ultra-generate (RPM: 5 | RPD: 30)</option>
+                            <option value="veo-3.0-fast-generate" data-rpm="2" data-tpm="N/A" data-rpd="10">
+                                veo-3.0-fast-generate (RPM: 2 | RPD: 10)</option>
+                            <option value="veo-3.0-generate" data-rpm="2" data-tpm="N/A" data-rpd="10">veo-3.0-generate
+                                (RPM: 2 | RPD: 10)</option>
+                        </optgroup>
+                        <!-- Other -->
+                        <optgroup label="Other">
+                            <option value="gemini-robotics-er-1.5-preview" data-rpm="1K" data-tpm="2M" data-rpd="14.4K">
+                                gemini-robotics-er-1.5-preview (RPM: 1K | RPD: 14.4K)</option>
+                        </optgroup>
+                        <!-- DeepSeek Models -->
+                        <optgroup label="🔥 DeepSeek">
+                            <option value="deepseek-chat" data-rpm="60" data-tpm="1M" data-rpd="Unlimited"
+                                data-provider="deepseek">deepseek-chat</option>
+                            <option value="deepseek-coder" data-rpm="60" data-tpm="1M" data-rpd="Unlimited"
+                                data-provider="deepseek">deepseek-coder</option>
+                            <option value="deepseek-reasoner" data-rpm="60" data-tpm="1M" data-rpd="Unlimited"
+                                data-provider="deepseek">deepseek-reasoner</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="rate-limit-info" id="rateLimitInfo">
+                    <span class="limit-item"><span class="limit-label">RPM:</span> <span class="limit-value"
+                            id="rpmValue">1K</span></span>
+                    <span class="limit-item"><span class="limit-label">TPM:</span> <span class="limit-value"
+                            id="tpmValue">1M</span></span>
+                    <span class="limit-item"><span class="limit-label">RPD:</span> <span class="limit-value"
+                            id="rpdValue">10K</span></span>
+                </div>
+                <button class="btn btn-clear" id="btnClearChat" title="Xóa cuộc trò chuyện">
+                    <i data-lucide="trash-2"></i>
+                    <span>Xóa chat</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Chat Section -->
+        <section class="chat-section">
+            <div id="chat-box" class="chat-container">
+                <div class="welcome-msg">
+                    <i data-lucide="sparkles"></i>
+                    <h2>Gemini AI Assistant</h2>
+                    <p>Nhập nội dung bất kỳ để bắt đầu trò chuyện với AI.</p>
+                    <div class="model-badge">
+                        <i data-lucide="cpu"></i>
+                        <span>Powered by Google Gemini</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attachment Preview -->
+            <div class="attachment-preview" id="attachmentPreview"></div>
+
+            <div class="chat-input-section">
+                <div class="attachment-container">
+                    <input type="file" id="fileInput" multiple accept="image/*,video/*,audio/*,.pdf"
+                        style="display: none;">
+                    <button class="btn-attach" id="btnAttach" title="Đính kèm file (Image, Video, Audio, PDF)">
+                        <i data-lucide="paperclip"></i>
+                    </button>
+                </div>
+                <textarea id="userInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+                <button class="btn btn-primary" id="btnSend">
+                    <i data-lucide="send"></i>
+                    <span>Gửi</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Auth Script -->
+    <script src="../hanghoan/auth.js"></script>
+
+    <script>
+        // ============================================================
+        // GEMINI AI CONFIGURATION
+        // ============================================================
+
+        // Default Model Configuration
+        const DEFAULT_MODEL = 'gemini-3-flash-preview';
+
+        // Get saved model from localStorage or use default
+        let GEMINI_MODEL = localStorage.getItem('gemini_selected_model') || DEFAULT_MODEL;
+
+        // Render Proxy URLs - API keys are stored securely on server
+        const GEMINI_PROXY_URL = 'https://n2store-fallback.onrender.com/api/gemini/chat';
+        const DEEPSEEK_PROXY_URL = 'https://n2store-fallback.onrender.com/api/deepseek/chat';
+
+        // Helper function to check if current model is DeepSeek
+        function isDeepSeekModel() {
+            return GEMINI_MODEL.startsWith('deepseek-');
+        }
+
+        // Helper function to get the correct API URL
+        function getApiUrl() {
+            return isDeepSeekModel() ? DEEPSEEK_PROXY_URL : GEMINI_PROXY_URL;
+        }
+
+        console.log('[AI] Using model:', GEMINI_MODEL);
+        console.log('[AI] Provider:', isDeepSeekModel() ? 'DeepSeek' : 'Gemini');
+
+        // Update rate limit display based on selected model
+        function updateRateLimitDisplay() {
+            const select = document.getElementById('modelSelect');
+            const selectedOption = select.options[select.selectedIndex];
+
+            document.getElementById('rpmValue').textContent = selectedOption.dataset.rpm || 'N/A';
+            document.getElementById('tpmValue').textContent = selectedOption.dataset.tpm || 'N/A';
+            document.getElementById('rpdValue').textContent = selectedOption.dataset.rpd || 'N/A';
+        }
+
+        // Initialize model selector on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const modelSelect = document.getElementById('modelSelect');
+
+            // Set saved or default model in dropdown
+            modelSelect.value = GEMINI_MODEL;
+
+            // Update rate limit display
+            updateRateLimitDisplay();
+
+            // Handle model change
+            modelSelect.addEventListener('change', (e) => {
+                GEMINI_MODEL = e.target.value;
+                localStorage.setItem('gemini_selected_model', GEMINI_MODEL);
+                updateRateLimitDisplay();
+                console.log('[GEMINI] Model changed to:', GEMINI_MODEL);
+            });
+        });
+
+        // ============================================================
+        // STATE
+        // ============================================================
+
+        let conversationHistory = [];
+
+        // ============================================================
+        // CHAT FUNCTIONS
+        // ============================================================
+
+        function addMessage(role, text) {
+            const box = document.getElementById("chat-box");
+
+            // Remove welcome message if exists with animation
+            const welcome = box.querySelector('.welcome-msg');
+            if (welcome) {
+                welcome.classList.add('animate__animated', 'animate__fadeOut', 'animate__faster');
+                welcome.addEventListener('animationend', () => welcome.remove(), { once: true });
+            }
+
+            const div = document.createElement("div");
+            const isUser = role === "user";
+            const animationClass = isUser ? 'animate__fadeInRight' : 'animate__fadeInLeft';
+            div.className = `message ${isUser ? "user-msg" : "ai-msg"} animate__animated ${animationClass} animate__faster`;
+            div.innerHTML = marked.parse(text);
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function showLoading() {
+            const box = document.getElementById("chat-box");
+            const loadingDiv = document.createElement("div");
+            loadingDiv.className = "message ai-msg animate__animated animate__fadeInLeft animate__faster";
+            loadingDiv.id = "loading-msg";
+            loadingDiv.innerHTML = `
+                <div class="loading-indicator">
+                    <div class="typing-dots">
+                        <span class="typing-dot animate__animated animate__pulse animate__infinite"></span>
+                        <span class="typing-dot animate__animated animate__pulse animate__infinite animate__delay-1s"></span>
+                        <span class="typing-dot animate__animated animate__pulse animate__infinite animate__delay-2s"></span>
+                    </div>
+                    <span class="loading-text animate__animated animate__flash animate__slower animate__infinite">Đang xử lý...</span>
+                </div>
+            `;
+            box.appendChild(loadingDiv);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById("loading-msg");
+            if (loading) {
+                loading.classList.remove('animate__fadeInLeft');
+                loading.classList.add('animate__fadeOutLeft');
+                loading.addEventListener('animationend', () => loading.remove(), { once: true });
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("userInput");
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            // Display user message
+            addMessage("user", text);
+            input.value = "";
+            input.style.height = 'auto';
+
+            // Show loading
+            showLoading();
+
+            try {
+                let response, data, aiText;
+
+                if (isDeepSeekModel()) {
+                    // DeepSeek API format
+                    const messages = [{ role: "user", content: text }];
+
+                    response = await fetch(DEEPSEEK_PROXY_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: GEMINI_MODEL,
+                            messages: messages,
+                            max_tokens: 4096,
+                            temperature: 0.7
+                        }),
+                    });
+
+                    data = await response.json();
+                    hideLoading();
+
+                    if (data.error) {
+                        addMessage("ai", `Lỗi: ${data.error.message}`);
+                    } else {
+                        aiText = data.choices?.[0]?.message?.content || "Không có phản hồi";
+                        addMessage("ai", aiText);
+
+                        // Save to conversation history (DeepSeek format)
+                        conversationHistory.push({ role: "user", content: text });
+                        conversationHistory.push({ role: "assistant", content: aiText });
+                    }
+                } else {
+                    // Gemini API format
+                    const parts = [{ text: text }];
+                    const contents = [{ role: "user", parts: parts }];
+
+                    response = await fetch(GEMINI_PROXY_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: GEMINI_MODEL,
+                            contents: contents
+                        }),
+                    });
+
+                    data = await response.json();
+                    hideLoading();
+
+                    if (data.error) {
+                        addMessage("ai", `Lỗi: ${data.error.message}`);
+                    } else {
+                        aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Không có phản hồi";
+                        addMessage("ai", aiText);
+
+                        // Save to conversation history (Gemini format)
+                        conversationHistory.push({ role: "user", parts: parts });
+                        conversationHistory.push({ role: "model", parts: [{ text: aiText }] });
+                    }
+                }
+            } catch (error) {
+                hideLoading();
+                const provider = isDeepSeekModel() ? 'DeepSeek' : 'Gemini';
+                addMessage("ai", `Có lỗi xảy ra khi kết nối với ${provider} AI.`);
+                console.error(`[${provider.toUpperCase()} ERROR]`, error);
+            }
+        }
+
+        // ============================================================
+        // UTILITY FUNCTIONS FOR GEMINI API
+        // ============================================================
+
+        /**
+         * Call Gemini API via Render Proxy with custom prompt
+         * @param {string} prompt - The prompt to send
+         * @param {Array} imageParts - Optional array of image data objects
+         * @returns {Promise<string>} - The AI response text
+         */
+        async function callGeminiAPI(prompt, imageParts = []) {
+            const parts = [{ text: prompt }, ...imageParts];
+
+            const response = await fetch(GEMINI_PROXY_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: GEMINI_MODEL,
+                    contents: [{ role: "user", parts: parts }]
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.error) throw new Error(data.error.message);
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        /**
+         * Convert file to base64 for Gemini API
+         * @param {File} file - The file to convert
+         * @returns {Promise<Object>} - Object with inline_data for Gemini API
+         */
+        function fileToGeminiPart(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(",")[1];
+                    resolve({
+                        inline_data: {
+                            mime_type: file.type,
+                            data: base64,
+                        }
+                    });
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+
+        // Attachment state
+        let pendingAttachments = [];
+
+        // Attach button click
+        document.getElementById('btnAttach').addEventListener('click', function () {
+            document.getElementById('fileInput').click();
+        });
+
+        // File input change
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                // Check if file type is supported
+                const supportedTypes = ['image/', 'video/', 'audio/', 'application/pdf'];
+                const isSupported = supportedTypes.some(type => file.type.startsWith(type) || file.type === 'application/pdf');
+
+                if (!isSupported) {
+                    alert(`File "${file.name}" không được hỗ trợ. Chỉ hỗ trợ: Image, Video, Audio, PDF`);
+                    return;
+                }
+
+                // Read file as base64
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    const attachment = {
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        type: file.type,
+                        data: base64,
+                        preview: file.type.startsWith('image/') ? reader.result : null
+                    };
+                    pendingAttachments.push(attachment);
+                    updateAttachmentPreview();
+                };
+                reader.readAsDataURL(file);
+            });
+            e.target.value = ''; // Reset input
+        });
+
+        // Paste image from clipboard
+        document.getElementById('userInput').addEventListener('paste', function (e) {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+
+                // Check if it's an image
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault(); // Prevent default paste behavior for images
+
+                    const file = item.getAsFile();
+                    if (!file) continue;
+
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = reader.result.split(',')[1];
+                        const attachment = {
+                            id: Date.now() + Math.random(),
+                            name: `pasted-image-${Date.now()}.${file.type.split('/')[1] || 'png'}`,
+                            type: file.type,
+                            data: base64,
+                            preview: reader.result
+                        };
+                        pendingAttachments.push(attachment);
+                        updateAttachmentPreview();
+                        console.log('[PASTE] Image added from clipboard');
+                    };
+                    reader.readAsDataURL(file);
+                    break; // Only handle first image
+                }
+            }
+        });
+
+        // Update attachment preview UI
+        function updateAttachmentPreview() {
+            const preview = document.getElementById('attachmentPreview');
+
+            if (pendingAttachments.length === 0) {
+                preview.classList.remove('has-files');
+                preview.innerHTML = '';
+                return;
+            }
+
+            preview.classList.add('has-files');
+            preview.innerHTML = pendingAttachments.map(att => {
+                const iconType = getFileIcon(att.type);
+                const previewContent = att.preview
+                    ? `<img src="${att.preview}" alt="${att.name}">`
+                    : `<i data-lucide="${iconType}" class="file-icon"></i>`;
+                return `
+                    <div class="attachment-item" data-id="${att.id}">
+                        ${previewContent}
+                        <span class="file-name" title="${att.name}">${att.name}</span>
+                        <button class="btn-remove" onclick="removeAttachment(${att.id})">×</button>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+
+            // Add animation class to new items
+            preview.querySelectorAll('.attachment-item').forEach((item, index) => {
+                item.classList.add('animate__animated', 'animate__bounceIn');
+                item.style.animationDelay = `${index * 0.05}s`;
+            });
+        }
+
+        // Get icon for file type
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) return 'image';
+            if (mimeType.startsWith('video/')) return 'video';
+            if (mimeType.startsWith('audio/')) return 'music';
+            if (mimeType === 'application/pdf') return 'file-text';
+            return 'file';
+        }
+
+        // Remove attachment
+        function removeAttachment(id) {
+            pendingAttachments = pendingAttachments.filter(a => a.id !== id);
+            updateAttachmentPreview();
+        }
+        window.removeAttachment = removeAttachment; // Make global for onclick
+
+        // Modified addMessage to support attachments
+        function addMessageWithAttachments(role, text, attachments = []) {
+            const box = document.getElementById("chat-box");
+
+            // Remove welcome message if exists with animation
+            const welcome = box.querySelector('.welcome-msg');
+            if (welcome) {
+                welcome.classList.add('animate__animated', 'animate__fadeOut', 'animate__faster');
+                welcome.addEventListener('animationend', () => welcome.remove(), { once: true });
+            }
+
+            const div = document.createElement("div");
+            const isUser = role === "user";
+            const animationClass = isUser ? 'animate__fadeInRight' : 'animate__fadeInLeft';
+            div.className = `message ${isUser ? "user-msg" : "ai-msg"} animate__animated ${animationClass} animate__faster`;
+
+            // Build attachments HTML with zoomIn animation
+            let attachmentsHtml = '';
+            if (attachments.length > 0) {
+                attachmentsHtml = '<div class="message-attachments">';
+                attachments.forEach((att, index) => {
+                    const delay = index * 0.1;
+                    if (att.preview) {
+                        attachmentsHtml += `<img src="${att.preview}" alt="${att.name}" class="animate__animated animate__zoomIn" style="animation-delay: ${delay}s" onclick="window.open('${att.preview}', '_blank')">`;
+                    } else {
+                        const icon = getFileIcon(att.type);
+                        attachmentsHtml += `<span class="file-badge animate__animated animate__bounceIn" style="animation-delay: ${delay}s"><i data-lucide="${icon}"></i> ${att.name}</span>`;
+                    }
+                });
+                attachmentsHtml += '</div>';
+            }
+
+            div.innerHTML = attachmentsHtml + marked.parse(text);
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+            lucide.createIcons();
+        }
+
+        // Send button click
+        document.getElementById('btnSend').addEventListener('click', sendMessageWithAttachments);
+
+        // Enter key to send (Shift+Enter for new line)
+        document.getElementById('userInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessageWithAttachments();
+            }
+        });
+
+        // Send message with attachments
+        async function sendMessageWithAttachments() {
+            const input = document.getElementById("userInput");
+            const text = input.value.trim();
+
+            if (!text && pendingAttachments.length === 0) return;
+
+            // Display user message with attachments
+            addMessageWithAttachments("user", text || "(Đã gửi file)", [...pendingAttachments]);
+
+            const attachmentsToSend = [...pendingAttachments];
+            pendingAttachments = [];
+            updateAttachmentPreview();
+
+            input.value = "";
+            input.style.height = 'auto';
+
+            // Show loading
+            showLoading();
+
+            try {
+                let response, data, aiText;
+
+                if (isDeepSeekModel()) {
+                    // DeepSeek doesn't support multimodal well, warn user
+                    if (attachmentsToSend.length > 0) {
+                        hideLoading();
+                        addMessage("ai", "⚠️ DeepSeek không hỗ trợ file attachments. Vui lòng chọn model Gemini để gửi file.");
+                        return;
+                    }
+
+                    const messages = [{ role: "user", content: text }];
+
+                    response = await fetch(DEEPSEEK_PROXY_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: GEMINI_MODEL,
+                            messages: messages,
+                            max_tokens: 4096,
+                            temperature: 0.7
+                        }),
+                    });
+
+                    data = await response.json();
+                    hideLoading();
+
+                    if (data.error) {
+                        addMessage("ai", `Lỗi: ${data.error.message}`);
+                    } else {
+                        aiText = data.choices?.[0]?.message?.content || "Không có phản hồi";
+                        addMessage("ai", aiText);
+                    }
+                } else {
+                    // Gemini API format with multimodal support
+                    const parts = [];
+
+                    // Add text if present
+                    if (text) {
+                        parts.push({ text: text });
+                    }
+
+                    // Add attachments as inline_data
+                    attachmentsToSend.forEach(att => {
+                        parts.push({
+                            inline_data: {
+                                mime_type: att.type,
+                                data: att.data
+                            }
+                        });
+                    });
+
+                    const contents = [{ role: "user", parts: parts }];
+
+                    response = await fetch(GEMINI_PROXY_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: GEMINI_MODEL,
+                            contents: contents
+                        }),
+                    });
+
+                    data = await response.json();
+                    hideLoading();
+
+                    if (data.error) {
+                        addMessage("ai", `Lỗi: ${data.error.message}`);
+                    } else {
+                        aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Không có phản hồi";
+                        addMessage("ai", aiText);
+                    }
+                }
+            } catch (error) {
+                hideLoading();
+                const provider = isDeepSeekModel() ? 'DeepSeek' : 'Gemini';
+                addMessage("ai", `Có lỗi xảy ra khi kết nối với ${provider} AI.`);
+                console.error(`[${provider.toUpperCase()} ERROR]`, error);
+            }
+        }
+
+        // Auto-resize textarea
+        document.getElementById('userInput').addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+
+        // Clear chat button
+        document.getElementById('btnClearChat').addEventListener('click', function () {
+            if (confirm('Bạn có chắc muốn xóa cuộc trò chuyện?')) {
+                conversationHistory = [];
+                pendingAttachments = [];
+                updateAttachmentPreview();
+                const box = document.getElementById("chat-box");
+                box.innerHTML = `
+                    <div class="welcome-msg">
+                        <i data-lucide="sparkles"></i>
+                        <h2>Gemini AI Assistant</h2>
+                        <p>Nhập nội dung bất kỳ để bắt đầu trò chuyện với AI.</p>
+                        <div class="model-badge">
+                            <i data-lucide="cpu"></i>
+                            <span>Powered by Google Gemini</span>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        });
+
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', function () {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>
