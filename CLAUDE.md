@@ -30,3 +30,4 @@ Khi code phần mới (feature, module, page mới), **luôn hỏi người dùn
 ## Database
 
 Use environment variables or `.pgpass` file for PostgreSQL credentials. Never hardcode passwords.
+...
