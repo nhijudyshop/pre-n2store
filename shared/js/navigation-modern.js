@@ -2308,6 +2308,30 @@ class UnifiedNavigationManager {
             .menu-group.collapsed .menu-group-items {
                 display: none;
             }
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px;
+                margin-bottom: 4px;
+                border-radius: var(--radius, 8px);
+                color: var(--gray-600, #4b5563);
+                text-decoration: none;
+                font-weight: 500;
+                transition: 0.2s;
+            }
+            .nav-item:hover {
+                background: var(--gray-100, #f3f4f6);
+                color: var(--gray-900, #111827);
+            }
+            .nav-item.active {
+                background: var(--primary, #6366f1);
+                color: white;
+            }
+            .nav-item i {
+                width: 20px;
+                height: 20px;
+            }
             .menu-group-items .nav-item {
                 padding-left: 20px;
                 font-size: 13px;
