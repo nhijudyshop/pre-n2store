@@ -52,6 +52,31 @@ navItems.forEach(item => {
   });
 });
 
+// ===== NAVIGATION MODERN SIDEBAR TOGGLE =====
+const navSidebar = document.getElementById('sidebar');
+const navToggleBtn = document.getElementById('sidebarToggle');
+const navToggleFixed = document.getElementById('sidebarToggleFixed');
+
+function toggleNavSidebar() {
+  if (window.innerWidth <= 1024) {
+    navSidebar.classList.toggle('open');
+    navToggleFixed.classList.toggle('sidebar-open', navSidebar.classList.contains('open'));
+  } else {
+    const collapsed = navSidebar.classList.toggle('collapsed');
+    document.body.classList.toggle('nav-collapsed', collapsed);
+    navToggleFixed.classList.toggle('visible', collapsed);
+  }
+}
+
+if (navToggleBtn) navToggleBtn.addEventListener('click', toggleNavSidebar);
+if (navToggleFixed) navToggleFixed.addEventListener('click', toggleNavSidebar);
+
+// Init nav state on desktop
+if (window.innerWidth > 1024) {
+  document.body.classList.add('nav-ready');
+  navToggleFixed.classList.remove('visible');
+}
+
 // =========================================================
 // NOTE SYSTEM — Đóng góp quy trình
 // =========================================================
