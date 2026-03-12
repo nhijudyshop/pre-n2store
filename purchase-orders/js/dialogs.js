@@ -328,9 +328,8 @@ class VariantGeneratorDialog {
      */
     async loadCSVData() {
         try {
-            const repoMatch = window.location.pathname.match(/\/(?:pre-)?n2store\//);
-            const repoBase = repoMatch ?
-                window.location.pathname.substring(0, repoMatch.index + repoMatch[0].length) : '/';
+            const repoBase = window.location.pathname.match(/\/n2store\//)?.[0] ?
+                window.location.pathname.substring(0, window.location.pathname.indexOf('/n2store/') + '/n2store/'.length) : '/';
             const basePath = `${repoBase}purchase-orders/`;
 
             const [attrsText, valsText] = await Promise.all([
@@ -1807,8 +1806,8 @@ class InventoryPickerDialog {
                 </div>
 
                 <!-- Search -->
-                <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb;">
-                    <input type="text" id="inventorySearchInput" placeholder="Tìm kiếm theo mã SP, tên, variant (tối thiểu 2 ký tự)..." style="
+                <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; position: relative;">
+                    <input type="text" id="inventorySearchInput" placeholder="Tìm kiếm theo mã SP, tên, variant (tối thiểu 2 ký tự)..." autocomplete="off" style="
                         width: 100%;
                         padding: 10px 14px;
                         border: 1px solid #d1d5db;
@@ -1816,6 +1815,37 @@ class InventoryPickerDialog {
                         font-size: 14px;
                         box-sizing: border-box;
                     ">
+                    <!-- Search suggestions dropdown -->
+                    <div id="searchSuggestionsDropdown" style="
+                        display: none;
+                        position: absolute;
+                        left: 20px;
+                        right: 20px;
+                        top: 52px;
+                        background: white;
+                        border: 1px solid #d1d5db;
+                        border-radius: 0 0 8px 8px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        z-index: 10;
+                        overflow: hidden;
+                    ">
+                        <div class="search-suggestion-item" data-search-mode="name" style="
+                            padding: 10px 14px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            background: #5b6abf;
+                            color: white;
+                        ">
+                            Tìm kiếm <em>Tên</em> Cho: <strong id="suggestionTermName"></strong>
+                        </div>
+                        <div class="search-suggestion-item" data-search-mode="code" style="
+                            padding: 10px 14px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">
+                            Tìm kiếm <em>Mã</em> Cho: <strong id="suggestionTermCode"></strong>
+                        </div>
+                    </div>
                     <p id="productCountText" style="margin: 8px 0 0; font-size: 13px; color: #6b7280;">
                         Hiển thị ${this.filteredProducts.length} sản phẩm mới nhất
                     </p>
@@ -2130,7 +2160,8 @@ class InventoryPickerDialog {
                     countText.textContent = `Có ${this.products.length} sản phẩm trong kho`;
                 }
             } else {
-                countText.textContent = `Tìm thấy ${this.filteredProducts.length} sản phẩm`;
+                const modeLabel = this.searchMode === 'name' ? ' (theo tên)' : this.searchMode === 'code' ? ' (theo mã)' : '';
+                countText.textContent = `Tìm thấy ${this.filteredProducts.length} sản phẩm${modeLabel}`;
             }
         }
     }
@@ -2139,19 +2170,66 @@ class InventoryPickerDialog {
      * Filter products by search term (min 2 characters)
      * Search by: Mã SP (code) and Tên sản phẩm (name)
      * Only show results when searching to avoid lag with large lists
+     * @param {string} term - search term
+     * @param {string} mode - 'all' (default), 'name', or 'code'
      */
-    filterProducts(term) {
+    filterProducts(term, mode = 'all') {
         this.searchTerm = term.toLowerCase().trim();
+        this.searchMode = mode;
+
+        // Helper: lấy phần tên sau [] - VD: "[B13] B1 0603 QUẦN..." → "b1 0603 quần..."
+        const getNameWithoutBracket = (name) => {
+            const idx = name.indexOf(']');
+            return idx !== -1 ? name.substring(idx + 1).trim() : name;
+        };
 
         // Require at least 2 characters - don't show all products to avoid lag
         if (this.searchTerm.length < 2) {
             this.filteredProducts = []; // Empty - will show search instruction
         } else {
             this.filteredProducts = this.products.filter(p => {
-                const name = (p.name || '').toLowerCase();
+                const fullName = (p.name || '').toLowerCase();
                 const code = (p.code || '').toLowerCase();
 
-                return name.includes(this.searchTerm) || code.includes(this.searchTerm);
+                if (mode === 'name') {
+                    // Tìm theo tên: chỉ tìm trong phần sau []
+                    const nameOnly = getNameWithoutBracket(fullName);
+                    return nameOnly.includes(this.searchTerm);
+                }
+                if (mode === 'code') return code.includes(this.searchTerm);
+                return fullName.includes(this.searchTerm) || code.includes(this.searchTerm);
+            });
+
+            // Sort: exact/earlier matches first
+            const term = this.searchTerm;
+            this.filteredProducts.sort((a, b) => {
+                const aFullName = (a.name || '').toLowerCase();
+                const aCode = (a.code || '').toLowerCase();
+                const bFullName = (b.name || '').toLowerCase();
+                const bCode = (b.code || '').toLowerCase();
+
+                const scoreName = (fullName) => {
+                    const nameOnly = getNameWithoutBracket(fullName);
+                    const pos = nameOnly.indexOf(term);
+                    if (pos === -1) return 999;
+                    return pos;
+                };
+
+                const scoreCode = (code) => {
+                    if (code === term) return -2;
+                    if (code.startsWith(term)) return -1;
+                    if (code.includes(term)) return 0;
+                    return 999;
+                };
+
+                if (mode === 'name') {
+                    return scoreName(aFullName) - scoreName(bFullName);
+                } else if (mode === 'code') {
+                    return scoreCode(aCode) - scoreCode(bCode);
+                }
+                const aScore = Math.min(scoreCode(aCode), scoreName(aFullName));
+                const bScore = Math.min(scoreCode(bCode), scoreName(bFullName));
+                return aScore - bScore;
             });
         }
 
@@ -2358,13 +2436,97 @@ class InventoryPickerDialog {
         };
         document.addEventListener('keydown', escHandler);
 
-        // Search with debounce
+        // Search with suggestions dropdown
         let searchTimeout;
-        this.modalElement.querySelector('#inventorySearchInput')?.addEventListener('input', (e) => {
+        const searchInput = this.modalElement.querySelector('#inventorySearchInput');
+        const suggestionsDropdown = this.modalElement.querySelector('#searchSuggestionsDropdown');
+        const suggestionItems = this.modalElement.querySelectorAll('.search-suggestion-item');
+        const suggestionTermName = this.modalElement.querySelector('#suggestionTermName');
+        const suggestionTermCode = this.modalElement.querySelector('#suggestionTermCode');
+        let activeSuggestionIndex = 0; // 0 = name (default), 1 = code
+
+        const updateSuggestionHighlight = () => {
+            suggestionItems.forEach((item, i) => {
+                if (i === activeSuggestionIndex) {
+                    item.style.background = '#5b6abf';
+                    item.style.color = 'white';
+                } else {
+                    item.style.background = 'white';
+                    item.style.color = '#333';
+                }
+            });
+        };
+
+        const hideSuggestions = () => {
+            if (suggestionsDropdown) suggestionsDropdown.style.display = 'none';
+        };
+
+        const showSuggestions = (term) => {
+            if (!suggestionsDropdown || term.trim().length === 0) {
+                hideSuggestions();
+                return;
+            }
+            if (suggestionTermName) suggestionTermName.textContent = term;
+            if (suggestionTermCode) suggestionTermCode.textContent = term;
+            activeSuggestionIndex = 0;
+            updateSuggestionHighlight();
+            suggestionsDropdown.style.display = 'block';
+        };
+
+        const executeSearch = (mode) => {
+            const term = searchInput?.value || '';
+            hideSuggestions();
+            this.filterProducts(term, mode);
+        };
+
+        searchInput?.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                this.filterProducts(e.target.value);
-            }, 200);
+            const term = e.target.value;
+            showSuggestions(term);
+            // Don't auto-search while suggestions are showing - wait for selection or Enter
+        });
+
+        searchInput?.addEventListener('keydown', (e) => {
+            if (suggestionsDropdown?.style.display === 'block') {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeSuggestionIndex = Math.min(activeSuggestionIndex + 1, suggestionItems.length - 1);
+                    updateSuggestionHighlight();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeSuggestionIndex = Math.max(activeSuggestionIndex - 1, 0);
+                    updateSuggestionHighlight();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const mode = activeSuggestionIndex === 0 ? 'name' : 'code';
+                    executeSearch(mode);
+                } else if (e.key === 'Escape') {
+                    hideSuggestions();
+                }
+            } else if (e.key === 'Enter') {
+                // If suggestions not visible, default search by name
+                e.preventDefault();
+                executeSearch('name');
+            }
+        });
+
+        // Click on suggestion items
+        suggestionItems.forEach((item, i) => {
+            item.addEventListener('mouseenter', () => {
+                activeSuggestionIndex = i;
+                updateSuggestionHighlight();
+            });
+            item.addEventListener('click', () => {
+                const mode = item.dataset.searchMode;
+                executeSearch(mode);
+            });
+        });
+
+        // Hide suggestions when clicking outside
+        this.modalElement.addEventListener('click', (e) => {
+            if (!e.target.closest('#inventorySearchInput') && !e.target.closest('#searchSuggestionsDropdown')) {
+                hideSuggestions();
+            }
         });
 
         // Select products (using event delegation)
