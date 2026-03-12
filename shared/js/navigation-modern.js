@@ -1654,7 +1654,7 @@ class UnifiedNavigationManager {
                 padding-left: 32px;
             }
         `;
-        document.head.appendChild(style);
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     // =====================================================
@@ -1917,7 +1917,8 @@ class UnifiedNavigationManager {
                 transform: scale(1.05);
             }
         `;
-        document.head.appendChild(style);
+        // Insert at beginning of <head> so page-specific CSS takes priority
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     /**
@@ -2032,7 +2033,7 @@ class UnifiedNavigationManager {
                 padding: 3px 20px 3px 6px;
             }
         `;
-        document.head.appendChild(style);
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     renderDesktopSidebar() {
@@ -2313,7 +2314,7 @@ class UnifiedNavigationManager {
             }
 
         `;
-        document.head.appendChild(style);
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     addSettingsToNavigation(sidebarNav) {
@@ -2351,7 +2352,7 @@ class UnifiedNavigationManager {
                     color: #fbbf24;
                 }
             `;
-            document.head.appendChild(style);
+            document.head.insertBefore(style, document.head.firstChild);
         }
 
         console.log("[Unified Nav] Settings button added");
@@ -2920,7 +2921,7 @@ class UnifiedNavigationManager {
                 background: rgba(99, 102, 241, 0.2) !important;
             }
         `;
-        document.head.appendChild(style);
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     // =====================================================
@@ -3497,7 +3498,7 @@ class UnifiedNavigationManager {
                     color: #00e5ff;
                 }
             `;
-            document.head.appendChild(style);
+            document.head.insertBefore(style, document.head.firstChild);
         }
     }
 
@@ -4873,7 +4874,7 @@ class UnifiedNavigationManager {
                 }
             }
         `;
-        document.head.appendChild(style);
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     showToast(message, type = "success") {
@@ -5090,7 +5091,7 @@ class UnifiedNavigationManager {
                 box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
             }
         `;
-        document.head.appendChild(style);
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     // =====================================================
@@ -5396,7 +5397,7 @@ class UnifiedNavigationManager {
                 }
             }
         `;
-        document.head.appendChild(style);
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     // =====================================================
