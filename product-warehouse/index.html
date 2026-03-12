@@ -1,0 +1,349 @@
+<!--
+  Kho Sản Phẩm - Product Warehouse
+  Trang xem và tìm kiếm sản phẩm trong kho.
+  Tất cả user đều có quyền truy cập.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kho Sản Phẩm - N2STORE</title>
+
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="../shared/css/modern.css">
+    <!-- Module Styles -->
+    <link rel="stylesheet" href="css/warehouse.css">
+
+    <!-- ES Module: Shared utilities -->
+    <script type="module" src="../shared/esm/compat.js"></script>
+    <!-- Navigation Manager -->
+    <script defer src="../shared/js/navigation-modern.js"></script>
+
+    <!-- Lucide Icons CDN -->
+    <script defer src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Configuration (SHARED) -->
+    <script src="../shared/js/firebase-config.js"></script>
+
+    <!-- Token Manager & API Config -->
+    <script src="../shared/js/api-config.js"></script>
+    <script src="../shared/js/token-manager.js"></script>
+
+    <!-- XLSX.js for Excel product suggestion -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Suggestion dropdown styles (same as soluong-live) -->
+    <style>
+        .header-search-box { position: relative; }
+        .search-suggestions {
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 5px;
+        }
+        .search-suggestions.show { display: block; }
+        .suggestion-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #eee;
+        }
+        .suggestion-item:hover { background: #f0f0ff; }
+        .suggestion-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <img src="../shared/images/logo.jpg" alt="N2STORE" class="sidebar-logo-img">
+                <span>N2STORE</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+            <!-- Menu items auto-generated -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-lucide="user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="btn-permissions" id="btnPermissions">
+                <i data-lucide="shield-check"></i>
+                <span>Xem Quyền Của Tôi</span>
+            </button>
+            <button class="btn-logout" id="btnLogout">
+                <i data-lucide="log-out"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="page-header">
+            <div class="page-header-left">
+                <button class="btn-icon mobile-menu-toggle" id="menuToggle">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="page-title-group">
+                    <h1 class="page-title">
+                        <i data-lucide="warehouse"></i>
+                        Sản phẩm
+                    </h1>
+                </div>
+                <div class="header-search-box">
+                    <i data-lucide="search" class="header-search-icon"></i>
+                    <input type="text" id="searchInput" class="header-search-input" placeholder="Nhập mã hoặc tên sản phẩm..." autocomplete="off">
+                    <button class="header-search-btn" id="searchBtn">
+                        <i data-lucide="search"></i>
+                    </button>
+                    <div class="search-suggestions" id="searchSuggestions"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Filter & Toolbar Bar -->
+        <div class="warehouse-toolbar">
+            <div class="toolbar-left">
+                <div class="toolbar-filter-group">
+                    <label class="filter-label">Tồn kho:</label>
+                    <select id="filterStock" class="filter-select filter-select-primary">
+                        <option value="all">Tất cả</option>
+                        <option value="in-stock">Còn hàng</option>
+                        <option value="low-stock">Sắp hết (≤5)</option>
+                        <option value="out-of-stock">Hết hàng</option>
+                    </select>
+                </div>
+                <div class="toolbar-filter-group">
+                    <label class="filter-label">Nhóm SP:</label>
+                    <select id="filterGroup" class="filter-select filter-select-info">
+                        <option value="all">Tất cả</option>
+                    </select>
+                </div>
+                <div class="toolbar-filter-group">
+                    <label class="filter-label">Hiệu lực:</label>
+                    <select id="filterStatus" class="filter-select filter-select-success">
+                        <option value="all">Tất cả</option>
+                        <option value="active">Hiệu lực</option>
+                        <option value="inactive">Hết hiệu lực</option>
+                    </select>
+                </div>
+                <span class="result-count" id="productCount">
+                    <i data-lucide="package"></i>
+                    <strong>0</strong> sản phẩm
+                </span>
+            </div>
+            <div class="toolbar-right">
+                <span class="toolbar-hint">
+                    <i data-lucide="lightbulb"></i>
+                    Gõ để tìm kiếm nhanh
+                </span>
+                <button class="btn-toolbar btn-reload" id="refreshButton" title="Tải lại dữ liệu">
+                    <i data-lucide="refresh-cw"></i>
+                    Tải lại
+                </button>
+                <button class="btn-toolbar btn-column-settings" id="btnColumnSettings" title="Cài đặt cột hiển thị">
+                    <i data-lucide="columns"></i>
+                    Cài đặt cột
+                </button>
+            </div>
+        </div>
+
+        <!-- Product Table -->
+        <div class="warehouse-table-wrapper">
+            <table class="warehouse-table" id="productTable">
+                <thead>
+                    <tr>
+                        <th class="col-checkbox col-sticky-left">
+                            <input type="checkbox" id="selectAll" title="Chọn tất cả">
+                        </th>
+                        <th class="col-actions">Thao tác</th>
+                        <th class="col-image">Ảnh</th>
+                        <th class="col-code sortable" data-sort="code" data-col="code">
+                            <div class="th-content">
+                                <span>Mã</span>
+                                <i data-lucide="filter" class="th-filter-icon"></i>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                            <input type="text" class="th-filter-input" data-filter="code" placeholder="Lọc mã...">
+                        </th>
+                        <th class="col-name sortable" data-sort="name" data-col="name">
+                            <div class="th-content">
+                                <span>Tên</span>
+                                <i data-lucide="filter" class="th-filter-icon"></i>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                            <input type="text" class="th-filter-input" data-filter="name" placeholder="Lọc tên...">
+                        </th>
+                        <th class="col-group sortable" data-sort="group" data-col="group">
+                            <div class="th-content">
+                                <span>Nhóm sản phẩm</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-price sortable" data-sort="price" data-col="price">
+                            <div class="th-content">
+                                <span>Giá bán</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-cost sortable" data-sort="defaultBuyPrice" data-col="defaultBuyPrice">
+                            <div class="th-content">
+                                <span>Giá mua mặc định</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-cost sortable" data-sort="costPrice" data-col="costPrice">
+                            <div class="th-content">
+                                <span>Giá vốn</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-qty sortable" data-sort="qtyActual" data-col="qtyActual">
+                            <div class="th-content">
+                                <span>Số lượng thực tế</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-qty sortable" data-sort="qtyForecast" data-col="qtyForecast">
+                            <div class="th-content">
+                                <span>Số lượng dự báo</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-unit" data-col="unit">
+                            <div class="th-content"><span>Đơn vị</span></div>
+                        </th>
+                        <th class="col-label" data-col="label">
+                            <div class="th-content"><span>Nhãn</span></div>
+                        </th>
+                        <th class="col-status sortable" data-sort="active" data-col="active">
+                            <div class="th-content">
+                                <span>Hiệu lực</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-company" data-col="allCompany">
+                            <div class="th-content"><span>All company</span></div>
+                        </th>
+                        <th class="col-note" data-col="note">
+                            <div class="th-content"><span>Ghi chú</span></div>
+                        </th>
+                        <th class="col-date sortable" data-sort="createdAt" data-col="createdAt">
+                            <div class="th-content">
+                                <span>Ngày tạo</span>
+                                <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+                            </div>
+                        </th>
+                        <th class="col-company-name" data-col="company">
+                            <div class="th-content"><span>Công ty</span></div>
+                        </th>
+                        <th class="col-creator" data-col="creator">
+                            <div class="th-content"><span>Người tạo</span></div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody">
+                    <!-- Products rendered by JS -->
+                </tbody>
+            </table>
+
+            <!-- Loading State -->
+            <div class="loading-state" id="loadingState">
+                <div class="loading-spinner"></div>
+                <span>Đang tải dữ liệu...</span>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state hidden" id="emptyState">
+                <i data-lucide="package-x"></i>
+                <h3>Không tìm thấy sản phẩm</h3>
+                <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="warehouse-pagination" id="pagination">
+            <div class="pagination-info">
+                <span id="paginationInfo">Hiển thị 0 - 0 / 0 sản phẩm</span>
+            </div>
+            <div class="pagination-controls">
+                <button class="btn-page" id="btnPrevPage" disabled>
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="btn-page" id="btnNextPage" disabled>
+                    <i data-lucide="chevron-right"></i>
+                </button>
+            </div>
+            <div class="pagination-size">
+                <select id="pageSize" class="filter-select">
+                    <option value="20">20 / trang</option>
+                    <option value="50" selected>50 / trang</option>
+                    <option value="100">100 / trang</option>
+                </select>
+            </div>
+        </div>
+    </main>
+
+    <!-- Column Settings Modal -->
+    <div class="column-settings-modal" id="columnSettingsModal">
+        <div class="column-settings-modal-content">
+            <div class="column-settings-modal-header">
+                <h3><i data-lucide="columns"></i> Cài đặt cột hiển thị</h3>
+                <button class="column-settings-modal-close" id="closeColumnSettings">&times;</button>
+            </div>
+            <div class="column-settings-modal-body">
+                <div class="column-settings-list" id="columnSettingsList">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+            <div class="column-settings-modal-footer">
+                <button class="column-settings-btn column-settings-btn-reset" id="resetColumns">
+                    <i data-lucide="rotate-ccw"></i> Mặc định
+                </button>
+                <div class="column-settings-btn-group">
+                    <button class="column-settings-btn column-settings-btn-cancel" id="cancelColumnSettings">Hủy</button>
+                    <button class="column-settings-btn column-settings-btn-save" id="saveColumnSettings">
+                        <i data-lucide="check"></i> Lưu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+</body>
+</html>

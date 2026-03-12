@@ -12,8 +12,8 @@
     <title>Thống kê KPI - Watermark Method</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="tab1-orders.css">
-    <link rel="stylesheet" href="report-modern.css">
+    <link rel="stylesheet" href="css/tab1-orders.css">
+    <link rel="stylesheet" href="css/report-modern.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
@@ -548,23 +548,50 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <!-- Firebase Configuration (SHARED) -->
+    <script src="../shared/js/firebase-config.js"></script>
+    <script src="../shared/js/indexed-db-store.js"></script>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Config & Auth -->
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script src="token-manager.js"></script>
-    <script src="api-config.js"></script>
-    <!-- KPI Manager -->
-    <script src="kpi-manager.js"></script>
+    <!-- Config -->
+    <script src="js/core/config.js"></script>
+
+    <!-- ES Module: Shared utilities (auto-initializes authManager) -->
+    <script type="module" src="../shared/esm/compat.js"></script>
+
+    <!-- Fallback for file:// protocol -->
+    <script>
+        if (window.location.protocol === 'file:') {
+            document.write('<script src="../shared/js/shared-auth-manager.js"><\/script>');
+            document.write('<script>window.authManager=new AuthManager({redirectUrl:"../index.html",sessionDuration:8*60*60*1000,rememberDuration:30*24*60*60*1000});<\/script>');
+        }
+    </script>
 
     <script>
-        // Initialize Firebase
-        if (!firebase.apps.length) {
+        // Auth helper functions (authManager is auto-initialized by compat.js)
+        function getAuthState() { return window.authManager?.getAuthData(); }
+        function isAuthenticated() { return window.authManager?.isAuthenticated(); }
+        function hasPermission(level) { return window.authManager?.hasPermission(level); }
+        function getUserName() {
+            const auth = getAuthState();
+            return auth?.userType ? auth.userType.split('-')[0] : 'Admin';
+        }
+    </script>
+    <script src="../shared/js/shop-config.js"></script>
+    <script src="../shared/js/token-manager.js"></script>
+    <script src="js/core/api-config.js"></script>
+    <!-- KPI Manager -->
+    <script src="js/managers/kpi-manager.js"></script>
+
+    <script>
+        // Firebase is initialized by shared/js/firebase-config.js
+        // Use firebaseConfig from shared config
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
 

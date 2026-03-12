@@ -13,14 +13,10 @@ echo "================================================"
 MODULES=(
     "bangkiemhang"
     "ck"
-    "hangdat"
     "hanghoan"
     "hangrotxa"
     "ib"
-    "lichsuchinhsua"
-    "livestream"
     "nhanhang"
-    "sanphamlive"
     "tpos-import"
     "tpos-manager"
     "user-management"
@@ -54,7 +50,7 @@ for module in "${MODULES[@]}"; do
     cp "$HTML_FILE" "$HTML_FILE.bak"
 
     # Use sed to insert core-loader before first <script> tag
-    sed -i '0,/<script/s|<script|<!-- N2Store Optimization: Core Utilities Loader -->\n        <script src="../js/core-loader.js"></script>\n\n        <script|' "$HTML_FILE"
+    sed -i '0,/<script/s|<script|<!-- N2Store Optimization: Core Utilities Loader -->\n        <script src="../shared/js/core-loader.js"></script>\n\n        <script|' "$HTML_FILE"
 
     if [ $? -eq 0 ]; then
         echo "  ✅ Added: $module"

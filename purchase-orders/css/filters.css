@@ -1,0 +1,235 @@
+/**
+ * FILTER BAR
+ * File: filters.css
+ * Purpose: Filter bar component styles (matching React app design)
+ */
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-soft);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group--search {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group--date {
+    min-width: 140px;
+}
+
+.filter-group--select {
+    min-width: 150px;
+}
+
+.filter-group--actions {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-left: auto;
+}
+
+.filter-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Input and Select base styles */
+.filter-input,
+.filter-select {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-card);
+    color: var(--color-text-primary);
+    transition: all var(--transition-fast);
+}
+
+.filter-input:hover,
+.filter-select:hover {
+    border-color: var(--color-text-muted);
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px hsl(217 91% 60% / 0.15);
+}
+
+.filter-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Select styling */
+.filter-select {
+    appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    cursor: pointer;
+}
+
+/* Input with icon */
+.input-icon {
+    position: relative;
+}
+
+.input-icon svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+.input-icon .filter-input {
+    padding-left: 38px;
+}
+
+/* Date range picker */
+.date-range {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.date-range__separator {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.date-range .filter-input {
+    width: 140px;
+}
+
+/* Quick filter buttons */
+.quick-filters {
+    display: flex;
+    gap: 4px;
+}
+
+.quick-filter-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: var(--color-muted);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.quick-filter-btn:hover {
+    background: var(--color-border);
+    color: var(--color-text-primary);
+}
+
+.quick-filter-btn.active {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+}
+
+/* Filter actions */
+.filter-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Export buttons */
+.export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.export-btn:hover {
+    background: var(--color-muted);
+    border-color: var(--color-text-muted);
+}
+
+.export-btn svg {
+    width: 16px;
+    height: 16px;
+    color: var(--color-success);
+}
+
+.export-btn--success {
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.export-btn--success:hover {
+    background: var(--color-success-light);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group--search {
+        min-width: 100%;
+    }
+
+    .filter-group--actions {
+        margin-left: 0;
+        justify-content: space-between;
+    }
+
+    .date-range {
+        flex-wrap: wrap;
+    }
+
+    .date-range .filter-input {
+        width: 100%;
+        flex: 1;
+    }
+
+    .quick-filters {
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+}

@@ -1,0 +1,187 @@
+/**
+ * SUMMARY CARDS
+ * File: cards.css
+ * Purpose: Summary card component styles (matching React app design)
+ */
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .summary-cards {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.summary-card {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    background: var(--gradient-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-soft);
+    transition: all var(--transition-normal);
+}
+
+.summary-card:hover {
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-2px);
+}
+
+.summary-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+
+.summary-card__title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (min-width: 768px) {
+    .summary-card__title {
+        font-size: 14px;
+    }
+}
+
+.summary-card__icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.summary-card__icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+@media (min-width: 768px) {
+    .summary-card__icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .summary-card__icon svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.summary-card__content {
+    flex: 1;
+}
+
+.summary-card__value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+}
+
+@media (min-width: 768px) {
+    .summary-card__value {
+        font-size: 28px;
+    }
+}
+
+.summary-card__subtitle {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+/* Card variants */
+.summary-card--success .summary-card__icon {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.summary-card--warning .summary-card__icon {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
+.summary-card--info .summary-card__icon {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+/* Sync status card */
+.summary-card--sync .summary-card__value {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-xs);
+}
+
+.summary-card--sync .sync-ratio {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.summary-card--sync .sync-percent {
+    font-size: 12px;
+    padding: 2px 6px;
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
+
+/* Skeleton loading */
+.summary-card--skeleton {
+    pointer-events: none;
+}
+
+.summary-card--skeleton .skeleton {
+    background: linear-gradient(90deg,
+        var(--color-muted) 25%,
+        var(--color-border-light) 50%,
+        var(--color-muted) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+}
+
+.summary-card--skeleton .skeleton-title {
+    width: 60%;
+    height: 14px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.summary-card--skeleton .skeleton-value {
+    width: 80%;
+    height: 28px;
+}
+
+.summary-card--skeleton .skeleton-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

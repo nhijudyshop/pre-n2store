@@ -9,12 +9,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Báo cáo bán hàng - N2Shop</title>
-
+    <title>Báo cáo bán hàng - N2STORE</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="firebase-helpers.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Configuration (SHARED) -->
+    <script src="../shared/js/firebase-config.js"></script>
+    <script src="../shared/js/indexed-db-store.js"></script>
+
+    <!-- ES Module: Shared utilities (auto-initializes authManager, notificationManager, cache) -->
+    <script type="module" src="../shared/esm/compat.js"></script>
+
+    <!-- Fallback for file:// protocol (ES modules don't work locally) -->
+    <script>
+        if (window.location.protocol === 'file:') {
+            document.write('<script src="../shared/js/shared-auth-manager.js"><\/script>');
+        }
+    </script>
+
+    <script type="module" src="firebase-helpers-global.js"></script>
+
+    <script defer src="../shared/js/navigation-modern.js"></script>
 
     <style>
         * {
@@ -395,18 +412,8 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyA-legWlCgjMDEy70rsaTTwLK39F4ZCKhM",
-            authDomain: "n2shop-69e37.firebaseapp.com",
-            databaseURL: "https://n2shop-69e37-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "n2shop-69e37",
-            storageBucket: "n2shop-69e37-ne0q1",
-            messagingSenderId: "598906493303",
-            appId: "1:598906493303:web:46d6236a1fdc2eff33e972",
-            measurementId: "G-TEJH3S2T1D"
-        };
-
-        firebase.initializeApp(firebaseConfig);
+        // Firebase Configuration - use shared config (loaded via shared/js/firebase-config.js)
+        // Firebase is auto-initialized by shared config
         const database = firebase.database();
 
         let allLogs = [];
@@ -617,5 +624,6 @@
         // Load report on page load
         loadReport();
     </script>
+    <!-- Note: notification-system.js is loaded by compat.js ES Module -->
 </body>
 </html>

@@ -1326,7 +1326,7 @@ FOR EACH ROW EXECUTE FUNCTION update_customer_stats_on_ticket();
 │  ├── Update orders-report: Link SĐT → Customer Hub                          │
 │  ├── Update balance-history: Link SĐT → Customer Hub                        │
 │  ├── Deprecate issue-tracking (redirect to customer-hub)                    │
-│  ├── Delete customer-management folder                                      │
+│  ├── ✅ DONE: customer-management folder deleted (replaced by customer-hub) │
 │  ├── Update navigation menu                                                 │
 │  └── Documentation & training                                               │
 │                                                                             │

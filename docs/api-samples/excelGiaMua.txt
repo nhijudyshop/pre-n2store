@@ -1,0 +1,13 @@
+fetch("https://tomato.tpos.vn/Product/ExportFileWithStandardPriceV2", {
+  "headers": {
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6InRtdFdlYkFwcCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYWU1YzcwYTEtODk4Yy00ZTlmLWIyNDgtYWNjMTBiNzAzNmJjIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Im52a3QiLCJEaXNwbGF5TmFtZSI6Im52a3QiLCJBdmF0YXJVcmwiOiIiLCJTZWN1cml0eVN0YW1wIjoiMmY0ZDgyZGUtYjkyMy00ZTIwLWFjNGUtNTc0YWQ3N2NmZDliIiwiQ29tcGFueUlkIjoiMSIsIlRlbmFudElkIjoidG9tYXRvLnRwb3Mudm4iLCJSb2xlSWRzIjoiNzMxNTQzNTgtZDUwYi00MDllLTk5ZmQtYTk4NDAxM2I0ZWE1LDc2MzlhMDQ4LTdjZmUtNDBiNS1hNDFkLWFlM2YwMDNiODlkZixiMmE1Mjc5ZC0zZjZkLTQ4MzQtOThmZS1hZTNmMDAzYjk5OGMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOlsiQWRtaW5pc3RyYXRvcnMiLCJDU0tIIC0gTMOgaSIsIlNBTEUiXSwianRpIjoiOThhNTNhZGEtNzY0MS00YjA4LTk0NzUtMDgwMDY0ODQwNjY0IiwiaWF0IjoiMTc3MTY0MjU4NSIsIm5iZiI6MTc3MTY0MjU4NSwiZXhwIjoxNzcyOTM4NTg1LCJpc3MiOiJodHRwczovL3RvbWF0by50cG9zLnZuIiwiYXVkIjoiaHR0cHM6Ly90b21hdG8udHBvcy52bixodHRwczovL3Rwb3Mudm4ifQ.9m3LB5Xby2lW2iy4Xb8iclFkVdhXiTIKknzECeq_pik",
+    "content-type": "application/json",
+    "feature-version": "2",
+    "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"macOS\"",
+    "Referer": "https://tomato.tpos.vn/"
+  },
+  "body": "{\"model\":{\"Active\":\"true\"},\"ids\":\"\"}",
+  "method": "POST"
+});

@@ -1,0 +1,275 @@
+/**
+ * BUTTONS
+ * File: buttons.css
+ * Purpose: Button component styles (matching shadcn/ui design)
+ */
+
+/* Base button */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: 10px var(--spacing-md);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Primary - gradient style */
+.btn-primary {
+    background: var(--gradient-primary);
+    color: var(--color-primary-foreground);
+    border-color: transparent;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Secondary */
+.btn-secondary {
+    background: var(--color-muted);
+    color: var(--color-text-primary);
+    border-color: transparent;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--color-border);
+}
+
+/* Outline */
+.btn-outline {
+    background: var(--color-bg-card);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+.btn-outline:hover:not(:disabled) {
+    background: var(--color-muted);
+    border-color: var(--color-border);
+}
+
+/* Ghost - no border */
+.btn-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background: var(--color-muted);
+    color: var(--color-text-primary);
+}
+
+/* Destructive/Danger */
+.btn-danger {
+    background: var(--color-danger);
+    color: var(--color-danger-foreground);
+    border-color: transparent;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: hsl(0, 84%, 55%);
+}
+
+/* Success */
+.btn-success {
+    background: var(--gradient-success);
+    color: var(--color-success-foreground);
+    border-color: transparent;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: hsl(142, 76%, 32%);
+}
+
+/* Link style */
+.btn-link {
+    background: transparent;
+    color: var(--color-primary);
+    border-color: transparent;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.btn-link:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+/* Sizes */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+}
+
+.btn-sm svg {
+    width: 14px;
+    height: 14px;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: var(--radius-lg);
+}
+
+.btn-lg svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Icon only button */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-icon:hover:not(:disabled) {
+    background: var(--color-muted);
+    color: var(--color-text-primary);
+}
+
+.btn-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.btn-icon.btn-sm {
+    width: 28px;
+    height: 28px;
+}
+
+.btn-icon.btn-sm svg {
+    width: 14px;
+    height: 14px;
+}
+
+.btn-icon.btn-lg {
+    width: 44px;
+    height: 44px;
+}
+
+.btn-icon.btn-lg svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Icon button variants */
+.btn-icon.btn-primary {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+    border-color: transparent;
+}
+
+.btn-icon.btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+.btn-icon.btn-ghost {
+    background: transparent;
+    border-color: transparent;
+}
+
+.btn-icon.btn-ghost:hover:not(:disabled) {
+    background: var(--color-muted);
+}
+
+.btn-icon.btn-danger {
+    background: transparent;
+    color: var(--color-danger);
+    border-color: transparent;
+}
+
+.btn-icon.btn-danger:hover:not(:disabled) {
+    background: var(--color-danger-light);
+}
+
+/* Button group */
+.btn-group {
+    display: inline-flex;
+    gap: 1px;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: var(--radius-md);
+    border-bottom-left-radius: var(--radius-md);
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+}
+
+/* Loading state */
+.btn--loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+}
+
+.btn--loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: btn-spin 0.6s linear infinite;
+}
+
+.btn-primary.btn--loading::after {
+    border-color: var(--color-primary-foreground);
+    border-right-color: transparent;
+}
+
+@keyframes btn-spin {
+    to { transform: rotate(360deg); }
+}

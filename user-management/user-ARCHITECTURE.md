@@ -150,9 +150,8 @@ User có array `pagePermissions` chứa danh sách pages được truy cập.
 | | `tpos-pancake` | Tpos - Pancake | |
 | **Admin** | `user-management` | Quản Lý Tài Khoản | ✅ |
 | | `balance-history` | Lịch Sử Số Dư | ✅ |
-| | `customer-management` | Quản Lý Khách Hàng | ✅ |
+| | `customer-hub` | Customer 360 | ✅ |
 | | `invoice-compare` | So Sánh Đơn Hàng | ✅ |
-| | `lichsuchinhsua` | Lịch Sử Chỉnh Sửa | ✅ |
 
 ---
 

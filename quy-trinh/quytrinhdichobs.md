@@ -1,0 +1,5 @@
+Quy Trình Đi chợ _ Dung
+- Sau khi kết thúc live hàng trên live sẽ được đưa xuống đi chợ, Hàng sẽ đc sắp xếp theo những con số và thứ tự tương ứng (của tên khách) vào những số đã đc có sẵn trong bill và số lượng tên và các món trong bill đã đc có sẵn.
+- Trong lúc đi chợ khi các bạn ra đơn sẽ đi lại tên và số thứ tự tên sản phẩm số lượng món giống với bill và tên khách hàng, còn trong trường hợp khi bill thiếu hàng trong bill sẽ đc giữ lại kiểm tra sau, (hoặc tìm gặp sản phẩm). còn nếu trường hợp ko tìm đc sản phẩm vấn đề khác thì sẽ trực tiếp đưa lại phiếu đặt hàng cho mấy bạn.
+- Trong quá trình đi chợ trong bill (hoặc đơn hàng có thiếu hàng oder ) sẽ đc giữ lại bill Khi hàng về đi đủ sản phẩm sẽ tiếp tục đi lại,
+- Còn trong trường hợp bill khách qua lấy sẽ đc giữ lại , và để vào chỗ hoặc nơi có sẵn đã có tên bill khi khách qua lấy. (còn trường hợp phiếu đặt hàng cho Live thì sẽ giữ lại và gộp, khi mấy bạn làm đơn gộp vào live sau. trường hợp hàng chưa về kịp sẽ đi chợ vào bao và kiểm tra sản phẩm số lượng tên sản phẩm và tên khách hàng

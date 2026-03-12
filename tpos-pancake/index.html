@@ -13,21 +13,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- External CSS (v=20241220 for cache busting) -->
-    <link rel="stylesheet" href="modern.css?v=20241220" />
-    <link rel="stylesheet" href="pancake-chat.css?v=20241220" />
-    <link rel="stylesheet" href="tpos-chat.css?v=20241220" />
+    <link rel="stylesheet" href="css/modern.css?v=20241220" />
+    <link rel="stylesheet" href="css/pancake-chat.css?v=20241220" />
+    <link rel="stylesheet" href="css/tpos-chat.css?v=20241220" />
 
     <!-- Lucide Icons -->
     <!-- N2Store Optimization: Core Utilities Loader -->
-    <script src="../js/core-loader.js"></script>
+    <!-- ES Module: Shared utilities -->
+        <script type="module" src="../shared/esm/compat.js"></script>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+        <!-- Fallback for file:// protocol -->
+        <script>
+            if (window.location.protocol === 'file:') {
+                document.write('<script src="../shared/js/shared-auth-manager.js"><\/script>');
+                document.write('<script>if(typeof AuthManager!=="undefined")window.authManager=new AuthManager({redirectUrl:"../index.html"});<\/script>');
+            }
+        </script>
+
+    <!-- Storage Migration -->
+    <script src="../shared/js/storage-migration.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.StorageMigration) {
+                window.StorageMigration.migrateModuleStorage('tpos');
+            }
+        });
+    </script>
+
+    <script defer src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 </head>
 
 <body>
@@ -35,8 +54,8 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <i data-lucide="zap"></i>
-                <span>N2Shop</span>
+                <img src="../shared/images/logo.jpg" alt="N2STORE" class="sidebar-logo-img">
+                <span>N2STORE</span>
             </div>
             <button class="sidebar-toggle" id="sidebarToggle">
                 <i data-lucide="panel-left-close"></i>
@@ -400,29 +419,42 @@
 
     <!-- Scripts -->
     <!-- Scripts (v=20241219 for cache busting - ensures timezone fix is loaded) -->
-    <script src="auth.js?v=20241219"></script>
-    <script src="config.js?v=20241219"></script>
-    <script src="cache.js?v=20241219"></script>
-    <script src="script.js?v=20241219"></script>
-    <script src="../js/navigation-modern.js?v=20241219"></script>
-    <script src="notification-system.js?v=20241219"></script>
+    <script src="../shared/js/shared-auth-manager.js?v=20241219"></script>
+    <script>
+        // Initialize authManager immediately after AuthManager class is loaded
+        if (typeof AuthManager !== 'undefined' && !window.authManager) {
+            window.authManager = new AuthManager({
+                redirectUrl: '../index.html',
+                sessionDuration: 8 * 60 * 60 * 1000,
+                rememberDuration: 30 * 24 * 60 * 60 * 1000
+            });
+        }
+    </script>
+    <script src="../shared/js/firebase-config.js?v=20241219"></script>
+    <script src="js/config.js?v=20241219"></script>
+    <script src="../shared/js/shared-cache-manager.js?v=20241219"></script>
+    <script src="../shared/js/notification-system.js?v=20241219"></script>
+    <script src="js/script.js?v=20241219"></script>
+    <script defer src="../shared/js/navigation-modern.js?v=20241219"></script>
 
-    <!-- API Config & Pancake Managers (v=20241219 for cache busting) -->
-    <script src="api-config.js?v=20241219"></script>
-    <script src="pancake-token-manager.js?v=20241219"></script>
-    <script src="pancake-data-manager.js?v=20241219"></script>
+    <!-- Shop Config (must load before token managers) -->
+    <script src="../shared/js/shop-config.js"></script>
+    <!-- Shared Pancake modules -->
+    <script src="../shared/js/api-config.js"></script>
+    <script src="js/pancake-token-manager.js"></script>
+    <script src="../shared/js/pancake-data-manager.js"></script>
     <!-- Pancake Chat UI Manager -->
-    <script src="pancake-chat.js?v=20250108"></script>
+    <script src="js/pancake-chat.js?v=20250108"></script>
 
     <!-- Realtime WebSocket Manager (Server Mode) -->
-    <script src="realtime-manager.js?v=20241220"></script>
+    <script src="js/realtime-manager.js?v=20241220"></script>
 
     <!-- TPOS Token Manager -->
-    <script src="tpos-token-manager.js?v=20241220"></script>
+    <script src="js/tpos-token-manager.js?v=20241220"></script>
     <!-- TPOS Realtime Manager (connects to render.com for WebSocket events) -->
-    <script src="tpos-realtime-manager.js?v=20250107"></script>
+    <script src="js/tpos-realtime-manager.js?v=20250107"></script>
     <!-- TPOS Chat UI Manager -->
-    <script src="tpos-chat.js?v=20250111"></script>
+    <script src="js/tpos-chat.js?v=20250111"></script>
 
     <script>
         // =====================================================

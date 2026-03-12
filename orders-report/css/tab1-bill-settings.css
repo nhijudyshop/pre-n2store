@@ -1,0 +1,63 @@
+/* ==============================================
+   Tab1 Bill Settings CSS
+   Extracted from tab1-orders.html
+   - Bill settings tabs
+   - Bill toggle items
+   - Bill settings groups
+   ============================================== */
+
+.bill-settings-tab {
+    padding: 8px 14px;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.2s;
+    font-size: 13px;
+}
+
+.bill-settings-tab:hover {
+    background: #e5e7eb;
+}
+
+.bill-settings-tab.active {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.bill-settings-group {
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.bill-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: #f9fafb;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.bill-toggle-item:hover {
+    background: #f3f4f6;
+}
+
+.bill-toggle-item input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.bill-toggle-item i {
+    margin-right: 6px;
+    color: #6b7280;
+    width: 14px;
+}

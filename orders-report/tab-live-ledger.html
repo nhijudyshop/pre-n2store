@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sổ Sách - Live Order Tracking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/tab-live-ledger.css">
+</head>
+<body>
+    <div class="ledger-container">
+        <!-- Header / Filters -->
+        <div class="ledger-header">
+            <h2><i class="fas fa-book-open"></i> Sổ Sách Live</h2>
+
+            <div class="filter-group">
+                <label>Đợt live:</label>
+                <select id="campaignFilter" onchange="onCampaignChange()">
+                    <option value="">-- Chọn đợt live --</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Ngày:</label>
+                <input type="date" id="dateFilter" onchange="onDateChange()">
+            </div>
+
+            <div class="filter-group">
+                <label>NCC:</label>
+                <select id="nccFilter" onchange="onNccChange()">
+                    <option value="">Tất cả NCC</option>
+                </select>
+            </div>
+
+            <button class="btn-refresh" id="btnRefresh" onclick="refreshOrderData()">
+                <i class="fas fa-sync-alt"></i> Refresh đơn hàng
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="ledger-table-wrapper">
+            <div id="ledgerContent">
+                <div class="ledger-empty">
+                    <i class="fas fa-book-open"></i>
+                    <p>Chọn đợt live để xem sổ sách</p>
+                    <p style="font-size: 12px;">Dữ liệu sẽ đồng bộ từ Quản lý Order và đơn hàng TPOS</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="../shared/js/firebase-config.js"></script>
+    <script src="../shared/js/indexed-db-store.js"></script>
+    <script src="js/tab-live-ledger.js"></script>
+</body>
+</html>

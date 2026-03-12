@@ -154,17 +154,8 @@ class CacheManager {
 // MAIN LOGIN SYSTEM
 // =====================================================
 document.addEventListener("DOMContentLoaded", function () {
-    const firebaseConfig = {
-        apiKey: "AIzaSyA-legWlCgjMDEy70rsaTTwLK39F4ZCKhM",
-        authDomain: "n2shop-69e37.firebaseapp.com",
-        projectId: "n2shop-69e37",
-        storageBucket: "n2shop-69e37-ne0q1",
-        messagingSenderId: "598906493303",
-        appId: "1:598906493303:web:46d6236a1fdc2eff33e972",
-        measurementId: "G-TEJH3S2T1D",
-    };
-
-    const app = firebase.initializeApp(firebaseConfig);
+    // Firebase Configuration - use shared config (loaded via shared/js/firebase-config.js)
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
     const db = firebase.firestore();
     const auth = firebase.auth();
 
@@ -272,35 +263,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("Created new Firebase Auth session");
             }
 
-            // Update auth_users collection
-            try {
-                const authUserRef = db
-                    .collection("auth_users")
-                    .doc(authResult.user.uid);
-                const authUserDoc = await authUserRef.get();
-
-                if (!authUserDoc.exists) {
-                    await authUserRef.set({
-                        username: username,
-                        loginTime:
-                            firebase.firestore.FieldValue.serverTimestamp(),
-                        lastLogin:
-                            firebase.firestore.FieldValue.serverTimestamp(),
-                        rememberMe: rememberMe,
-                    });
-                    console.log("New auth mapping created");
-                } else {
-                    await authUserRef.update({
-                        lastLogin:
-                            firebase.firestore.FieldValue.serverTimestamp(),
-                        rememberMe: rememberMe,
-                    });
-                    console.log("Auth mapping updated");
-                }
-            } catch (error) {
-                console.log("Auth mapping error:", error);
-            }
-
             console.log("Firebase Auth successful:", authResult.user.uid);
 
             // Save session with cache
@@ -308,10 +270,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 username,
                 {
                     displayName: userData.displayName,
-                    checkLogin: userData.checkLogin,
+                    checkLogin: userData.checkLogin ?? userData.roleTemplate ?? 'user', // Support both old and new system
                     password: password,
                     uid: authResult.user.uid,
                     userId: userData.userId || null, // 🆕 Pass existing userId if available
+                    roleTemplate: userData.roleTemplate || null, // 🆕 New permission system
                 },
                 rememberMe,
             );
@@ -382,6 +345,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Load detailed permissions and roleTemplate (NEW SYSTEM)
             let detailedPermissions = {};
             let roleTemplate = 'custom';
+            let isAdminFlag = false;
 
             const cachedPermissions = authCache.get(
                 `${username}_detailed_permissions`,
@@ -392,6 +356,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("✔ Sử dụng detailedPermissions từ cache");
                 detailedPermissions = cachedPermissions.detailedPermissions || {};
                 roleTemplate = cachedPermissions.roleTemplate || 'custom';
+                isAdminFlag = cachedPermissions.isAdmin === true || roleTemplate === 'admin';
             } else {
                 console.log("⚡ Fetching detailedPermissions từ Firestore");
                 try {
@@ -402,11 +367,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         const userData = userDoc.data();
                         detailedPermissions = userData.detailedPermissions || {};
                         roleTemplate = userData.roleTemplate || 'custom';
+                        isAdminFlag = userData.isAdmin === true || roleTemplate === 'admin'; // backward compatible
 
                         // Cache permissions
                         authCache.set(
                             `${username}_detailed_permissions`,
-                            { detailedPermissions, roleTemplate },
+                            { detailedPermissions, roleTemplate, isAdmin: isAdminFlag },
                             "permissions",
                         );
                         console.log(
@@ -451,7 +417,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const authData = {
                 isLoggedIn: "true",
                 userType: `${username}-${userInfo.password}`,
-                checkLogin: userInfo.checkLogin.toString(), // Kept for backward display only
+                checkLogin: (userInfo.checkLogin || roleTemplate || 'user').toString(), // Kept for backward display only
                 timestamp: now,
                 expiresAt: now + duration,
                 lastActivity: now,
@@ -463,6 +429,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 // NEW PERMISSION SYSTEM - Only detailedPermissions
                 detailedPermissions: detailedPermissions,
                 roleTemplate: roleTemplate,
+                isAdmin: isAdminFlag,  // NEW: Admin flag for bypass
                 isRemembered: rememberMe,
             };
 
@@ -478,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
                 localStorage.setItem(
                     "checkLogin",
-                    userInfo.checkLogin.toString(),
+                    (userInfo.checkLogin || roleTemplate || 'user').toString(),
                 );
                 sessionStorage.removeItem("loginindex_auth");
 
@@ -736,7 +703,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function redirectToMainApp() {
         sessionStorage.setItem("justLoggedIn", "true");
         const timestamp = Date.now();
-        window.location.href = `./live/index.html?t=${timestamp}`;
+        window.location.href = `./quy-trinh/index.html?t=${timestamp}`;
     }
 
     // Setup event listeners

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html class="light" lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,96 +11,164 @@
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Material Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script defer src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
     <!-- Tailwind CSS -->
     <link href="./styles/tailwind.css" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/css/modern.css">
+
+    <!-- ES Module: Shared utilities (auto-initializes authManager, notificationManager) -->
+    <script type="module" src="../shared/esm/compat.js"></script>
+
+    <!-- Fallback for file:// protocol (ES modules don't work locally) -->
+    <script>
+        if (window.location.protocol === 'file:') {
+            document.write('<script src="../shared/js/shared-auth-manager.js"><\/script>');
+            document.write('<script>if(typeof AuthManager!=="undefined")window.authManager=new AuthManager({redirectUrl:"../index.html"});<\/script>');
+        }
+    </script>
+
+    <!-- Firebase SDK for menu layout sync -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="../shared/js/firebase-config.js"></script>
+    <!-- Shop Config + Token Manager for TPOS auth -->
+    <script src="../shared/js/shop-config.js"></script>
+    <script src="../shared/js/token-manager.js"></script>
+    <!-- Navigation (deferred) -->
+    <script defer src="../shared/js/navigation-modern.js"></script>
     <style>
         /* Custom scrollbar for table container */
         .custom-scrollbar::-webkit-scrollbar {
             height: 8px;
             width: 8px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-track {
             background: transparent;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background-color: #cbd5e1;
             border-radius: 20px;
         }
+
         .dark .custom-scrollbar::-webkit-scrollbar-thumb {
             background-color: #475569;
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
-    <!-- Top Navigation Bar -->
-    <header class="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark sticky top-0 z-50">
-        <div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
-            <!-- Logo Area -->
-            <div class="flex items-center gap-3">
-                <div class="bg-primary/10 p-2 rounded-lg text-primary">
-                    <span class="material-symbols-outlined text-2xl">hub</span>
-                </div>
-                <h1 class="font-bold text-xl tracking-tight">Customer 360 Hub</h1>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <img src="../shared/images/logo.jpg" alt="N2STORE" class="sidebar-logo-img">
+                <span>N2STORE</span>
             </div>
-            <!-- Global Actions -->
-            <div class="flex items-center gap-3">
-                <button id="theme-toggle" class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <span class="material-symbols-outlined text-[20px]" id="theme-icon">dark_mode</span>
-                </button>
-                <button class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <span class="material-symbols-outlined text-[20px]">notifications</span>
-                </button>
-                <button class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <span class="material-symbols-outlined text-[20px]">settings</span>
-                </button>
-                <div class="h-8 w-px bg-border-light dark:bg-border-dark mx-1"></div>
-                <div class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 py-1.5 px-3 rounded-full transition-colors">
-                    <div class="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center overflow-hidden">
-                        <span class="material-symbols-outlined text-slate-500 dark:text-slate-300 text-[20px]">person</span>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebarNav">
+            <!-- Menu items auto-generated -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-lucide="user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role">Quản trị viên</div>
+                </div>
+            </div>
+            <button class="btn-permissions" id="btnPermissions">
+                <i data-lucide="shield-check"></i>
+                <span>Xem Quyền Của Tôi</span>
+            </button>
+            <button class="btn-logout" id="btnLogout">
+                <i data-lucide="log-out"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <!-- Main Content Area -->
+        <main class="flex-1 max-w-[1440px] w-full mx-auto px-6 py-4">
+            <!-- Tab Navigation with Actions -->
+            <div class="mb-4">
+                <nav aria-label="Tabs"
+                    class="flex items-center justify-between border-b border-border-light dark:border-border-dark">
+                    <div class="flex space-x-1 items-center">
+                        <button class="btn-icon mr-2 md:hidden" id="menuToggle">
+                            <span class="material-symbols-outlined">menu</span>
+                        </button>
+                        <a class="tab-link border-b-2 border-primary text-primary dark:text-white px-4 py-3 font-semibold text-sm flex items-center gap-2"
+                            id="customer-search-tab" href="#customer-search">
+                            <span class="material-symbols-outlined text-[20px]">search</span>
+                            Tìm kiếm khách hàng
+                        </a>
+                        <a class="tab-link border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 px-4 py-3 font-medium text-sm flex items-center gap-2 transition-colors"
+                            id="transaction-activity-tab" href="#transaction-activity">
+                            <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                            Hoạt động giao dịch
+                        </a>
+                        <a class="tab-link border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 px-4 py-3 font-medium text-sm flex items-center gap-2 transition-colors"
+                            id="unlinked-transactions-tab" href="#unlinked-transactions">
+                            <span class="material-symbols-outlined text-[20px]">link_off</span>
+                            Giao dịch chưa liên kết
+                            <span id="unlinked-badge"
+                                class="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded-full ml-1 hidden">0</span>
+                        </a>
                     </div>
-                    <span class="text-sm font-medium hidden sm:block">Admin User</span>
-                </div>
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2 pb-2">
+                        <button id="theme-toggle"
+                            class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                            <span class="material-symbols-outlined text-[20px]" id="theme-icon">dark_mode</span>
+                        </button>
+                        <button
+                            class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">notifications</span>
+                        </button>
+                        <button
+                            class="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">settings</span>
+                        </button>
+                    </div>
+                </nav>
             </div>
-        </div>
-    </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 max-w-[1440px] w-full mx-auto px-6 py-8">
-        <!-- Tab Navigation -->
-        <div class="mb-8">
-            <nav aria-label="Tabs" class="flex space-x-1 border-b border-border-light dark:border-border-dark">
-                <a class="tab-link border-b-2 border-primary text-primary dark:text-white px-4 py-3 font-semibold text-sm flex items-center gap-2" id="customer-search-tab" href="#customer-search">
-                    <span class="material-symbols-outlined text-[20px]">search</span>
-                    Tìm kiếm khách hàng
-                </a>
-                <a class="tab-link border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 px-4 py-3 font-medium text-sm flex items-center gap-2 transition-colors" id="transaction-activity-tab" href="#transaction-activity">
-                    <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-                    Hoạt động giao dịch
-                </a>
-                <a class="tab-link border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 px-4 py-3 font-medium text-sm flex items-center gap-2 transition-colors" id="unlinked-transactions-tab" href="#unlinked-transactions">
-                    <span class="material-symbols-outlined text-[20px]">link_off</span>
-                    Giao dịch chưa liên kết
-                    <span id="unlinked-badge" class="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded-full ml-1 hidden">0</span>
-                </a>
-            </nav>
-        </div>
-
-        <!-- App Content Container -->
-        <div id="app-content">
-            <!-- Content will be loaded here by JavaScript -->
-        </div>
-    </main>
+            <!-- App Content Container -->
+            <div id="app-content">
+                <!-- Content will be loaded here by JavaScript -->
+            </div>
+        </main>
+    </div>
 
     <!-- Customer Profile Modal Container -->
     <div id="customer-profile-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" id="modal-backdrop"></div>
-        <div class="absolute inset-4 md:inset-8 bg-background-light dark:bg-background-dark rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700" id="modal-content">
+        <div class="absolute inset-4 md:inset-8 bg-background-light dark:bg-background-dark rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700"
+            id="modal-content">
             <!-- Modal content will be loaded here -->
         </div>
     </div>
 
+    <script src="../shared/js/api-service.js"></script>
+    <script src="../shared/js/tpos-customer-lookup.js"></script>
+    <script src="../shared/js/customer-creator.js"></script>
+    <script src="../shared/js/audit-logger.js"></script>
     <script src="./js/main.js" type="module"></script>
     <script src="./js/utils/permissions.js" type="module"></script>
 </body>
+
 </html>

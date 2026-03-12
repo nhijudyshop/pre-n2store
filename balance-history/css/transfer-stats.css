@@ -1,0 +1,499 @@
+/* =====================================================
+   TRANSFER STATS - CSS STYLES
+   ===================================================== */
+
+/* Main Section Tabs */
+.main-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    padding: 4px;
+    width: fit-content;
+}
+
+.main-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: transparent;
+    color: #6b7280;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.main-tab:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.main-tab.active {
+    background: #fff;
+    color: #059669;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.main-tab i {
+    width: 20px;
+    height: 20px;
+}
+
+/* Unchecked Badge */
+.unchecked-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    margin-left: 4px;
+}
+
+/* Tab Panels */
+.main-tab-panel {
+    display: none;
+}
+
+.main-tab-panel.active {
+    display: block;
+}
+
+/* Transfer Stats Filters */
+.ts-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.ts-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ts-filter-group label {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.ts-filter-group select,
+.ts-filter-group input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+}
+
+.ts-filter-group select:focus,
+.ts-filter-group input:focus {
+    outline: none;
+    border-color: #059669;
+    box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.1);
+}
+
+.ts-filter-group input {
+    width: 200px;
+}
+
+/* Stats Summary */
+.ts-stats-summary {
+    display: flex;
+    gap: 15px;
+    margin-left: auto;
+}
+
+.ts-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #6b7280;
+    padding: 6px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.ts-stat i {
+    width: 14px;
+    height: 14px;
+}
+
+.ts-stat.unchecked {
+    color: #f59e0b;
+    border-color: #fcd34d;
+    background: #fffbeb;
+}
+
+.ts-stat.checked {
+    color: #059669;
+    border-color: #6ee7b7;
+    background: #ecfdf5;
+}
+
+.ts-stat.verified {
+    color: #7c3aed;
+    border-color: #c4b5fd;
+    background: #f5f3ff;
+}
+
+/* Transfer Stats Table */
+.ts-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ts-table th {
+    background-color: #f9fafb;
+    text-align: left;
+    padding: 12px 10px;
+    font-weight: 600;
+    color: #637381;
+    font-size: 13px;
+    border-bottom: 1px solid #dfe3e8;
+}
+
+.ts-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #edf2f7;
+    font-size: 14px;
+    color: #212b36;
+    vertical-align: middle;
+}
+
+/* Column widths - use nth-child to override styles.css */
+.ts-table th:nth-child(1),
+.ts-table td:nth-child(1) {
+    width: 75px !important;
+}
+
+.ts-table th:nth-child(2),
+.ts-table td:nth-child(2) {
+    width: 110px !important;
+}
+
+.ts-table th:nth-child(3),
+.ts-table td:nth-child(3) {
+    width: 110px !important;
+}
+
+.ts-table th:nth-child(4),
+.ts-table td:nth-child(4) {
+    width: 95px !important;
+    text-align: right;
+}
+
+.ts-table th:nth-child(5),
+.ts-table td:nth-child(5) {
+    width: 520px !important;
+    max-width: 520px !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+.ts-table th:nth-child(6),
+.ts-table td:nth-child(6) {
+    width: auto !important;
+    min-width: 120px !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+.ts-table th:nth-child(7),
+.ts-table td:nth-child(7),
+.ts-table th:nth-child(8),
+.ts-table td:nth-child(8),
+.ts-table th:nth-child(9),
+.ts-table td:nth-child(9) {
+    width: 50px !important;
+    text-align: center;
+}
+
+.ts-table td:nth-child(7) input[type="checkbox"],
+.ts-table td:nth-child(8) input[type="checkbox"] {
+    margin: 0 auto;
+    display: block;
+}
+
+/* Wrap cell - allow content to wrap instead of truncating */
+.wrap-cell {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+/* Truncate cell with tooltip */
+.truncate-cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    max-width: 0;
+}
+
+.truncate-cell:hover {
+    color: #3b82f6;
+}
+
+/* Floating tooltip (appended to body via JS) */
+.ts-floating-tooltip {
+    position: fixed;
+    z-index: 99999;
+    background-color: #1f2937;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    max-width: 450px;
+    pointer-events: none;
+}
+
+.ts-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.ts-table tbody tr.unchecked {
+    opacity: 0.5;
+    background: #fefce8;
+}
+
+.ts-table tbody tr.unchecked:hover {
+    opacity: 0.8;
+}
+
+.ts-table tbody tr.checked {
+    opacity: 1;
+    background: white;
+}
+
+.ts-table tbody tr.checked:hover {
+    background: #f9fafb;
+}
+
+/* Verified row styling with watermark */
+.ts-table tbody tr.verified {
+    background: #fef2f2 !important;
+}
+
+.ts-table tbody tr.verified:hover {
+    background: #fee2e2 !important;
+}
+
+/* Watermark on the Nội dung cell (column 5) */
+.ts-table tbody tr.verified td:nth-child(5) {
+    position: relative;
+    overflow: visible;
+}
+
+.ts-table tbody tr.verified td:nth-child(5)::after {
+    content: 'ĐÃ KIỂM TRA';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    font-size: 18px;
+    font-weight: 900;
+    color: rgba(220, 38, 38, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+/* Disabled checkbox styling */
+.ts-verify-checkbox:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Checkbox styling */
+.ts-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #059669;
+}
+
+/* Amount styling */
+.ts-amount {
+    font-weight: 600;
+    color: #059669;
+}
+
+.ts-amount.negative {
+    color: #ef4444;
+}
+
+/* Phone styling */
+.ts-customer-phone {
+    color: #3b82f6;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 13px;
+}
+
+/* Text colors */
+.text-green { color: #22c55e; font-weight: 500; }
+
+/* Edit Button */
+.btn-edit-ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-ts:hover {
+    background: #e0e7ff;
+    color: #4f46e5;
+    border-color: #a5b4fc;
+}
+
+.btn-edit-ts i {
+    width: 14px;
+    height: 14px;
+}
+
+/* Transfer Button in Balance History */
+.btn-transfer {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #dbeafe;
+    color: #2563eb;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-transfer:hover {
+    background: #bfdbfe;
+    border-color: #60a5fa;
+}
+
+.btn-transfer.transferred {
+    background: #d1fae5;
+    color: #059669;
+    border-color: #6ee7b7;
+    cursor: default;
+}
+
+.btn-transfer.disabled,
+.btn-transfer:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-transfer i {
+    width: 12px;
+    height: 12px;
+}
+
+/* Empty state */
+.ts-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+}
+
+.ts-empty i {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.ts-empty p {
+    font-size: 15px;
+    margin: 0;
+}
+
+/* Loading state */
+.ts-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.ts-loading i {
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-tabs {
+        width: 100%;
+    }
+
+    .main-tab {
+        flex: 1;
+        justify-content: center;
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+
+    .ts-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ts-filter-group {
+        width: 100%;
+    }
+
+    .ts-filter-group input {
+        width: 100%;
+        flex: 1;
+    }
+
+    .ts-stats-summary {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+}

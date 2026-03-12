@@ -8,71 +8,136 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Hệ Thống Quản Lý - N2Shop</title>
+    <title>Hệ Thống Quản Lý - N2STORE</title>
     <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- 🧹 Auto cleanup localStorage to prevent QuotaExceededError -->
     <script>
-    (function() {
-        try {
-            var totalSize = 0;
-            for (var key in localStorage) {
-                if (localStorage.hasOwnProperty(key)) {
-                    totalSize += localStorage[key].length + key.length;
-                }
-            }
-            var sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
-
-            // If over 4MB, clean up non-essential data
-            if (totalSize > 4 * 1024 * 1024) {
-                console.warn('[STORAGE] ⚠️ localStorage near quota (' + sizeMB + 'MB), auto cleaning...');
-                var cleaned = 0;
-                var keysToRemove = [];
-
-                for (var k in localStorage) {
-                    if (localStorage.hasOwnProperty(k)) {
-                        // Remove Firebase logs
-                        if (k.startsWith('firebase:')) keysToRemove.push(k);
-                        // Remove large caches
-                        if ((k === 'standard_price_cache' || k === 'product_excel_cache') && localStorage[k].length > 500000) {
-                            keysToRemove.push(k);
-                        }
-                        // Always remove phone debt/qr caches when near quota
-                        if (k === 'orders_phone_debt_cache' || k === 'orders_phone_qr_cache') {
-                            keysToRemove.push(k);
-                        }
+        (function () {
+            try {
+                var totalSize = 0;
+                for (var key in localStorage) {
+                    if (localStorage.hasOwnProperty(key)) {
+                        totalSize += localStorage[key].length + key.length;
                     }
                 }
+                var sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
 
-                keysToRemove.forEach(function(key) {
-                    localStorage.removeItem(key);
-                    cleaned++;
-                });
+                // If over 4MB, clean up non-essential data
+                if (totalSize > 4 * 1024 * 1024) {
+                    console.warn(
+                        '[STORAGE] ⚠️ localStorage near quota (' +
+                        sizeMB +
+                        'MB), auto cleaning...'
+                    );
+                    var cleaned = 0;
+                    var keysToRemove = [];
 
-                console.log('[STORAGE] ✅ Auto cleaned ' + cleaned + ' items');
+                    for (var k in localStorage) {
+                        if (localStorage.hasOwnProperty(k)) {
+                            // Remove Firebase logs
+                            if (k.startsWith('firebase:')) keysToRemove.push(k);
+                            // Remove large caches
+                            if (
+                                (k === 'standard_price_cache' || k === 'product_excel_cache') &&
+                                localStorage[k].length > 500000
+                            ) {
+                                keysToRemove.push(k);
+                            }
+                            // Always remove phone debt/qr caches when near quota
+                            if (
+                                k === 'orders_phone_debt_cache' ||
+                                k === 'orders_phone_qr_cache'
+                            ) {
+                                keysToRemove.push(k);
+                            }
+                        }
+                    }
+
+                    keysToRemove.forEach(function (key) {
+                        localStorage.removeItem(key);
+                        cleaned++;
+                    });
+
+                    console.log('[STORAGE] ✅ Auto cleaned ' + cleaned + ' items');
+                }
+            } catch (e) {
+                console.warn('[STORAGE] Cleanup error:', e);
             }
-        } catch (e) {
-            console.warn('[STORAGE] Cleanup error:', e);
-        }
-    })();
+        })();
     </script>
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="modern.css" />
+    <link rel="stylesheet" href="css/modern.css" />
 
-    <!-- N2Store Optimization: Core Utilities Loader -->
-    <script src="../js/core-loader.js"></script>
+    <!-- N2Store Optimization: ES Module Loader (auto-inits authManager) -->
+    <script type="module" src="../shared/esm/compat.js"></script>
 
-    <!-- Auth must load BEFORE navigation -->
-    <script src="auth.js"></script>
+    <!-- Fallback for file:// protocol -->
+    <script>
+        if (window.location.protocol === 'file:') {
+            document.write('<script src="../shared/js/shared-auth-manager.js"><\/script>');
+            document.write(
+                '<script>if(typeof AuthManager!=="undefined")window.authManager=new AuthManager({redirectUrl:"../index.html"});<\/script>'
+            );
+        }
+    </script>
 
-    <!-- Navigation Manager - Load sau khi load auth -->
-    <script src="../js/navigation-modern.js"></script>
-    <script src="../js/common-utils.js"></script>
+    <!-- Legacy wrapper functions for orders-report -->
+    <script type="module">
+        window.addEventListener('sharedModulesLoaded', () => {
+            if (window.authManager) {
+                window.getAuthState = () => window.authManager.getAuthData();
+                window.setAuthState = (isLoggedIn, userType, roleData) => {
+                    window.authManager.saveAuthData(
+                        { isLoggedIn, userType, roleData, timestamp: Date.now() },
+                        false
+                    );
+                };
+                window.clearAuthState = () => {
+                    sessionStorage.removeItem('loginindex_auth');
+                    localStorage.removeItem('loginindex_auth');
+                };
+                window.isAuthenticated = () => window.authManager.isAuthenticated();
+                window.hasPermission = (level) => window.authManager.hasPermission(level);
+                window.getUserName = () => {
+                    const auth = window.authManager.getAuthData();
+                    return auth?.userType ? auth.userType.split('-')[0] : 'Admin';
+                };
+                window.handleLogout = () => {
+                    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                        window.clearAuthState();
+                        window.location.href = '../index.html';
+                    }
+                };
+                console.log('[AUTH] Legacy wrapper functions ready');
+            }
+        });
+    </script>
+
+    <!-- Firebase SDK for menu layout sync -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="../shared/js/firebase-config.js"></script>
+
+    <!-- Navigation Manager -->
+    <script defer src="../shared/js/navigation-modern.js"></script>
+    <script defer src="../shared/js/common-utils.js"></script>
+
+    <!-- Storage Migration (run migration on load) -->
+    <script src="../shared/js/storage-migration.js"></script>
+    <script>
+        // Auto-migrate orders module storage on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.StorageMigration) {
+                window.StorageMigration.migrateModuleStorage('orders');
+            }
+        });
+    </script>
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
 
     <!-- XLSX.js for Excel parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -118,7 +183,7 @@
         }
 
         .tab-button.active::after {
-            content: "";
+            content: '';
             position: absolute;
             bottom: 0;
             left: 0;
@@ -369,8 +434,26 @@
                 <span>Báo Cáo Tổng Hợp</span>
                 <i data-lucide="check" class="check-icon"></i>
             </div>
-            <div class="mobile-dropdown-item" onclick="window.location.href='../index.html'"
-                style="border-top: 1px solid #eee; margin-top: 4px; color: #ef4444;">
+            <div class="mobile-dropdown-item" onclick="switchMobileTab('social-orders', 'Đơn Social')"
+                data-mobile-tab="social-orders">
+                <i data-lucide="share-2"></i>
+                <span>Đơn Social</span>
+                <i data-lucide="check" class="check-icon"></i>
+            </div>
+            <div class="mobile-dropdown-item" onclick="switchMobileTab('pending-delete', 'Bill Đã Xóa')"
+                data-mobile-tab="pending-delete">
+                <i data-lucide="trash-2"></i>
+                <span>Bill Đã Xóa</span>
+                <i data-lucide="check" class="check-icon"></i>
+            </div>
+            <div class="mobile-dropdown-item" onclick="switchMobileTab('kpi-commission', 'KPI - HOA HỒNG')"
+                data-mobile-tab="kpi-commission">
+                <i data-lucide="award"></i>
+                <span>KPI - HOA HỒNG</span>
+                <i data-lucide="check" class="check-icon"></i>
+            </div>
+            <div class="mobile-dropdown-item" onclick="window.location.href = '../index.html'"
+                style="border-top: 1px solid #eee; margin-top: 4px; color: #ef4444">
                 <i data-lucide="log-out"></i>
                 <span>Thoát Báo Cáo</span>
             </div>
@@ -381,8 +464,8 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <i data-lucide="zap"></i>
-                <span>N2Shop</span>
+                <img src="../shared/images/logo.jpg" alt="N2STORE" class="sidebar-logo-img">
+                <span>N2STORE</span>
             </div>
             <button class="sidebar-toggle" id="sidebarToggle">
                 <i data-lucide="panel-left-close"></i>
@@ -435,6 +518,19 @@
                     <i data-lucide="file-bar-chart" class="tab-icon"></i>
                     Báo Cáo Tổng Hợp
                 </button>
+                <button class="tab-button" onclick="switchTab('social-orders')" data-tab="social-orders">
+                    <i data-lucide="share-2" class="tab-icon"></i>
+                    Đơn Social
+                </button>
+                <button class="tab-button" onclick="switchTab('pending-delete')" data-tab="pending-delete">
+                    <i data-lucide="trash-2" class="tab-icon"></i>
+                    Bill Đã Xóa
+                </button>
+
+                <button class="tab-button" onclick="switchTab('kpi-commission')" data-tab="kpi-commission">
+                    <i data-lucide="award" class="tab-icon"></i>
+                    KPI - HOA HỒNG
+                </button>
 
                 <!-- Campaign Firebase Badge -->
                 <div class="campaign-badge-wrapper">
@@ -473,13 +569,24 @@
             <iframe id="statisticsFrame" src="tab2-statistics.html"></iframe>
         </div>
 
-
         <div id="productAssignmentTab" class="tab-content">
             <iframe id="productAssignmentFrame" src="tab3-product-assignment.html"></iframe>
         </div>
 
         <div id="overviewTab" class="tab-content">
             <iframe id="overviewFrame" src="tab-overview.html"></iframe>
+        </div>
+
+        <div id="socialOrdersTab" class="tab-content">
+            <iframe id="socialOrdersFrame" src="tab-social-orders.html"></iframe>
+        </div>
+
+        <div id="pendingDeleteTab" class="tab-content">
+            <iframe id="pendingDeleteFrame" src="tab-pending-delete.html"></iframe>
+        </div>
+
+        <div id="kpiCommissionTab" class="tab-content">
+            <iframe id="kpiCommissionFrame" src="tab-kpi-commission.html"></iframe>
         </div>
 
         <div id="reportOnlineTab" class="tab-content">
@@ -502,50 +609,59 @@
     <!-- These are loaded in individual tabs to avoid duplicates -->
 
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+        // Initialize Lucide icons (wait for defer script to load)
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            window.addEventListener('DOMContentLoaded', () => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            });
+        }
 
         // Tab switching
         function switchTab(tabName) {
             // Save current tab to localStorage
-            localStorage.setItem("currentTab", tabName);
+            localStorage.setItem('currentTab', tabName);
 
             // Update tab buttons (Desktop)
-            document.querySelectorAll(".tab-button").forEach((btn) => {
-                btn.classList.remove("active");
+            document.querySelectorAll('.tab-button').forEach((btn) => {
+                btn.classList.remove('active');
             });
             const desktopBtn = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
-            if (desktopBtn) desktopBtn.classList.add("active");
+            if (desktopBtn) desktopBtn.classList.add('active');
 
             // Update Mobile Header & Dropdown
             updateMobileHeader(tabName);
 
             // Update tab content
-            document.querySelectorAll(".tab-content").forEach((content) => {
-                content.classList.remove("active");
+            document.querySelectorAll('.tab-content').forEach((content) => {
+                content.classList.remove('active');
             });
 
-            if (tabName === "orders") {
-                document.getElementById("ordersTab").classList.add("active");
-            } else if (tabName === "statistics") {
-                document.getElementById("statisticsTab").classList.add("active");
+            if (tabName === 'orders') {
+                document.getElementById('ordersTab').classList.add('active');
+            } else if (tabName === 'statistics') {
+                document.getElementById('statisticsTab').classList.add('active');
                 // Trigger statistics refresh when switching to it
                 refreshStatistics();
-            } else if (tabName === "product-assignment") {
-                document.getElementById("productAssignmentTab").classList.add("active");
+            } else if (tabName === 'product-assignment') {
+                document.getElementById('productAssignmentTab').classList.add('active');
                 // Send orders data to product assignment tab
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame && ordersFrame.contentWindow) {
                     // Request orders data from tab1
-                    ordersFrame.contentWindow.postMessage(
-                        { type: "REQUEST_ORDERS_DATA" },
-                        "*"
-                    );
+                    ordersFrame.contentWindow.postMessage({ type: 'REQUEST_ORDERS_DATA' }, '*');
                 }
-            } else if (tabName === "overview") {
-                document.getElementById("overviewTab").classList.add("active");
-            } else if (tabName === "report-online") {
-                document.getElementById("reportOnlineTab").classList.add("active");
+            } else if (tabName === 'overview') {
+                document.getElementById('overviewTab').classList.add('active');
+            } else if (tabName === 'social-orders') {
+                document.getElementById('socialOrdersTab').classList.add('active');
+            } else if (tabName === 'pending-delete') {
+                document.getElementById('pendingDeleteTab').classList.add('active');
+            } else if (tabName === 'kpi-commission') {
+                document.getElementById('kpiCommissionTab').classList.add('active');
+            } else if (tabName === 'report-online') {
+                document.getElementById('reportOnlineTab').classList.add('active');
             }
 
             // Reinitialize icons after DOM change
@@ -585,11 +701,14 @@
         function updateMobileHeader(tabName) {
             // Update Title
             const titleMap = {
-                'orders': 'Quản Lý Đơn Hàng',
+                orders: 'Quản Lý Đơn Hàng',
                 'product-assignment': 'Gán Sản Phẩm - STT',
-                'statistics': 'Thống Kê',
-                'overview': 'Báo Cáo Tổng Hợp',
-                'report-online': 'Báo Cáo Online'
+                statistics: 'Thống Kê',
+                overview: 'Báo Cáo Tổng Hợp',
+                'social-orders': 'Đơn Social',
+                'pending-delete': 'Bill Đã Xóa',
+                'kpi-commission': 'KPI - HOA HỒNG',
+                'report-online': 'Báo Cáo Online',
             };
 
             const titleElement = document.getElementById('mobileHeaderTitle');
@@ -598,7 +717,7 @@
             }
 
             // Update Active State in Dropdown
-            document.querySelectorAll('.mobile-dropdown-item').forEach(item => {
+            document.querySelectorAll('.mobile-dropdown-item').forEach((item) => {
                 item.classList.remove('active');
                 if (item.dataset.mobileTab === tabName) {
                     item.classList.add('active');
@@ -607,103 +726,114 @@
         }
 
         // Listen for filter changes from Tab 1
-        window.addEventListener("storage", function (e) {
-            if (e.key === "tab1_filter_data") {
+        window.addEventListener('storage', function (e) {
+            if (e.key === 'tab1_filter_data') {
                 showSyncIndicator();
                 // Notify Tab 2 about data change
-                const statisticsFrame =
-                    document.getElementById("statisticsFrame");
+                const statisticsFrame = document.getElementById('statisticsFrame');
                 if (statisticsFrame && statisticsFrame.contentWindow) {
                     statisticsFrame.contentWindow.postMessage(
                         {
-                            type: "FILTER_UPDATE",
+                            type: 'FILTER_UPDATE',
                             data: JSON.parse(e.newValue),
                         },
-                        "*",
+                        '*'
                     );
                 }
             }
         });
 
         // Listen for messages from iframes
-        window.addEventListener("message", function (e) {
-            if (e.data.type === "FILTER_CHANGED") {
-                // Tab 1 filter changed
-                localStorage.setItem(
-                    "tab1_filter_data",
-                    JSON.stringify(e.data.filter),
-                );
+        window.addEventListener('message', function (e) {
+            if (e.data.type === 'FILTER_CHANGED') {
+                // Tab 1 filter changed - save with quota handling
+                try {
+                    localStorage.setItem('tab1_filter_data', JSON.stringify(e.data.filter));
+                } catch (err) {
+                    if (err.name === 'QuotaExceededError') {
+                        console.warn(
+                            '[MAIN] localStorage quota exceeded, saving lightweight data...'
+                        );
+                        localStorage.removeItem('tab1_filter_data');
+                        try {
+                            const lightData = { ...e.data.filter, data: [], dataSkipped: true };
+                            localStorage.setItem('tab1_filter_data', JSON.stringify(lightData));
+                        } catch (e2) {
+                            console.error('[MAIN] Failed to save lightweight data:', e2);
+                        }
+                    }
+                }
                 showSyncIndicator();
-            } else if (e.data.type === "REQUEST_FILTER_DATA") {
+            } else if (e.data.type === 'REQUEST_FILTER_DATA') {
                 // Tab 2 requesting current filter data
-                const filterData = localStorage.getItem("tab1_filter_data");
+                const filterData = localStorage.getItem('tab1_filter_data');
                 if (filterData) {
                     e.source.postMessage(
                         {
-                            type: "FILTER_DATA",
+                            type: 'FILTER_DATA',
                             data: JSON.parse(filterData),
                         },
-                        "*",
+                        '*'
                     );
                 }
-            } else if (e.data.type === "SWITCH_TO_TAB1") {
+            } else if (e.data.type === 'SWITCH_TO_TAB1') {
                 // Switch to orders tab
-                switchTab("orders");
-            } else if (e.data.type === "REQUEST_ORDERS_DATA_FROM_TAB3") {
+                switchTab('orders');
+            } else if (e.data.type === 'REQUEST_ORDERS_DATA_FROM_TAB3') {
                 // Tab 3 requesting orders data
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame && ordersFrame.contentWindow) {
                     // Request orders data from tab1
-                    ordersFrame.contentWindow.postMessage(
-                        { type: "REQUEST_ORDERS_DATA" },
-                        "*"
-                    );
+                    ordersFrame.contentWindow.postMessage({ type: 'REQUEST_ORDERS_DATA' }, '*');
                 }
-            } else if (e.data.type === "REQUEST_ORDERS_DATA_FROM_OVERVIEW") {
+            } else if (e.data.type === 'REQUEST_ORDERS_DATA_FROM_OVERVIEW') {
                 // Overview tab requesting orders data - forward directly to Tab1
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame && ordersFrame.contentWindow) {
                     ordersFrame.contentWindow.postMessage(
-                        { type: "REQUEST_ORDERS_DATA_FROM_OVERVIEW" },
-                        "*"
+                        { type: 'REQUEST_ORDERS_DATA_FROM_OVERVIEW' },
+                        '*'
                     );
                 }
-            } else if (e.data.type === "ORDERS_DATA_RESPONSE_TAB3") {
+            } else if (e.data.type === 'ORDERS_DATA_RESPONSE_TAB3') {
                 // Forward orders data from Tab 1 to Tab 3 ONLY
-                const productAssignmentFrame = document.getElementById("productAssignmentFrame");
+                const productAssignmentFrame =
+                    document.getElementById('productAssignmentFrame');
                 if (productAssignmentFrame && productAssignmentFrame.contentWindow) {
-                    productAssignmentFrame.contentWindow.postMessage(e.data, "*");
+                    productAssignmentFrame.contentWindow.postMessage(e.data, '*');
                 }
-            } else if (e.data.type === "ORDERS_DATA_RESPONSE_OVERVIEW") {
+            } else if (e.data.type === 'ORDERS_DATA_RESPONSE_OVERVIEW') {
                 // Forward orders data from Tab 1 to Overview ONLY
-                const overviewFrame = document.getElementById("overviewFrame");
+                const overviewFrame = document.getElementById('overviewFrame');
                 if (overviewFrame && overviewFrame.contentWindow) {
-                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                    overviewFrame.contentWindow.postMessage(e.data, '*');
                 }
-            } else if (e.data.type === "FETCH_CONVERSATIONS_FOR_ORDERS") {
+            } else if (e.data.type === 'FETCH_CONVERSATIONS_FOR_ORDERS') {
                 // Forward request from Overview to Tab1 to fetch conversations
                 console.log('[MAIN] 📨 Forwarding FETCH_CONVERSATIONS_FOR_ORDERS to Tab1');
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame && ordersFrame.contentWindow) {
-                    ordersFrame.contentWindow.postMessage(e.data, "*");
+                    ordersFrame.contentWindow.postMessage(e.data, '*');
                 }
-            } else if (e.data.type === "RELOAD_TAB1_ONLY") {
+            } else if (e.data.type === 'RELOAD_TAB1_ONLY') {
                 // Tab3 requested reload Tab1 only - Tab3 will receive data via ORDERS_DATA_RESPONSE
-                console.log('[MAIN] 🔄 Reloading Tab1 only (Tab3 will receive data when ready)...');
+                console.log(
+                    '[MAIN] 🔄 Reloading Tab1 only (Tab3 will receive data when ready)...'
+                );
 
                 // Reload Tab1 để fetch fresh data từ API
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame) {
                     ordersFrame.src = ordersFrame.src;
                     console.log('[MAIN] ✅ Tab1 (ordersFrame) reloading...');
                 }
                 // Tab3 KHÔNG reload - sẽ tự động nhận data khi Tab1 load xong
-            } else if (e.data.type === "RELOAD_TAB1_AND_TAB3") {
+            } else if (e.data.type === 'RELOAD_TAB1_AND_TAB3') {
                 // Legacy: Tab3 requested reload with cache clear (kept for backward compatibility)
                 console.log('[MAIN] 🔄 Reloading Tab1 and Tab3 (cache already cleared)...');
 
                 // Reload Tab1 trước để fetch fresh data từ API
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame) {
                     ordersFrame.src = ordersFrame.src;
                     console.log('[MAIN] ✅ Tab1 (ordersFrame) reloading...');
@@ -711,66 +841,82 @@
 
                 // Reload Tab3 sau 3500ms để Tab1 có thời gian init và fetch data
                 setTimeout(() => {
-                    const productAssignmentFrame = document.getElementById("productAssignmentFrame");
+                    const productAssignmentFrame =
+                        document.getElementById('productAssignmentFrame');
                     if (productAssignmentFrame) {
                         productAssignmentFrame.src = productAssignmentFrame.src;
                         console.log('[MAIN] ✅ Tab3 (productAssignmentFrame) reloading...');
                     }
                 }, 3500);
-            } else if (e.data.type === "CAMPAIGN_STATUS_UPDATE") {
+            } else if (e.data.type === 'CAMPAIGN_STATUS_UPDATE') {
                 // Update campaign badge from overview tab
                 updateCampaignBadge(e.data);
-            } else if (e.data.type === "REQUEST_TOKEN_FROM_OVERVIEW") {
+            } else if (e.data.type === 'REQUEST_TOKEN_FROM_OVERVIEW') {
                 // Overview tab requesting token - forward to Tab1
                 console.log('[MAIN] 🔑 Forwarding token request to Tab1');
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame && ordersFrame.contentWindow) {
                     ordersFrame.contentWindow.postMessage(
-                        { type: "REQUEST_TOKEN", requestId: e.data.requestId },
-                        "*"
+                        { type: 'REQUEST_TOKEN', requestId: e.data.requestId },
+                        '*'
                     );
                 }
-            } else if (e.data.type === "TOKEN_RESPONSE") {
+            } else if (e.data.type === 'TOKEN_RESPONSE') {
                 // Forward token response from Tab1 to Overview
                 console.log('[MAIN] 🔑 Forwarding token response to Overview');
-                const overviewFrame = document.getElementById("overviewFrame");
+                const overviewFrame = document.getElementById('overviewFrame');
                 if (overviewFrame && overviewFrame.contentWindow) {
-                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                    overviewFrame.contentWindow.postMessage(e.data, '*');
                 }
-            } else if (e.data.type === "TABLE_NAME_CHANGED") {
+            } else if (e.data.type === 'OPEN_RETAIL_SALE_FROM_SOCIAL') {
+                // Social tab requested to open retail sale modal in Tab1
+                console.log('[MAIN] 🧾 Forwarding OPEN_RETAIL_SALE_FROM_SOCIAL to Tab1');
+                // Switch to orders tab first so user can see the modal
+                switchTab('orders');
+                // Forward to Tab1 after a small delay to ensure tab is visible
+                setTimeout(() => {
+                    const ordersFrame = document.getElementById('ordersFrame');
+                    if (ordersFrame && ordersFrame.contentWindow) {
+                        ordersFrame.contentWindow.postMessage(e.data, '*');
+                    }
+                }, 300);
+            } else if (e.data.type === 'TABLE_NAME_CHANGED') {
                 // Forward table name change from Tab1 to Overview
-                const overviewFrame = document.getElementById("overviewFrame");
+                const overviewFrame = document.getElementById('overviewFrame');
                 if (overviewFrame && overviewFrame.contentWindow) {
-                    overviewFrame.contentWindow.postMessage(e.data, "*");
-                    console.log('[MAIN] 📡 Forwarded TABLE_NAME_CHANGED to overview:', e.data.tableName);
+                    overviewFrame.contentWindow.postMessage(e.data, '*');
+                    console.log(
+                        '[MAIN] 📡 Forwarded TABLE_NAME_CHANGED to overview:',
+                        e.data.tableName
+                    );
                 }
-            } else if (e.data.type === "REQUEST_EMPLOYEE_RANGES") {
+            } else if (e.data.type === 'REQUEST_EMPLOYEE_RANGES') {
                 // Forward request from Overview to Tab1 for employee ranges
                 console.log('[MAIN] 📨 Forwarding REQUEST_EMPLOYEE_RANGES to Tab1');
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame && ordersFrame.contentWindow) {
-                    ordersFrame.contentWindow.postMessage(e.data, "*");
+                    ordersFrame.contentWindow.postMessage(e.data, '*');
                 }
-            } else if (e.data.type === "EMPLOYEE_RANGES_RESPONSE") {
+            } else if (e.data.type === 'EMPLOYEE_RANGES_RESPONSE') {
                 // Forward employee ranges response from Tab1 to Overview
                 console.log('[MAIN] 📨 Forwarding EMPLOYEE_RANGES_RESPONSE to Overview');
-                const overviewFrame = document.getElementById("overviewFrame");
+                const overviewFrame = document.getElementById('overviewFrame');
                 if (overviewFrame && overviewFrame.contentWindow) {
-                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                    overviewFrame.contentWindow.postMessage(e.data, '*');
                 }
-            } else if (e.data.type === "REQUEST_CAMPAIGN_INFO") {
+            } else if (e.data.type === 'REQUEST_CAMPAIGN_INFO') {
                 // Forward request from Overview to Tab1 for campaign info
                 console.log('[MAIN] 📨 Forwarding REQUEST_CAMPAIGN_INFO to Tab1');
-                const ordersFrame = document.getElementById("ordersFrame");
+                const ordersFrame = document.getElementById('ordersFrame');
                 if (ordersFrame && ordersFrame.contentWindow) {
-                    ordersFrame.contentWindow.postMessage(e.data, "*");
+                    ordersFrame.contentWindow.postMessage(e.data, '*');
                 }
-            } else if (e.data.type === "CAMPAIGN_INFO_RESPONSE") {
+            } else if (e.data.type === 'CAMPAIGN_INFO_RESPONSE') {
                 // Forward campaign info response from Tab1 to Overview
                 console.log('[MAIN] 📨 Forwarding CAMPAIGN_INFO_RESPONSE to Overview');
-                const overviewFrame = document.getElementById("overviewFrame");
+                const overviewFrame = document.getElementById('overviewFrame');
                 if (overviewFrame && overviewFrame.contentWindow) {
-                    overviewFrame.contentWindow.postMessage(e.data, "*");
+                    overviewFrame.contentWindow.postMessage(e.data, '*');
                 }
             }
         });
@@ -829,50 +975,59 @@
         }
 
         function refreshStatistics() {
-            const statisticsFrame =
-                document.getElementById("statisticsFrame");
+            const statisticsFrame = document.getElementById('statisticsFrame');
             if (statisticsFrame && statisticsFrame.contentWindow) {
-                const filterData = localStorage.getItem("tab1_filter_data");
+                const filterData = localStorage.getItem('tab1_filter_data');
                 if (filterData) {
                     statisticsFrame.contentWindow.postMessage(
                         {
-                            type: "REFRESH_DATA",
+                            type: 'REFRESH_DATA',
                             data: JSON.parse(filterData),
                         },
-                        "*",
+                        '*'
                     );
                 }
             }
         }
 
         function showSyncIndicator() {
-            const indicator = document.getElementById("syncIndicator");
-            indicator.classList.add("show");
+            const indicator = document.getElementById('syncIndicator');
+            indicator.classList.add('show');
             setTimeout(() => {
-                indicator.classList.remove("show");
+                indicator.classList.remove('show');
             }, 2000);
         }
 
         // Logout handler
-        document
-            .getElementById("btnLogout")
-            .addEventListener("click", function () {
-                if (confirm("Bạn có chắc muốn đăng xuất?")) {
-                    // Clear ONLY auth data, preserve tokens and other data
-                    sessionStorage.removeItem('loginindex_auth');
-                    localStorage.removeItem('loginindex_auth');
-                    window.location.href = "../index.html";
-                }
-            });
+        document.getElementById('btnLogout').addEventListener('click', function () {
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                // Clear ONLY auth data, preserve tokens and other data
+                sessionStorage.removeItem('loginindex_auth');
+                localStorage.removeItem('loginindex_auth');
+                window.location.href = '../index.html';
+            }
+        });
 
         // Tab management
-        window.addEventListener("DOMContentLoaded", function () {
+        window.addEventListener('DOMContentLoaded', function () {
             // Restore last active tab or default to orders
-            const savedTab = localStorage.getItem("currentTab");
-            if (savedTab && ["orders", "statistics", "product-assignment", "overview", "report-online"].includes(savedTab)) {
+            const savedTab = localStorage.getItem('currentTab');
+            if (
+                savedTab &&
+                [
+                    'orders',
+                    'statistics',
+                    'product-assignment',
+                    'overview',
+                    'social-orders',
+                    'pending-delete',
+                    'kpi-commission',
+                    'report-online',
+                ].includes(savedTab)
+            ) {
                 switchTab(savedTab);
             } else {
-                switchTab("orders");
+                switchTab('orders');
             }
 
             // Reinitialize icons after everything loads

@@ -1,0 +1,175 @@
+/**
+ * RESPONSIVE
+ * File: responsive.css
+ * Purpose: Responsive breakpoint styles
+ */
+
+/* Tablet and smaller */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Table horizontal scroll */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 800px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .main-content {
+        padding: var(--spacing-md);
+    }
+
+    .page-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .page-header__title {
+        font-size: 20px;
+    }
+
+    .page-header .btn {
+        width: 100%;
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs-nav {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+        white-space: nowrap;
+    }
+
+    .filter-bar {
+        flex-direction: column;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group--search {
+        flex: none;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .form-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-totals,
+    .form-actions {
+        justify-content: center;
+    }
+
+    /* Modal responsive */
+    .modal {
+        max-height: 100vh;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .modal--lg,
+    .modal--xl {
+        width: 100vw;
+        max-width: 100vw;
+    }
+
+    .modal__body {
+        padding: var(--spacing-md);
+    }
+
+    /* Pagination */
+    .pagination {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .pagination__info {
+        text-align: center;
+    }
+
+    .pagination__controls {
+        justify-content: center;
+    }
+
+    /* Detail dialog */
+    .detail-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-timestamps {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+    .main-content {
+        padding: var(--spacing-sm);
+    }
+
+    .page-header__title {
+        font-size: 18px;
+    }
+
+    .summary-card {
+        padding: var(--spacing-sm);
+    }
+
+    .summary-card__value {
+        font-size: 18px;
+    }
+
+    /* Hide less important columns on very small screens */
+    .items-table .col-code,
+    .items-table .col-image,
+    .items-table .col-price-image {
+        display: none;
+    }
+
+    /* Simplified actions */
+    .item-actions {
+        flex-direction: column;
+    }
+
+    .pagination__btn--page {
+        display: none;
+    }
+
+    .pagination__btn--page.active,
+    .pagination__btn--prev,
+    .pagination__btn--next {
+        display: flex;
+    }
+}

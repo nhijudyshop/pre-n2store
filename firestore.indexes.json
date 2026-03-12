@@ -31,6 +31,75 @@
         { "fieldPath": "createdAt", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "soquy_vouchers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fundType", "order": "ASCENDING" },
+        { "fieldPath": "voucherDateTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "soquy_vouchers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fundType", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "voucherDateTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "soquy_vouchers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fundType", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "voucherDateTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "soquy_vouchers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "voucherDateTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "soquy_vouchers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fundType", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "businessAccounting", "order": "ASCENDING" },
+        { "fieldPath": "voucherDateTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "kpi_audit_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "orderId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "kpi_audit_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "campaignName", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "kpi_audit_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

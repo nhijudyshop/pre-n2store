@@ -90,7 +90,10 @@ LIMIT 10;
 
 ### 4. Update Frontend
 
-The frontend has been updated in `customer-management/main.js` to:
+> **LƯU Ý:** Module `customer-management` đã được thay thế bằng `customer-hub` (Customer 360).
+> Nếu bạn đang đọc tài liệu này để migrate, hãy sử dụng `customer-hub` thay thế.
+
+The frontend has been updated in `customer-hub/` to:
 - Use PostgreSQL API endpoints instead of Firebase
 - Maintain same UI/UX
 - Keep IndexedDB cache for offline support
@@ -105,7 +108,7 @@ API endpoints:
 
 ### 5. Test Frontend
 
-1. Open: https://nhijudyshop.github.io/n2store/customer-management/index.html
+1. Open: https://nhijudyshop.github.io/n2store/customer-hub/index.html
 2. Test search:
    - Phone: `0123` → should find matches instantly
    - Name: `Nguyen` → should find all matching names
@@ -120,12 +123,12 @@ API endpoints:
 
 If issues occur, you can rollback to Firebase:
 
+> **LƯU Ý:** Module `customer-management` đã được xóa và thay thế bằng `customer-hub`.
+> Các bước rollback dưới đây chỉ để tham khảo lịch sử.
+
 ### Option 1: Frontend Rollback
 
-Restore `customer-management/main.js` from git:
-```bash
-git checkout HEAD~1 customer-management/main.js
-```
+Restore from git history if needed (not applicable for customer-hub).
 
 ### Option 2: Dual-Write Period
 

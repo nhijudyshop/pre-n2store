@@ -248,13 +248,12 @@ body::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(0.5rem, 2vw, 1rem);
     margin-bottom: 0.5rem;
 }
 
 .brand-logo {
-    width: clamp(48px, 12vw, 64px);
-    height: clamp(48px, 12vw, 64px);
+    width: clamp(120px, 30vw, 160px);
+    height: clamp(120px, 30vw, 160px);
     object-fit: cover;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);

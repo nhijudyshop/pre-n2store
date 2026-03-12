@@ -1,0 +1,194 @@
+/* Sổ Sách - Live Ledger Tab Styles */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.ledger-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+/* Header / Filters */
+.ledger-header {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.ledger-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ledger-header h2 i { color: #8b5cf6; }
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.filter-group select,
+.filter-group input[type="date"] {
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1e293b;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.filter-group select:focus,
+.filter-group input[type="date"]:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139,92,246,0.1);
+}
+
+.btn-refresh {
+    padding: 6px 14px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-refresh:hover { background: #7c3aed; }
+.btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-refresh.loading i { animation: spin 1s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Table */
+.ledger-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow-x: auto;
+}
+
+.ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.ledger-table thead th {
+    background: #f1f5f9;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.ledger-table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.ledger-table tbody tr:hover { background: #f8fafc; }
+
+.ledger-table .editable-cell {
+    padding: 0;
+}
+
+.ledger-table .editable-cell input {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: #1e293b;
+    outline: none;
+    text-align: right;
+}
+
+.ledger-table .editable-cell input:focus {
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 2px #3b82f6;
+}
+
+.ledger-table .editable-cell input.notes-input {
+    text-align: left;
+}
+
+.diff-positive { color: #16a34a; font-weight: 600; }
+.diff-negative { color: #dc2626; font-weight: 600; }
+.diff-zero { color: #94a3b8; }
+
+/* Footer totals */
+.ledger-table tfoot td {
+    padding: 10px 12px;
+    font-weight: 700;
+    background: #f8fafc;
+    border-top: 2px solid #e2e8f0;
+    font-size: 13px;
+}
+
+/* Empty state */
+.ledger-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+}
+
+.ledger-empty i { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+.ledger-empty p { font-size: 14px; margin: 4px 0; }
+
+/* Loading */
+.ledger-loading {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+}
+
+.ledger-loading i { animation: spin 1s linear infinite; margin-right: 8px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ledger-header { flex-direction: column; align-items: stretch; }
+    .ledger-header h2 { margin-right: 0; margin-bottom: 8px; }
+    .filter-group { flex-wrap: wrap; }
+}

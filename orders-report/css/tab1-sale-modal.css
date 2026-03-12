@@ -1,0 +1,160 @@
+/* ==============================================
+   Tab1 Sale Modal CSS
+   Extracted from tab1-orders.html
+   - Sale button styles
+   - Sale tabs
+   - Sale product table
+   - Sale inputs
+   ============================================== */
+
+/* Sale Button Modal Styles */
+.sale-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sale-btn-teal {
+    background: #14b8a6;
+    color: white;
+}
+
+.sale-btn-green {
+    background: #22c55e;
+    color: white;
+}
+
+.sale-btn-purple {
+    background: #8b5cf6;
+    color: white;
+}
+
+.sale-btn-blue {
+    background: #3b82f6;
+    color: white;
+}
+
+.sale-btn-orange {
+    background: #f97316;
+    color: white;
+}
+
+.sale-btn-pink {
+    background: #ec4899;
+    color: white;
+}
+
+.sale-btn-default {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.sale-btn:hover {
+    opacity: 0.9;
+}
+
+.sale-tab {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.sale-tab.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.sale-tab:hover {
+    color: #374151;
+}
+
+.sale-tab-content {
+    display: none;
+}
+
+.sale-tab-content.active {
+    display: block;
+}
+
+.sale-label {
+    display: block;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.sale-value {
+    font-size: 14px;
+    color: #374151;
+}
+
+.sale-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.sale-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.sale-product-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.sale-product-table th {
+    text-align: left;
+    padding: 10px 8px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.sale-product-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sale-product-table tr:hover {
+    background: #f9fafb;
+}
+
+.sale-product-row {
+    cursor: pointer;
+}
+
+.sale-product-row.selected {
+    background: #eff6ff !important;
+}
+
+.sale-product-name {
+    color: #6366f1;
+    font-weight: 500;
+}
+
+.sale-product-stock {
+    font-size: 11px;
+    color: #f59e0b;
+}
+
+.sale-product-price {
+    color: #ef4444;
+    font-weight: 500;
+}

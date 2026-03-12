@@ -271,4 +271,90 @@ router.get('/check-tables', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/admin/run-single-migration
+ * Chạy một migration file cụ thể
+ * Body: { "file": "031_add_order_cancel_refund_source.sql" }
+ */
+router.post('/run-single-migration', async (req, res) => {
+    try {
+        const db = req.app.locals.chatDb;
+        if (!db) {
+            return res.status(500).json({ error: 'Database not available' });
+        }
+
+        const { file } = req.body;
+        if (!file || !file.endsWith('.sql')) {
+            return res.status(400).json({ error: 'Valid .sql file name required' });
+        }
+
+        const safeName = path.basename(file);
+        const migrationPath = path.join(__dirname, '../migrations', safeName);
+
+        if (!fs.existsSync(migrationPath)) {
+            return res.status(404).json({ error: `Migration file not found: ${safeName}` });
+        }
+
+        const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+        console.log(`[MIGRATION] Running single migration: ${safeName} (${migrationSQL.length} bytes)`);
+
+        const startTime = Date.now();
+        await db.query(migrationSQL);
+        const duration = Date.now() - startTime;
+
+        console.log(`[MIGRATION] ✅ ${safeName} completed in ${duration}ms`);
+        res.json({ success: true, file: safeName, duration: duration + 'ms' });
+    } catch (error) {
+        console.error('[MIGRATION] ❌ Single migration error:', error.message);
+        res.status(500).json({ error: 'Migration failed', details: error.message });
+    }
+});
+
 module.exports = router;
+
+/**
+ * POST /api/admin/run-single-migration
+ * Chạy một migration file cụ thể
+ * Body: { "file": "031_add_order_cancel_refund_source.sql" }
+ */
+router.post('/run-single-migration', async (req, res) => {
+    try {
+        const db = req.app.locals.chatDb;
+        if (!db) {
+            return res.status(500).json({ error: 'Database not available' });
+        }
+
+        const { file } = req.body;
+        if (!file || !file.endsWith('.sql')) {
+            return res.status(400).json({ error: 'Valid .sql file name required' });
+        }
+
+        // Security: only allow files from migrations directory
+        const safeName = path.basename(file);
+        const migrationPath = path.join(__dirname, '../migrations', safeName);
+
+        if (!fs.existsSync(migrationPath)) {
+            return res.status(404).json({ error: `Migration file not found: ${safeName}` });
+        }
+
+        const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+        console.log(`[MIGRATION] Running single migration: ${safeName} (${migrationSQL.length} bytes)`);
+
+        const startTime = Date.now();
+        await db.query(migrationSQL);
+        const duration = Date.now() - startTime;
+
+        console.log(`[MIGRATION] ✅ ${safeName} completed in ${duration}ms`);
+
+        res.json({
+            success: true,
+            file: safeName,
+            duration: duration + 'ms',
+            message: `Migration ${safeName} completed successfully`
+        });
+    } catch (error) {
+        console.error('[MIGRATION] ❌ Single migration error:', error.message);
+        res.status(500).json({ error: 'Migration failed', details: error.message });
+    }
+});
+

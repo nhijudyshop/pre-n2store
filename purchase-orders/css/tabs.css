@@ -1,0 +1,172 @@
+/**
+ * TABS
+ * File: tabs.css
+ * Purpose: Tab navigation component styles (matching React app - shadcn/ui style)
+ */
+
+.tabs-container {
+    margin-bottom: var(--spacing-md);
+}
+
+/* Tab List - rounded pill style */
+.tabs-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs);
+    background: var(--color-muted);
+    border-radius: var(--radius-lg);
+}
+
+.tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-card);
+}
+
+.tab-btn.active {
+    color: var(--color-text-primary);
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-soft);
+}
+
+.tab-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Tab Badge */
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-full);
+    color: var(--color-text-secondary);
+}
+
+.tab-btn.active .tab-badge {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* Tab status colors */
+.tab-btn[data-status="draft"] .tab-badge {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
+.tab-btn[data-status="awaiting_purchase"] .tab-badge {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.tab-btn[data-status="awaiting_delivery"] .tab-badge {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    padding-top: var(--spacing-md);
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Tab Card - content wrapper */
+.tab-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+}
+
+.tab-card__header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tab-card__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 4px 0;
+}
+
+.tab-card__description {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.tab-card__body {
+    padding: var(--spacing-md);
+}
+
+/* Bulk action toolbar */
+.bulk-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-primary-light);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.bulk-toolbar__count {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-primary);
+}
+
+.bulk-toolbar__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-left: auto;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .tabs-nav {
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .tabs-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: var(--spacing-sm);
+        font-size: 13px;
+    }
+}

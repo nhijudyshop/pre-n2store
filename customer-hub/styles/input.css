@@ -51,3 +51,39 @@ html.dark ::-webkit-scrollbar-track {
 html.dark ::-webkit-scrollbar-thumb {
     @apply bg-border-dark;
 }
+
+/* =====================================================
+   ALIAS TAGS - For Customer Reference Names
+   ===================================================== */
+
+.alias-tag {
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg;
+    @apply bg-slate-100 text-slate-700;
+    @apply dark:bg-slate-700 dark:text-slate-300;
+    transition: all 0.15s ease;
+}
+
+.alias-tag.primary {
+    @apply bg-primary/10 text-primary border border-primary/20;
+    @apply dark:bg-primary/20 dark:text-primary-light;
+}
+
+.alias-tag .remove-alias-btn {
+    @apply ml-1 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600;
+    @apply text-slate-400 hover:text-danger;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.alias-tag:hover {
+    @apply bg-slate-200 dark:bg-slate-600;
+}
+
+.alias-tag.primary:hover {
+    @apply bg-primary/20 dark:bg-primary/30;
+}

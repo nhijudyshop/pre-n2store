@@ -326,6 +326,54 @@ router.post('/sse/test', (req, res) => {
 });
 
 // =====================================================
+// WALLET EVENT SUBSCRIPTION
+// Subscribe to wallet events and broadcast to SSE clients
+// =====================================================
+
+const { walletEvents } = require('../services/wallet-event-processor');
+
+// Listen for wallet updates and notify SSE clients
+walletEvents.on('wallet:update', (data) => {
+    const { phone, wallet, transaction } = data;
+
+    // Notify clients subscribed to this specific phone's wallet
+    const key = `wallet:${phone}`;
+    const clients = sseClients.get(key);
+
+    if (clients && clients.size > 0) {
+        const message = JSON.stringify({
+            key,
+            data: {
+                phone,
+                wallet,
+                transaction,
+                timestamp: Date.now()
+            },
+            timestamp: Date.now(),
+            event: 'wallet_update'
+        });
+
+        let successCount = 0;
+        clients.forEach(client => {
+            try {
+                client.write(`event: wallet_update\n`);
+                client.write(`data: ${message}\n\n`);
+                successCount++;
+            } catch (error) {
+                console.error('[SSE-WALLET] Error sending to client:', error.message);
+            }
+        });
+
+        console.log(`[SSE-WALLET] ✅ Notified ${successCount} clients for wallet:${phone}`);
+    }
+
+    // Also notify wildcard watchers for "wallet" key (admin dashboard)
+    notifyClientsWildcard('wallet', data, 'wallet_update');
+});
+
+console.log('[SSE] Wallet event subscription initialized');
+
+// =====================================================
 // EXPORTS
 // =====================================================
 

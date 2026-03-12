@@ -43,9 +43,15 @@ export class TransactionActivityModule {
                         <select id="type-filter"
                             class="appearance-none pl-4 pr-10 py-2.5 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer min-w-[160px]">
                             <option value="">Tất cả loại</option>
+                            <option value="ORDER_CREATED">Tạo đơn hàng</option>
+                            <option value="ORDER_CANCELLED">Hủy đơn hàng</option>
                             <option value="DEPOSIT">Nạp tiền</option>
                             <option value="WITHDRAW">Rút tiền</option>
                             <option value="VIRTUAL_CREDIT">Tín dụng ảo</option>
+                            <option value="WALLET_REFUND">Hoàn công nợ</option>
+                            <option value="RETURN_SHIPPER">Hoàn shipper</option>
+                            <option value="RETURN_CLIENT">Hoàn khách</option>
+                            <option value="BOOM">BOOM</option>
                             <option value="OTHER">Khác</option>
                         </select>
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -220,10 +226,10 @@ export class TransactionActivityModule {
             // Check if it's a server error or endpoint not implemented
             const errorMsg = error.message.toLowerCase();
             const isServerError = errorMsg.includes('500') ||
-                                  errorMsg.includes('internal server') ||
-                                  errorMsg.includes('consolidated') ||
-                                  errorMsg.includes('not found') ||
-                                  errorMsg.includes('404');
+                errorMsg.includes('internal server') ||
+                errorMsg.includes('consolidated') ||
+                errorMsg.includes('not found') ||
+                errorMsg.includes('404');
 
             this.tableBody.innerHTML = `
                 <tr>
@@ -317,30 +323,41 @@ export class TransactionActivityModule {
 
     getEventTypeInfo(type) {
         const typeMap = {
-            'DEPOSIT': { text: 'Wire Transfer', icon: 'account_balance' },
-            'WITHDRAW': { text: 'Card Payment', icon: 'payments' },
-            'VIRTUAL_CREDIT': { text: 'Internal Transfer', icon: 'swap_horiz' },
-            'VIRTUAL_DEBIT': { text: 'Withdrawal', icon: 'credit_card_off' },
-            'RETURN_CLIENT': { text: 'Deposit', icon: 'savings' },
-            'RETURN_SHIPPER': { text: 'Refund', icon: 'local_shipping' },
-            'COD_ADJUSTMENT': { text: 'Adjustment', icon: 'tune' },
-            'OTHER': { text: 'System Event', icon: 'dns' },
-            'TICKET_CREATED': { text: 'Ticket Created', icon: 'confirmation_number' },
-            'TICKET_UPDATED': { text: 'Ticket Updated', icon: 'edit_note' },
-            'NOTE_ADDED': { text: 'Note Added', icon: 'sticky_note_2' },
-            'CUSTOMER_CREATED': { text: 'Customer Created', icon: 'person_add' },
-            'customer_ticket': { text: 'Subscription', icon: 'credit_card' },
+            'DEPOSIT': { text: 'Nạp tiền CK', icon: 'account_balance' },
+            'WITHDRAW': { text: 'Rút tiền', icon: 'payments' },
+            'VIRTUAL_CREDIT': { text: 'Cộng công nợ ảo', icon: 'swap_horiz' },
+            'VIRTUAL_DEBIT': { text: 'Trừ công nợ ảo', icon: 'credit_card_off' },
+            'VIRTUAL_CANCEL': { text: 'Thu hồi công nợ ảo', icon: 'cancel' },
+            'RETURN_CLIENT': { text: 'Hoàn khách', icon: 'savings' },
+            'RETURN_SHIPPER': { text: 'Hoàn shipper', icon: 'local_shipping' },
+            'COD_ADJUSTMENT': { text: 'Điều chỉnh COD', icon: 'tune' },
+            'OTHER': { text: 'Khác', icon: 'dns' },
+            'BOOM': { text: 'BOOM', icon: 'help_outline' },
+            'TICKET_CREATED': { text: 'Tạo phiếu', icon: 'confirmation_number' },
+            'TICKET_UPDATED': { text: 'Cập nhật phiếu', icon: 'edit_note' },
+            'TICKET_DELETED': { text: 'Xóa phiếu', icon: 'delete' },
+            'NOTE_ADDED': { text: 'Thêm ghi chú', icon: 'sticky_note_2' },
+            'CUSTOMER_CREATED': { text: 'Tạo khách hàng', icon: 'person_add' },
+            'WALLET_DEPOSIT': { text: 'Nạp tiền CK', icon: 'account_balance' },
+            'WALLET_VIRTUAL_CREDIT': { text: 'Cộng công nợ ảo', icon: 'card_giftcard' },
+            'WALLET_REFUND': { text: 'Hoàn công nợ', icon: 'undo' },
+            'WALLET_WITHDRAW': { text: 'Trừ công nợ', icon: 'shopping_cart_checkout' },
+            'ORDER_CREATED': { text: 'Tạo đơn hàng', icon: 'shopping_cart' },
+            'ORDER_CANCELLED': { text: 'Hủy đơn hàng', icon: 'cancel' },
+            'ORDER_DELIVERED': { text: 'Giao hàng', icon: 'local_shipping' },
+            'ORDER_RETURNED': { text: 'Trả hàng', icon: 'assignment_return' },
+            'customer_ticket': { text: 'Sự vụ khách hàng', icon: 'credit_card' },
         };
 
-        return typeMap[type] || { text: type || 'N/A', icon: 'help' };
+        return typeMap[type] || { text: type || 'Không xác định', icon: 'help' };
     }
 
     getStatusBadge(color) {
         const colorMap = {
-            'green': { text: 'Completed', bg: 'bg-success-light', textColor: 'text-success' },
-            'yellow': { text: 'Pending', bg: 'bg-warning-light', textColor: 'text-warning' },
-            'red': { text: 'Failed', bg: 'bg-danger-light', textColor: 'text-danger' },
-            'blue': { text: 'Processing', bg: 'bg-info-light', textColor: 'text-info' },
+            'green': { text: 'Hoàn thành', bg: 'bg-success-light', textColor: 'text-success' },
+            'yellow': { text: 'Chờ xử lý', bg: 'bg-warning-light', textColor: 'text-warning' },
+            'red': { text: 'Thất bại', bg: 'bg-danger-light', textColor: 'text-danger' },
+            'blue': { text: 'Đang xử lý', bg: 'bg-info-light', textColor: 'text-info' },
         };
 
         const config = colorMap[color] || colorMap['green'];
@@ -352,7 +369,11 @@ export class TransactionActivityModule {
             return { text: '-', colorClass: 'text-slate-400' };
         }
 
-        const formatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(amount));
+        // Định dạng tiền Việt: 900.000 (dùng dấu chấm phân cách nghìn, không có dấu thập phân)
+        const formatted = new Intl.NumberFormat('vi-VN', {
+            style: 'decimal',
+            maximumFractionDigits: 0
+        }).format(Math.abs(amount));
 
         if (amount > 0) {
             return { text: `+${formatted}`, colorClass: 'text-success' };
@@ -366,7 +387,13 @@ export class TransactionActivityModule {
     formatTimestamp(dateStr) {
         if (!dateStr) return 'N/A';
         const date = new Date(dateStr);
-        return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+        return date.toLocaleString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     }
 
     updatePagination(total) {

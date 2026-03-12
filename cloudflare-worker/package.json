@@ -1,0 +1,27 @@
+{
+  "name": "n2store-cloudflare-worker",
+  "version": "2.0.0",
+  "description": "Multi-API Proxy for n2store - TPOS, Pancake, Facebook",
+  "main": "worker.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "build": "echo 'Wrangler bundles automatically'",
+    "test": "echo 'No tests configured'"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "proxy",
+    "tpos",
+    "pancake",
+    "facebook"
+  ],
+  "author": "N2Store",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

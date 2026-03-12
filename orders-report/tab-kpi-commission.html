@@ -1,0 +1,1004 @@
+<!--
+  Tab KPI - HOA HỒNG
+  Quản lý KPI upselling sản phẩm: bộ lọc, summary cards, bảng KPI, đối soát, drill-down modals
+  Dữ liệu từ Firestore: kpi_statistics, kpi_audit_log, kpi_base
+-->
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI - Hoa Hồng Upselling</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Configuration (SHARED) -->
+    <script src="../shared/js/firebase-config.js"></script>
+    <script src="../shared/js/indexed-db-store.js"></script>
+
+    <!-- XLSX.js for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script defer src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+        /* ===== BASE STYLES ===== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #1e293b;
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===== PAGE HEADER ===== */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-title svg { color: #f59e0b; width: 28px; height: 28px; }
+
+        .page-subtitle {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        /* ===== FILTER SECTION ===== */
+        .kpi-filters {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select,
+        .filter-group input[type="date"] {
+            padding: 9px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #334155;
+            background: white;
+            transition: border-color 0.2s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input[type="date"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary, .btn-secondary, .btn-success, .btn-warning, .btn-danger {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+
+        .btn-primary svg, .btn-secondary svg, .btn-success svg,
+        .btn-warning svg, .btn-danger svg { width: 16px; height: 16px; }
+
+        .btn-primary:disabled, .btn-success:disabled, .btn-warning:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ===== SUMMARY CARDS ===== */
+        .kpi-summary-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border-top: 3px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .summary-card:hover { transform: translateY(-2px); }
+
+        .card-blue { border-top-color: #3b82f6; }
+        .card-purple { border-top-color: #8b5cf6; }
+        .card-orange { border-top-color: #f59e0b; }
+        .card-green { border-top-color: #10b981; }
+
+        .card-icon { font-size: 28px; margin-bottom: 8px; }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+
+        .card-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* ===== SECTION CARDS ===== */
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title svg { width: 20px; height: 20px; color: #3b82f6; }
+
+        /* ===== TABLES ===== */
+        .table-wrapper { overflow-x: auto; }
+
+        .kpi-main-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .kpi-main-table thead th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .kpi-main-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        .kpi-main-table tbody tr:hover { background: #f8fafc; }
+
+        .kpi-main-table tfoot td {
+            padding: 12px 16px;
+            font-weight: 700;
+            background: #f0f9ff;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .employee-link {
+            color: #3b82f6;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .employee-link:hover { text-decoration: underline; color: #2563eb; }
+
+        .order-link {
+            color: #3b82f6;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .order-link:hover { text-decoration: underline; }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-ok { background: #dcfce7; color: #16a34a; }
+        .status-discrepancy { background: #fef3c7; color: #d97706; }
+
+        /* Audit log row highlights */
+        .audit-row-out-of-range { background: #fef2f2 !important; }
+        .audit-row-out-of-range td { color: #dc2626; }
+
+        .audit-row-non-chat { background: #fff7ed !important; }
+
+        .source-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .source-chat { background: #dcfce7; color: #16a34a; }
+        .source-non-chat { background: #fed7aa; color: #c2410c; }
+        .source-merge { background: #dbeafe; color: #2563eb; }
+
+        .action-add { color: #16a34a; font-weight: 600; }
+        .action-remove { color: #dc2626; font-weight: 600; }
+        .action-merge { color: #2563eb; font-weight: 600; }
+
+        .out-of-range-label {
+            display: inline-block;
+            background: #fecaca;
+            color: #dc2626;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        /* Audit summary */
+        .audit-summary {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border: 1px solid #bae6fd;
+        }
+
+        .audit-summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+
+        .audit-summary-row .label { color: #64748b; }
+        .audit-summary-row .value { font-weight: 700; color: #1e293b; }
+        .audit-summary-row.total { border-top: 1px solid #bae6fd; margin-top: 8px; padding-top: 8px; }
+        .audit-summary-row.total .value { color: #16a34a; font-size: 15px; }
+
+        /* BASE info */
+        .base-info {
+            padding: 12px 16px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            border: 1px solid #bbf7d0;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #166534;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .base-info-item { display: flex; align-items: center; gap: 6px; }
+        .base-info-item svg { width: 14px; height: 14px; }
+
+        /* Reconciliation delta */
+        .delta-positive { color: #dc2626; font-weight: 700; }
+        .delta-zero { color: #16a34a; font-weight: 700; }
+        .delta-negative { color: #2563eb; font-weight: 700; }
+
+        /* ===== LOADING & EMPTY STATES ===== */
+        .loading-state, .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+
+        .loading-state p, .empty-state p {
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .empty-state svg { width: 48px; height: 48px; color: #cbd5e1; }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== MODALS ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-overlay-l2 { z-index: 1100; }
+
+        .modal-container {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .modal-l1 { max-width: 900px; }
+        .modal-l2 { max-width: 1000px; }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-title svg { width: 22px; height: 22px; color: #3b82f6; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover { background: #f1f5f9; color: #1e293b; }
+        .modal-close svg { width: 20px; height: 20px; }
+
+        .modal-filters {
+            display: flex;
+            gap: 12px;
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .modal-filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #334155;
+        }
+
+        .modal-search {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .modal-search .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: #94a3b8;
+        }
+
+        .modal-search input {
+            width: 100%;
+            padding: 8px 12px 8px 34px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #334155;
+        }
+
+        .modal-search input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Modal L2 Tabs */
+        .modal-tabs {
+            display: flex;
+            gap: 0;
+            padding: 0 24px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+
+        .modal-tab-btn {
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .modal-tab-btn:hover { color: #3b82f6; }
+        .modal-tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .modal-tab-btn svg { width: 16px; height: 16px; }
+
+        .order-tab-content { display: none; }
+        .order-tab-content.active { display: block; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+
+            .kpi-summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .summary-card { padding: 14px; }
+            .card-value { font-size: 22px; }
+            .card-icon { font-size: 22px; }
+
+            .filter-row { flex-direction: column; gap: 10px; }
+            .filter-group { min-width: 100%; }
+
+            .page-title { font-size: 18px; }
+
+            .modal-container { max-height: 95vh; }
+            .modal-l1, .modal-l2 { max-width: 100%; }
+            .modal-overlay { padding: 10px; }
+
+            .modal-tabs { padding: 0 12px; }
+            .modal-tab-btn { padding: 10px 12px; font-size: 12px; }
+
+            .section-header { flex-direction: column; align-items: flex-start; }
+
+            .kpi-main-table { font-size: 13px; }
+            .kpi-main-table thead th,
+            .kpi-main-table tbody td { padding: 8px 10px; }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-summary-cards { grid-template-columns: 1fr 1fr; }
+            .filter-actions { flex-direction: column; }
+            .filter-actions button { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    <i data-lucide="award"></i>
+                    KPI - Hoa Hồng Upselling
+                </h1>
+                <p class="page-subtitle">Quản lý và kiểm soát KPI upselling sản phẩm</p>
+            </div>
+        </div>
+
+        <!-- ===== FILTER SECTION (11.2) ===== -->
+        <div class="kpi-filters">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Campaign</label>
+                    <select id="kpiFilterCampaign">
+                        <option value="">Tất cả</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Nhân viên</label>
+                    <select id="kpiFilterEmployee">
+                        <option value="">Tất cả</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Từ ngày</label>
+                    <input type="date" id="kpiFilterDateFrom">
+                </div>
+                <div class="filter-group">
+                    <label>Đến ngày</label>
+                    <input type="date" id="kpiFilterDateTo">
+                </div>
+                <div class="filter-group">
+                    <label>Trạng thái</label>
+                    <select id="kpiFilterStatus">
+                        <option value="">Tất cả</option>
+                        <option value="ok">OK</option>
+                        <option value="discrepancy">Cần đối soát</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button onclick="KPICommission.applyFilters()" class="btn-primary">
+                    <i data-lucide="filter"></i> Lọc
+                </button>
+                <button onclick="KPICommission.refreshData()" class="btn-secondary">
+                    <i data-lucide="refresh-cw"></i> Làm mới
+                </button>
+                <button onclick="KPICommission.exportExcel()" class="btn-success">
+                    <i data-lucide="file-spreadsheet"></i> Export Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== SUMMARY CARDS (11.3) ===== -->
+        <div class="kpi-summary-cards">
+            <div class="summary-card card-blue">
+                <div class="card-icon">👥</div>
+                <div class="card-value" id="totalEmployees">0</div>
+                <div class="card-label">Tổng NV có KPI</div>
+            </div>
+            <div class="summary-card card-purple">
+                <div class="card-icon">🛒</div>
+                <div class="card-value" id="totalOrdersWithBase">0</div>
+                <div class="card-label">Tổng đơn có BASE</div>
+            </div>
+            <div class="summary-card card-orange">
+                <div class="card-icon">📦</div>
+                <div class="card-value" id="totalNetProducts">0</div>
+                <div class="card-label">SP thêm ròng (NET)</div>
+            </div>
+            <div class="summary-card card-green">
+                <div class="card-icon">💰</div>
+                <div class="card-value" id="totalKPIAmount">0đ</div>
+                <div class="card-label">Tổng KPI (VNĐ)</div>
+            </div>
+        </div>
+
+        <!-- ===== MAIN KPI TABLE (11.4) ===== -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i data-lucide="table"></i>
+                    Bảng KPI theo nhân viên
+                </h2>
+            </div>
+
+            <!-- Loading state -->
+            <div id="kpiTableLoading" class="loading-state">
+                <div class="spinner"></div>
+                <p>Đang tải dữ liệu KPI...</p>
+            </div>
+
+            <!-- Empty state -->
+            <div id="kpiTableEmpty" class="empty-state" style="display:none;">
+                <i data-lucide="inbox"></i>
+                <p>Chưa có dữ liệu KPI. Hãy chọn bộ lọc và nhấn "Lọc".</p>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrapper" id="kpiTableWrapper" style="display:none;">
+                <table class="kpi-main-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên nhân viên</th>
+                            <th>Số đơn</th>
+                            <th>SP NET</th>
+                            <th>Tổng KPI (VNĐ)</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kpiTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== RECONCILIATION SECTION (11.5) ===== -->
+        <div class="section-card" id="reconciliationSection">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i data-lucide="shield-check"></i>
+                    Đối soát KPI
+                </h2>
+                <button onclick="KPICommission.runReconciliation()" class="btn-warning" id="btnRunReconciliation">
+                    <i data-lucide="play"></i> Chạy đối soát
+                </button>
+            </div>
+
+            <!-- Reconciliation loading -->
+            <div id="reconLoading" class="loading-state" style="display:none;">
+                <div class="spinner"></div>
+                <p>Đang chạy đối soát...</p>
+            </div>
+
+            <!-- Reconciliation empty -->
+            <div id="reconEmpty" class="empty-state">
+                <i data-lucide="check-circle"></i>
+                <p>Nhấn "Chạy đối soát" để so sánh Audit Log với trạng thái thực tế đơn hàng (TPOS).</p>
+            </div>
+
+            <!-- Reconciliation results -->
+            <div class="table-wrapper" id="reconResultsWrapper" style="display:none;">
+                <table class="kpi-main-table recon-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>STT</th>
+                            <th>Expected NET</th>
+                            <th>Actual NET</th>
+                            <th>Delta</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reconTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL LEVEL 1: Employee Orders (11.6) ===== -->
+    <div class="modal-overlay" id="modalEmployeeOrders" style="display:none;">
+        <div class="modal-container modal-l1">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i data-lucide="user"></i>
+                    Chi tiết KPI - <span id="modalL1EmployeeName">---</span>
+                </h3>
+                <button class="modal-close" onclick="KPICommission.closeEmployeeOrders()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Modal L1 Filters -->
+            <div class="modal-filters">
+                <div class="modal-filter-group">
+                    <select id="modalL1FilterStatus" onchange="KPICommission.filterEmployeeOrders()">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="ok">OK</option>
+                        <option value="discrepancy">Cần đối soát</option>
+                    </select>
+                </div>
+                <div class="modal-filter-group modal-search">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="modalL1Search" placeholder="Tìm Order ID hoặc STT..."
+                        oninput="KPICommission.filterEmployeeOrders()">
+                </div>
+            </div>
+
+            <!-- Modal L1 Table -->
+            <div class="modal-body">
+                <div id="modalL1Loading" class="loading-state" style="display:none;">
+                    <div class="spinner"></div>
+                    <p>Đang tải đơn hàng...</p>
+                </div>
+                <div id="modalL1Empty" class="empty-state" style="display:none;">
+                    <p>Không có đơn hàng nào.</p>
+                </div>
+                <div class="table-wrapper" id="modalL1TableWrapper" style="display:none;">
+                    <table class="kpi-main-table">
+                        <thead>
+                            <tr>
+                                <th>STT đơn</th>
+                                <th>Order ID</th>
+                                <th>Campaign</th>
+                                <th>SP NET</th>
+                                <th>KPI (VNĐ)</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalL1TableBody">
+                            <!-- Rendered by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL LEVEL 2: Order Details (11.7) ===== -->
+    <div class="modal-overlay modal-overlay-l2" id="modalOrderDetails" style="display:none;">
+        <div class="modal-container modal-l2">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i data-lucide="file-text"></i>
+                    Chi tiết đơn hàng - <span id="modalL2OrderId">---</span>
+                </h3>
+                <button class="modal-close" onclick="KPICommission.closeOrderDetails()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Modal L2 Tab Navigation -->
+            <div class="modal-tabs">
+                <button class="modal-tab-btn active" onclick="KPICommission.switchOrderTab('kpi-compare')" data-order-tab="kpi-compare">
+                    <i data-lucide="bar-chart-3"></i> So sánh KPI
+                </button>
+                <button class="modal-tab-btn" onclick="KPICommission.switchOrderTab('audit-log')" data-order-tab="audit-log">
+                    <i data-lucide="scroll-text"></i> Audit Log
+                </button>
+                <button class="modal-tab-btn" onclick="KPICommission.switchOrderTab('all-products')" data-order-tab="all-products">
+                    <i data-lucide="package"></i> Tất cả SP
+                </button>
+                <button class="modal-tab-btn" onclick="KPICommission.switchOrderTab('base-products')" data-order-tab="base-products">
+                    <i data-lucide="lock"></i> BASE Products
+                </button>
+            </div>
+
+            <!-- Modal L2 Tab Contents -->
+            <div class="modal-body">
+                <!-- Tab: So sánh KPI (NET calculation) -->
+                <div class="order-tab-content active" id="tabKpiCompare">
+                    <div id="kpiCompareLoading" class="loading-state" style="display:none;">
+                        <div class="spinner"></div>
+                        <p>Đang tính NET KPI...</p>
+                    </div>
+                    <div id="kpiCompareEmpty" class="empty-state" style="display:none;">
+                        <p>Không có sản phẩm mới (NET = 0).</p>
+                    </div>
+                    <div class="table-wrapper" id="kpiCompareWrapper" style="display:none;">
+                        <table class="kpi-main-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Mã SP</th>
+                                    <th>Tên SP</th>
+                                    <th>Thêm</th>
+                                    <th>Xóa</th>
+                                    <th>NET Qty</th>
+                                    <th>KPI (VNĐ)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kpiCompareBody">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                            <tfoot id="kpiCompareFoot">
+                                <!-- Summary row rendered by JS -->
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab: Audit Log (timeline) -->
+                <div class="order-tab-content" id="tabAuditLog" style="display:none;">
+                    <div id="auditLogLoading" class="loading-state" style="display:none;">
+                        <div class="spinner"></div>
+                        <p>Đang tải audit log...</p>
+                    </div>
+                    <div id="auditLogEmpty" class="empty-state" style="display:none;">
+                        <p>Chưa có audit log cho đơn hàng này.</p>
+                    </div>
+                    <div class="table-wrapper" id="auditLogWrapper" style="display:none;">
+                        <table class="kpi-main-table audit-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Thời gian</th>
+                                    <th>Nhân viên</th>
+                                    <th>Hành động</th>
+                                    <th>Mã SP</th>
+                                    <th>Tên SP</th>
+                                    <th>Số lượng</th>
+                                    <th>Nguồn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogBody">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                        </table>
+                        <!-- Audit summary -->
+                        <div class="audit-summary" id="auditLogSummary">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Tất cả SP (current products) -->
+                <div class="order-tab-content" id="tabAllProducts" style="display:none;">
+                    <div id="allProductsLoading" class="loading-state" style="display:none;">
+                        <div class="spinner"></div>
+                        <p>Đang tải sản phẩm...</p>
+                    </div>
+                    <div id="allProductsEmpty" class="empty-state" style="display:none;">
+                        <p>Không có dữ liệu sản phẩm.</p>
+                    </div>
+                    <div class="table-wrapper" id="allProductsWrapper" style="display:none;">
+                        <table class="kpi-main-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Mã SP</th>
+                                    <th>Tên SP</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn giá</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allProductsBody">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab: BASE Products (snapshot gốc) -->
+                <div class="order-tab-content" id="tabBaseProducts" style="display:none;">
+                    <div id="baseProductsLoading" class="loading-state" style="display:none;">
+                        <div class="spinner"></div>
+                        <p>Đang tải BASE snapshot...</p>
+                    </div>
+                    <div id="baseProductsEmpty" class="empty-state" style="display:none;">
+                        <p>Đơn hàng chưa có BASE snapshot.</p>
+                    </div>
+                    <div id="baseProductsContent" style="display:none;">
+                        <div class="base-info" id="baseSnapshotInfo">
+                            <!-- Info: timestamp, user rendered by JS -->
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="kpi-main-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Mã SP</th>
+                                        <th>Tên SP</th>
+                                        <th>Số lượng</th>
+                                        <th>Đơn giá</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="baseProductsBody">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialize Lucide icons -->
+    <script>
+        function initIcons() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+        // Try immediately, then on DOMContentLoaded, then on load
+        initIcons();
+        document.addEventListener('DOMContentLoaded', initIcons);
+        window.addEventListener('load', initIcons);
+    </script>
+
+    <!-- Firebase initialization -->
+    <script>
+        if (typeof initializeFirebaseApp === 'function') {
+            initializeFirebaseApp();
+        }
+    </script>
+
+    <!-- KPI Commission Tab JS (11.8) -->
+    <script src="js/tab-kpi-commission.js"></script>
+</body>
+
+</html>

@@ -9,31 +9,36 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản Lý Tài Khoản - N2 Shop</title>
+    <title>Quản Lý Tài Khoản - N2STORE</title>
     <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="modern.css" />
-    <link rel="stylesheet" href="detailed-permissions.css" />
+    <link rel="stylesheet" href="css/modern.css" />
+    <link rel="stylesheet" href="css/user-management.css" />
+    <link rel="stylesheet" href="css/detailed-permissions.css" />
 
     <!-- Lucide Icons -->
     <!-- N2Store Optimization: Core Utilities Loader -->
-    <script src="../js/core-loader.js"></script>
+    <!-- ES Module: Shared utilities -->
+        <script type="module" src="../shared/esm/compat.js"></script>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
 
     <!-- Firebase Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <!-- Firebase Configuration (SHARED) -->
+    <script src="../shared/js/firebase-config.js"></script>
 
     <!-- Crypto Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/3.0.1/bcrypt.min.js"></script>
 
     <!-- Navigation & Utils -->
-    <script src="../js/navigation-modern.js"></script>
-    <script src="../js/common-utils.js"></script>
+    <script src="../shared/js/notification-system.js"></script>
+    <script defer src="../shared/js/navigation-modern.js"></script>
 </head>
 
 <body>
@@ -47,7 +52,7 @@
             Bạn không có quyền truy cập vào trang này.<br />
             Chỉ có Admin mới có thể quản lý tài khoản.
         </p>
-        <a href="../live/index.html" class="btn btn-primary">
+        <a href="../index.html" class="btn btn-primary">
             <i data-lucide="arrow-left"></i>
             Quay về trang chính
         </a>
@@ -59,8 +64,8 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <i data-lucide="zap"></i>
-                    <span>N2Shop</span>
+                    <img src="../shared/images/logo.jpg" alt="N2STORE" class="sidebar-logo-img">
+                    <span>N2STORE</span>
                 </div>
                 <button class="sidebar-toggle" id="sidebarToggle">
                     <i data-lucide="panel-left-close"></i>
@@ -240,6 +245,17 @@
                                 </label>
                                 <input type="password" id="editNewPassword" placeholder="Password mới" />
                             </div>
+                        </div>
+
+                        <!-- Admin Toggle (chỉ admin mới thấy, controlled by JS) -->
+                        <div class="form-group" id="editAdminToggleGroup" style="display: none;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="editIsAdmin" style="width: 18px; height: 18px; cursor: pointer;" />
+                                <i data-lucide="shield"></i>
+                                Thăng cấp Admin
+                                <span id="editAdminBadge" class="badge" style="display: none; background: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">ON</span>
+                                <span id="editAdminBadgeOff" class="badge" style="background: var(--gray-300); color: var(--text-secondary); padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">OFF</span>
+                            </label>
                         </div>
 
                         <!-- Permissions Section (Simplified - only detailed permissions) -->
@@ -502,12 +518,11 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../orders-report/decoding-utility.js"></script>
-    <script src="menu-rename-manager.js"></script>
-    <script src="notification-system.js"></script>
+    <script src="../orders-report/js/utils/decoding-utility.js"></script>
+    <script src="js/menu-rename-manager.js"></script>
 
     <!-- Permissions Registry - Single Source of Truth (phải load trước các UI) -->
-    <script src="permissions-registry.js"></script>
+    <script src="js/permissions-registry.js"></script>
     <!-- page-permissions-ui.js REMOVED - replaced by simplified system using only detailedPermissions -->
 
     <script>
@@ -550,16 +565,15 @@
         })();
     </script>
 
-    <script src="image-system.js"></script>
-    <script src="auth.js"></script>
+    <script src="js/image-system.js"></script>
     <!-- detailed-permissions-config.js REMOVED - replaced by permissions-registry.js -->
-    <script src="detailed-permissions-ui.js"></script>
-    <script src="user-management-enhanced.js"></script>
-    <script src="permissions-overview.js"></script>
-    <script src="template-manager.js"></script>
+    <script src="js/detailed-permissions-ui.js"></script>
+    <script src="js/user-management-enhanced.js"></script>
+    <script src="js/permissions-overview.js"></script>
+    <script src="js/template-manager.js"></script>
 
     <!-- Migration Script - Có thể xóa sau khi migration xong -->
-    <script src="permissions-migration.js"></script>
+    <script src="js/permissions-migration.js"></script>
 
     <script>
         // Initialize
@@ -602,7 +616,13 @@
                         window.templateManager.loadTemplates();
                     }
 
-                    lucide.createIcons();
+                    // Re-render icons after DOM is fully updated
+                    // Use setTimeout to ensure tab is visible before rendering icons
+                    setTimeout(() => {
+                        if (typeof lucide !== 'undefined') {
+                            lucide.createIcons();
+                        }
+                    }, 50);
                 });
             });
 

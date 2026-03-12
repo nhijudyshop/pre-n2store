@@ -1,0 +1,101 @@
+/**
+ * CSS VARIABLES
+ * File: variables.css
+ * Purpose: Theme variables and design tokens (matching React app design system)
+ */
+
+:root {
+    /* Primary Colors - Professional Blue */
+    --color-primary: hsl(217, 91%, 60%);
+    --color-primary-hover: hsl(217, 91%, 55%);
+    --color-primary-light: hsl(217, 91%, 95%);
+    --color-primary-foreground: #ffffff;
+
+    /* Accent/Success - Green */
+    --color-success: hsl(142, 76%, 36%);
+    --color-success-light: hsl(142, 76%, 95%);
+    --color-success-foreground: #ffffff;
+
+    /* Warning - Orange/Amber */
+    --color-warning: hsl(38, 92%, 50%);
+    --color-warning-light: hsl(38, 92%, 95%);
+    --color-warning-foreground: #000000;
+
+    /* Destructive/Danger - Red */
+    --color-danger: hsl(0, 84%, 60%);
+    --color-danger-light: hsl(0, 84%, 95%);
+    --color-danger-foreground: #ffffff;
+
+    /* Info - Blue */
+    --color-info: hsl(217, 91%, 60%);
+    --color-info-light: hsl(217, 91%, 95%);
+
+    /* Neutrals */
+    --color-bg: hsl(210, 20%, 98%);
+    --color-bg-card: #ffffff;
+    --color-border: hsl(214, 32%, 88%);
+    --color-border-light: hsl(214, 32%, 95%);
+    --color-muted: hsl(214, 32%, 95%);
+    --color-muted-foreground: hsl(215, 16%, 47%);
+
+    /* Text Colors */
+    --color-text-primary: hsl(215, 25%, 27%);
+    --color-text-secondary: hsl(215, 16%, 47%);
+    --color-text-muted: hsl(215, 16%, 65%);
+
+    /* Shadows - Soft Design System */
+    --shadow-soft: 0 2px 8px -2px hsl(215 25% 27% / 0.08);
+    --shadow-medium: 0 4px 16px -4px hsl(215 25% 27% / 0.12);
+    --shadow-strong: 0 8px 32px -8px hsl(215 25% 27% / 0.16);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(217, 91%, 70%));
+    --gradient-success: linear-gradient(135deg, hsl(142, 76%, 36%), hsl(142, 76%, 46%));
+    --gradient-card: linear-gradient(180deg, #ffffff, hsl(214, 32%, 98%));
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+
+    /* Border radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-full: 9999px;
+
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-normal: 200ms ease;
+    --transition-slow: 300ms ease;
+
+    /* Layout */
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 70px;
+    --header-height: 64px;
+
+    /* Font */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    :root.dark {
+        --color-bg: hsl(215, 25%, 10%);
+        --color-bg-card: hsl(215, 25%, 15%);
+        --color-border: hsl(215, 25%, 25%);
+        --color-border-light: hsl(215, 25%, 20%);
+        --color-text-primary: hsl(210, 20%, 98%);
+        --color-text-secondary: hsl(215, 16%, 65%);
+        --color-text-muted: hsl(215, 16%, 47%);
+    }
+}

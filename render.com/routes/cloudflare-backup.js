@@ -410,7 +410,44 @@ router.post('/facebook-send', async (req, res) => {
     console.log('[FACEBOOK-SEND] ========================================');
     console.log('[FACEBOOK-SEND] Received request to send message via Facebook Graph API');
 
-    const { pageId, psid, message, pageToken, useTag, imageUrls = [] } = req.body;
+    const { pageId, psid, message, pageToken, useTag, imageUrls = [], postId, customerName, commentId } = req.body;
+
+    // === DIRECT PRIVATE REPLY MODE ===
+    if (commentId && message && pageToken) {
+        console.log('[FACEBOOK-SEND] Direct Private Reply mode → commentId:', commentId);
+        const messageText = typeof message === 'string' ? message : message.text;
+        const prUrl = `https://graph.facebook.com/v21.0/${commentId}/private_replies?access_token=${pageToken}`;
+        try {
+            const resp = await fetchWithTimeout(prUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ message: messageText }),
+            });
+            const result = await resp.json();
+
+            if (result.error) {
+                console.error('[FACEBOOK-SEND] Private Reply error:', result.error.message);
+                return res.status(resp.status || 400).json({
+                    success: false,
+                    error: result.error.message,
+                    error_code: result.error.code,
+                    error_subcode: result.error.error_subcode,
+                    method: 'private_reply',
+                });
+            }
+
+            console.log('[FACEBOOK-SEND] ✅ Direct Private Reply succeeded!');
+            return res.json({
+                success: true,
+                recipient_id: result.recipient_id,
+                message_id: result.id,
+                method: 'private_reply',
+                comment_id: commentId,
+            });
+        } catch (err) {
+            return res.status(500).json({ success: false, error: 'Private Reply error: ' + err.message });
+        }
+    }
 
     // Validate required fields
     if (!pageId || !psid || !pageToken) {
@@ -419,13 +456,141 @@ router.post('/facebook-send', async (req, res) => {
             success: false,
             error: 'Missing required fields',
             required: ['pageId', 'psid', 'pageToken'],
-            usage: 'POST /api/facebook-send with JSON body { pageId, psid, message, pageToken, useTag: true, imageUrls: [] }'
+            usage: 'POST /api/facebook-send with JSON body { pageId, psid, message, pageToken, useTag: true, imageUrls: [], postId: "optional" }'
         });
     }
 
     const graphApiUrl = `https://graph.facebook.com/v21.0/${pageId}/messages?access_token=${pageToken}`;
     const messageIds = [];
     let lastResult = null;
+    let usedTag = null;
+    let sendFailed551 = false;
+    let lastError = null;
+
+    if (postId) console.log('[FACEBOOK-SEND] Post ID for Private Reply fallback:', postId);
+
+    // Tag priority: HUMAN_AGENT → CUSTOMER_FEEDBACK
+    const TAG_SEQUENCE = ['HUMAN_AGENT', 'CUSTOMER_FEEDBACK'];
+
+    // Helper: send with tag fallback
+    async function sendWithTagFallback(baseFbBody) {
+        if (!useTag) {
+            baseFbBody.messaging_type = 'RESPONSE';
+            const resp = await fetchWithTimeout(graphApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(baseFbBody)
+            });
+            const result = await resp.json();
+            if (result.error) return { success: false, result, status: resp.status };
+            return { success: true, result, tag: null };
+        }
+
+        for (const tag of TAG_SEQUENCE) {
+            const body = { ...baseFbBody, messaging_type: 'MESSAGE_TAG', tag };
+            console.log(`[FACEBOOK-SEND] Trying tag: ${tag}`);
+
+            const resp = await fetchWithTimeout(graphApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const result = await resp.json();
+            console.log(`[FACEBOOK-SEND] ${tag} response:`, JSON.stringify(result));
+
+            if (!result.error) {
+                console.log(`[FACEBOOK-SEND] ✅ Success with tag: ${tag}`);
+                return { success: true, result, tag };
+            }
+
+            if (result.error.code === 551) sendFailed551 = true;
+            lastError = result.error;
+            console.warn(`[FACEBOOK-SEND] ⚠️ ${tag} failed (${result.error.code}): ${result.error.message}`);
+        }
+
+        return { success: false, result: { error: lastError }, status: 400 };
+    }
+
+    // Helper: Find real Facebook comment ID (returns { commentId, diagnostics })
+    async function findRealCommentId(fbPostId, customerAsid, custName) {
+        const diagnostics = {
+            postId: fbPostId, psid: customerAsid, customerName: custName || null,
+            queries: [], commentersFound: [],
+        };
+
+        console.log('[PRIVATE-REPLY] Post ID:', fbPostId, '| PSID:', customerAsid, '| Name:', custName);
+
+        const postIdVariants = [fbPostId];
+        if (fbPostId.includes('_')) postIdVariants.push(fbPostId.split('_').slice(1).join('_'));
+
+        for (const pid of postIdVariants) {
+            for (const filter of ['stream', 'toplevel', null]) {
+                const graphUrl = `https://graph.facebook.com/v21.0/${pid}/comments`;
+                const params = new URLSearchParams({
+                    access_token: pageToken,
+                    fields: 'from{id,name},id,message,created_time',
+                    limit: '200', order: 'reverse_chronological'
+                });
+                if (filter) params.set('filter', filter);
+
+                const queryKey = `${pid}/comments?filter=${filter || 'default'}`;
+                try {
+                    const resp = await fetchWithTimeout(`${graphUrl}?${params.toString()}`, {
+                        method: 'GET', headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await resp.json();
+
+                    if (data.error) {
+                        diagnostics.queries.push({ query: queryKey, error: data.error.message });
+                        continue;
+                    }
+
+                    const comments = data.data || [];
+                    diagnostics.queries.push({ query: queryKey, count: comments.length });
+                    if (comments.length === 0) continue;
+
+                    const uniqueCommenters = [...new Map(
+                        comments.filter(c => c.from).map(c => [c.from.id, { id: c.from.id, name: c.from.name }])
+                    ).values()];
+                    diagnostics.commentersFound = uniqueCommenters.slice(0, 20);
+
+                    let match = comments.find(c => c.from && String(c.from.id) === String(customerAsid));
+                    if (match) return { commentId: match.id, diagnostics, matchedBy: 'id' };
+
+                    if (custName) {
+                        const norm = custName.trim().toLowerCase();
+                        match = comments.find(c => c.from?.name?.trim().toLowerCase() === norm);
+                        if (match) return { commentId: match.id, diagnostics, matchedBy: 'name' };
+                    }
+                } catch (err) {
+                    diagnostics.queries.push({ query: queryKey, error: err.message });
+                }
+            }
+        }
+
+        return { commentId: null, diagnostics };
+    }
+
+    // Helper: Send Private Reply
+    async function sendPrivateReply(realCommentId, messageText) {
+        const prUrl = `https://graph.facebook.com/v21.0/${realCommentId}/private_replies?access_token=${pageToken}`;
+        console.log('[PRIVATE-REPLY] Sending Private Reply to comment:', realCommentId);
+
+        const resp = await fetchWithTimeout(prUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ message: messageText })
+        });
+        const result = await resp.json();
+
+        if (result.error) {
+            console.error('[PRIVATE-REPLY] ❌ Failed:', result.error.message);
+            return { success: false, result, status: resp.status };
+        }
+
+        console.log('[PRIVATE-REPLY] ✅ Private Reply sent successfully!');
+        return { success: true, result };
+    }
 
     try {
         // Send images first
@@ -435,86 +600,89 @@ router.post('/facebook-send', async (req, res) => {
                 message: {
                     attachment: {
                         type: 'image',
-                        payload: {
-                            url: imageUrl,
-                            is_reusable: true
-                        }
+                        payload: { url: imageUrl, is_reusable: true }
                     }
                 }
             };
 
-            if (useTag) {
-                imageFbBody.messaging_type = 'MESSAGE_TAG';
-                imageFbBody.tag = 'POST_PURCHASE_UPDATE';
-            } else {
-                imageFbBody.messaging_type = 'RESPONSE';
-            }
-
             console.log('[FACEBOOK-SEND] Sending image:', imageUrl);
+            const imgResult = await sendWithTagFallback(imageFbBody);
 
-            const imageResponse = await fetchWithTimeout(graphApiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(imageFbBody)
-            });
-
-            const imageResult = await imageResponse.json();
-            console.log('[FACEBOOK-SEND] Image response:', JSON.stringify(imageResult));
-
-            if (imageResult.error) {
-                return res.status(imageResponse.status).json({
-                    success: false,
-                    error: imageResult.error.message || 'Failed to send image',
-                    error_code: imageResult.error.code,
-                    error_subcode: imageResult.error.error_subcode
-                });
+            if (!imgResult.success) {
+                break; // Don't return - try Private Reply fallback
             }
 
-            messageIds.push(imageResult.message_id);
-            lastResult = imageResult;
+            messageIds.push(imgResult.result.message_id);
+            lastResult = imgResult.result;
+            usedTag = imgResult.tag;
         }
 
         // Send text message
-        if (message && message.trim()) {
+        const hasTextMessage = message && message.trim();
+        if (hasTextMessage && !sendFailed551) {
             const textFbBody = {
                 recipient: { id: psid },
                 message: { text: message }
             };
 
-            if (useTag) {
-                textFbBody.messaging_type = 'MESSAGE_TAG';
-                textFbBody.tag = 'POST_PURCHASE_UPDATE';
-                console.log('[FACEBOOK-SEND] Using MESSAGE_TAG with POST_PURCHASE_UPDATE');
-            } else {
-                textFbBody.messaging_type = 'RESPONSE';
+            console.log('[FACEBOOK-SEND] Sending text message');
+            const txtResult = await sendWithTagFallback(textFbBody);
+
+            if (txtResult.success) {
+                messageIds.push(txtResult.result.message_id);
+                lastResult = txtResult.result;
+                usedTag = txtResult.tag;
             }
+        }
 
-            const textResponse = await fetchWithTimeout(graphApiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(textFbBody)
-            });
+        // Private Reply fallback when Send API fails with 551
+        if (sendFailed551 && postId && hasTextMessage) {
+            console.log('[FACEBOOK-SEND] Send API failed 551 → trying Private Reply fallback');
 
-            const textResult = await textResponse.json();
-            console.log('[FACEBOOK-SEND] Text response:', JSON.stringify(textResult));
+            const lookup = await findRealCommentId(postId, psid, customerName);
 
-            if (textResult.error) {
-                return res.status(textResponse.status).json({
+            if (lookup.commentId) {
+                const prResult = await sendPrivateReply(lookup.commentId, message);
+
+                if (prResult.success) {
+                    return res.json({
+                        success: true,
+                        recipient_id: prResult.result.recipient_id,
+                        message_id: prResult.result.id,
+                        message_ids: [prResult.result.id],
+                        used_tag: 'PRIVATE_REPLY',
+                        method: 'private_reply',
+                        real_comment_id: lookup.commentId,
+                        matched_by: lookup.matchedBy,
+                    });
+                }
+
+                return res.status(prResult.status || 400).json({
                     success: false,
-                    error: textResult.error.message || 'Failed to send text',
-                    error_code: textResult.error.code,
-                    error_subcode: textResult.error.error_subcode
+                    error: prResult.result.error?.message || 'Private Reply failed',
+                    error_code: prResult.result.error?.code,
+                    method: 'private_reply',
+                    real_comment_id: lookup.commentId,
+                    _debug: lookup.diagnostics,
                 });
             }
 
-            messageIds.push(textResult.message_id);
-            lastResult = textResult;
+            return res.status(400).json({
+                success: false,
+                error: lastError?.message || 'Không tìm thấy comment của khách trên bài viết',
+                error_code: lastError?.code || 551,
+                private_reply_error: 'comment_not_found',
+                _debug: lookup.diagnostics,
+            });
+        }
+
+        // Non-551 failure
+        if (messageIds.length === 0 && lastError) {
+            return res.status(400).json({
+                success: false,
+                error: lastError.message || 'Failed to send message',
+                error_code: lastError.code,
+            });
         }
 
         console.log('[FACEBOOK-SEND] All messages sent successfully!');
@@ -525,7 +693,7 @@ router.post('/facebook-send', async (req, res) => {
             recipient_id: lastResult?.recipient_id,
             message_id: lastResult?.message_id,
             message_ids: messageIds,
-            used_tag: useTag ? 'POST_PURCHASE_UPDATE' : null
+            used_tag: usedTag
         });
 
     } catch (error) {
@@ -605,6 +773,30 @@ router.all('/rest/*', async (req, res) => {
             error: error.name || 'TposRestApiError',
             message: error.message
         });
+    }
+});
+
+// =====================================================
+// FACEBOOK GRAPH API PROXY
+// GET /api/facebook-graph?path=<graph_path>&access_token=<token>&fields=...
+// =====================================================
+router.get('/facebook-graph', async (req, res) => {
+    const { path: graphPath, ...params } = req.query;
+
+    if (!graphPath || !params.access_token) {
+        return res.status(400).json({ error: 'Missing path or access_token' });
+    }
+
+    try {
+        const qs = new URLSearchParams(params).toString();
+        const fbUrl = `https://graph.facebook.com/v21.0/${graphPath}?${qs}`;
+        console.log('[FB-GRAPH] Proxying:', fbUrl.replace(/access_token=[^&]+/, 'access_token=***'));
+
+        const resp = await fetchWithTimeout(fbUrl, { method: 'GET' });
+        const data = await resp.json();
+        return res.json(data);
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 });
 

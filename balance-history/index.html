@@ -11,13 +11,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lịch sử biến động số dư - Sepay</title>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Core Loader -->
+    <!-- ES Module: Shared utilities -->
+    <script type="module" src="../shared/esm/compat.js"></script>
+
+    <!-- Storage Migration -->
+    <script src="../shared/js/storage-migration.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.StorageMigration) {
+                window.StorageMigration.migrateModuleStorage('balanceHistory');
+            }
+        });
+    </script>
+
+    <!-- Lucide Icons (pinned version for CDN cache efficiency) -->
+    <script src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
 
     <!-- Modern CSS + Styles -->
-    <link rel="stylesheet" href="modern.css">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="transfer-stats.css">
+    <link rel="stylesheet" href="css/modern.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/transfer-stats.css">
+    <link rel="stylesheet" href="css/live-mode.css">
+    <link rel="stylesheet" href="css/accountant.css?v=20260127a">
 </head>
 
 <body>
@@ -25,8 +41,8 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <i data-lucide="zap"></i>
-                <span>N2Shop</span>
+                <img src="../shared/images/logo.jpg" alt="N2STORE" class="sidebar-logo-img">
+                <span>N2STORE</span>
             </div>
             <button class="sidebar-toggle" id="sidebarToggle">
                 <i data-lucide="panel-left-close"></i>
@@ -63,259 +79,367 @@
         <div class="container">
             <!-- Main Section Tabs -->
             <div class="main-tabs">
-                <button class="main-tab active" data-section="balance-history" onclick="switchMainTab('balance-history')">
+                <button class="main-tab" data-section="live-mode" onclick="switchMainTab('live-mode')">
+                    <i data-lucide="radio"></i> Live Mode
+                </button>
+                <button class="main-tab active" data-section="balance-history"
+                    onclick="switchMainTab('balance-history')">
                     <i data-lucide="wallet"></i> Lịch sử biến động số dư
                 </button>
                 <button class="main-tab" data-section="transfer-stats" onclick="switchMainTab('transfer-stats')">
                     <i data-lucide="clipboard-check"></i> Thống Kê Chuyển Khoản
                     <span id="uncheckedBadge" class="unchecked-badge" style="display: none;">0</span>
                 </button>
+                <button class="main-tab" data-section="verification" onclick="switchMainTab('verification')"
+                    id="verificationTab">
+                    <i data-lucide="calculator"></i> Kế Toán
+                    <span id="verificationBadge" class="unchecked-badge verification-badge"
+                        style="display: none;">0</span>
+                </button>
             </div>
+
+            <!-- Tab Panel: Live Mode -->
+            <div id="liveModePanel" class="main-tab-panel">
+                <!-- Header -->
+                <div class="live-mode-header">
+                    <div class="live-indicator">
+                        <span class="pulse"></span>
+                        <span>LIVE MODE</span>
+                    </div>
+
+                    <div class="live-search">
+                        <input type="text" id="liveSearchInput" placeholder="🔍 Tìm kiếm...">
+                    </div>
+
+                    <div id="sseStatus" class="sse-status disconnected">
+                        <span class="status-dot"></span> Offline
+                    </div>
+
+                    <!-- Date Range Filter -->
+                    <div class="live-date-filter">
+                        <div class="date-input-wrapper">
+                            <input type="text" id="liveStartDateDisplay" class="date-input date-display"
+                                placeholder="dd/mm/yyyy" maxlength="10">
+                            <input type="date" id="liveStartDate" class="date-input-hidden" title="Từ ngày">
+                            <i data-lucide="calendar" class="date-icon"></i>
+                        </div>
+                        <input type="time" id="liveStartTime" class="time-input" value="00:00" title="Giờ bắt đầu">
+                        <span class="date-separator">→</span>
+                        <div class="date-input-wrapper">
+                            <input type="text" id="liveEndDateDisplay" class="date-input date-display"
+                                placeholder="dd/mm/yyyy" maxlength="10">
+                            <input type="date" id="liveEndDate" class="date-input-hidden" title="Đến ngày">
+                            <i data-lucide="calendar" class="date-icon"></i>
+                        </div>
+                        <input type="time" id="liveEndTime" class="time-input" value="23:59" title="Giờ kết thúc">
+                    </div>
+
+                    <button class="toggle-confirmed" id="toggleConfirmedBtn">
+                        <i data-lucide="eye-off" style="width:14px;height:14px;"></i> Đã XN (0)
+                    </button>
+
+                    <button class="btn btn-secondary btn-sm" id="liveRefreshBtn">
+                        <i data-lucide="refresh-cw"></i> Làm mới
+                    </button>
+                </div>
+
+                <!-- Kanban Board -->
+                <div class="kanban-board" id="kanbanBoard">
+                    <div class="kanban-loading">
+                        <i data-lucide="loader-2"></i>
+                        Đang tải dữ liệu...
+                    </div>
+                </div>
+
+            </div><!-- End Live Mode Panel -->
 
             <!-- Tab Panel: Balance History -->
             <div id="balanceHistoryPanel" class="main-tab-panel active">
 
-            <!-- Header -->
-            <header class="header">
-                <div class="header-content">
-                    <h1 style="font-size: 1.2rem;"><i data-lucide="wallet"></i> Lịch sử biến động số dư</h1>
-                    <div class="header-actions">
-                        <!-- Inline QR Generator with Customer Info -->
-                        <div class="inline-qr-form">
-                            <input type="text" id="inlineCustomerName" class="inline-input" placeholder="Tên khách hàng"
-                                style="display: none;">
-                            <input type="tel" id="inlineCustomerPhone" class="inline-input" placeholder="SĐT">
-                            <button id="inlineGenerateQRBtn" class="btn btn-success">
-                                <i data-lucide="qr-code"></i> Tạo QR
+                <!-- Header -->
+                <header class="header">
+                    <div class="header-content">
+                        <h1 style="font-size: 1.2rem;"><i data-lucide="wallet"></i> Lịch sử biến động số dư</h1>
+                        <div class="header-actions">
+                            <!-- Inline QR Generator with Customer Info -->
+                            <div class="inline-qr-form">
+                                <input type="text" id="inlineCustomerName" class="inline-input"
+                                    placeholder="Tên khách hàng" style="display: none;">
+                                <input type="tel" id="inlineCustomerPhone" class="inline-input" placeholder="SĐT">
+                                <button id="inlineGenerateQRBtn" class="btn btn-success">
+                                    <i data-lucide="qr-code"></i> Tạo QR
+                                </button>
+                                <!-- Inline QR Display -->
+                                <div id="inlineQRDisplay" class="inline-qr-display" style="display: none;">
+                                    <img id="inlineQRImage" src="" alt="QR Code">
+                                    <span id="inlineCustomerInfo" class="inline-customer-info"></span>
+                                    <span id="inlineQRCode" class="inline-qr-code"></span>
+                                    <button id="copyInlineQRBtn" class="btn btn-primary btn-sm" title="Copy hình QR">
+                                        <i data-lucide="copy"></i>
+                                    </button>
+                                    <button id="closeInlineQRBtn" class="btn btn-secondary btn-sm" title="Đóng">
+                                        <i data-lucide="x"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button id="viewPhoneDataBtn" class="btn btn-info">
+                                <i data-lucide="phone-outgoing"></i> Xem Phone Data
                             </button>
-                            <!-- Inline QR Display -->
-                            <div id="inlineQRDisplay" class="inline-qr-display" style="display: none;">
-                                <img id="inlineQRImage" src="" alt="QR Code">
-                                <span id="inlineCustomerInfo" class="inline-customer-info"></span>
-                                <span id="inlineQRCode" class="inline-qr-code"></span>
-                                <button id="copyInlineQRBtn" class="btn btn-primary btn-sm" title="Copy hình QR">
-                                    <i data-lucide="copy"></i>
-                                </button>
-                                <button id="closeInlineQRBtn" class="btn btn-secondary btn-sm" title="Đóng">
-                                    <i data-lucide="x"></i>
-                                </button>
+                            <button id="reprocessOldTransactionsBtn" class="btn btn-warning" style="display: none;">
+                                <i data-lucide="rotate-cw"></i> Xử lý lại GD cũ
+                            </button>
+                            <button id="fetchNamesBtn" class="btn btn-success" style="display: none;">
+                                <i data-lucide="user-check"></i> Lấy Tên từ TPOS
+                            </button>
+                            <button id="viewRawDataBtn" class="btn btn-secondary" style="display: none;">
+                                <i data-lucide="database"></i> Xem Raw Data
+                            </button>
+                            <button id="refreshBtn" class="btn btn-primary">
+                                <i data-lucide="refresh-cw"></i> Làm mới
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Filter Toggle Button, Search & Transaction View Tabs -->
+                <div style="margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button id="toggleFiltersBtn" class="btn btn-secondary" onclick="toggleFilters()">
+                        <i data-lucide="filter"></i> <span id="toggleFiltersText">Hiện bộ lọc</span>
+                    </button>
+
+                    <!-- Always-visible search -->
+                    <div style="position: relative; flex: 1; min-width: 200px; max-width: 350px;">
+                        <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9ca3af; pointer-events: none;"></i>
+                        <input type="text" id="filterSearch" class="filter-input"
+                            placeholder="Tên KH, SĐT, nội dung..."
+                            style="width: 100%; padding-left: 32px; height: 36px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px;">
+                    </div>
+
+                    <!-- Transaction View Tabs -->
+                    <div class="view-tabs">
+                        <button class="view-tab active" data-view="all" onclick="setViewMode('all')">
+                            <i data-lucide="list"></i> Tất cả
+                        </button>
+                        <button class="view-tab" data-view="visible" onclick="setViewMode('visible')">
+                            <i data-lucide="eye"></i> Giao dịch hiện
+                        </button>
+                        <button class="view-tab" data-view="no-phone" onclick="setViewMode('no-phone')">
+                            <i data-lucide="phone-off"></i> Chưa có SĐT <span id="noPhoneCount"
+                                class="tab-badge"></span>
+                        </button>
+                        <button class="view-tab" data-view="hidden" onclick="setViewMode('hidden')">
+                            <i data-lucide="eye-off"></i> Giao dịch ẩn <span id="hiddenCount" class="tab-badge"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Verification Status Filter Chips -->
+                <div id="verificationFilters" class="verification-filters">
+                    <div class="filter-label">
+                        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> Trạng thái xác minh:
+                    </div>
+                    <div class="filter-chips">
+                        <button class="filter-chip active" data-status="all">
+                            Tất cả <span class="chip-count" id="stat-all">0</span>
+                        </button>
+                        <button class="filter-chip chip-auto" data-status="AUTO_APPROVED">
+                            <i data-lucide="zap" style="width:12px;height:12px"></i> Tự động
+                            <span class="chip-count" id="stat-auto">0</span>
+                        </button>
+                        <button class="filter-chip chip-approved" data-status="APPROVED">
+                            <i data-lucide="user-check" style="width:12px;height:12px"></i> Kế toán duyệt
+                            <span class="chip-count" id="stat-approved">0</span>
+                        </button>
+                        <button class="filter-chip chip-pending" data-status="PENDING_VERIFICATION">
+                            <i data-lucide="clock" style="width:12px;height:12px"></i> Chờ duyệt
+                            <span class="chip-count" id="stat-pending">0</span>
+                        </button>
+                        <button class="filter-chip chip-rejected" data-status="REJECTED">
+                            <i data-lucide="x-circle" style="width:12px;height:12px"></i> Từ chối
+                            <span class="chip-count" id="stat-rejected">0</span>
+                        </button>
+                        <button class="filter-chip chip-no-phone" data-status="NO_PHONE">
+                            <i data-lucide="user-x" style="width:12px;height:12px"></i> Chưa gán KH
+                            <span class="chip-count" id="stat-no-phone">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters Container (hidden by default) -->
+                <div id="filtersContainer" style="display: none;">
+                    <!-- Quick Date Filters -->
+                    <div class="quick-filters">
+                        <label><i data-lucide="calendar-clock"></i> Bộ lọc nhanh:</label>
+                        <div class="quick-filter-buttons">
+                            <button class="btn-quick-filter" data-filter="today">
+                                <i data-lucide="calendar-days"></i> Hôm nay
+                            </button>
+                            <button class="btn-quick-filter" data-filter="yesterday">
+                                <i data-lucide="calendar-minus"></i> Hôm qua
+                            </button>
+                            <button class="btn-quick-filter" data-filter="thisWeek">
+                                <i data-lucide="calendar-range"></i> Tuần này
+                            </button>
+                            <button class="btn-quick-filter" data-filter="lastWeek">
+                                <i data-lucide="calendar-range"></i> Tuần trước
+                            </button>
+                            <button class="btn-quick-filter" data-filter="thisMonth">
+                                <i data-lucide="calendar"></i> Tháng này
+                            </button>
+                            <button class="btn-quick-filter" data-filter="lastMonth">
+                                <i data-lucide="calendar"></i> Tháng trước
+                            </button>
+                            <button class="btn-quick-filter" data-filter="last7days">
+                                <i data-lucide="calendar-clock"></i> 7 ngày qua
+                            </button>
+                            <button class="btn-quick-filter active" data-filter="last30days">
+                                <i data-lucide="calendar-clock"></i> 30 ngày qua
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label><i data-lucide="filter"></i> Loại giao dịch:</label>
+                            <select id="filterType" class="filter-select">
+                                <option value="">Tất cả</option>
+                                <option value="in">Tiền vào</option>
+                                <option value="out">Tiền ra</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i data-lucide="landmark"></i> Ngân hàng:</label>
+                            <input type="text" id="filterGateway" class="filter-input" placeholder="VD: Vietcombank">
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i data-lucide="calendar"></i> Từ ngày:</label>
+                            <div class="date-input-wrapper">
+                                <input type="text" id="filterStartDateDisplay" class="filter-input date-display"
+                                    placeholder="dd/mm/yyyy" maxlength="10">
+                                <input type="date" id="filterStartDate" class="date-input-hidden">
+                                <i data-lucide="calendar" class="date-icon"></i>
                             </div>
                         </div>
 
-                        <button id="viewPhoneDataBtn" class="btn btn-info">
-                            <i data-lucide="phone-outgoing"></i> Xem Phone Data
-                        </button>
-                        <button id="reprocessOldTransactionsBtn" class="btn btn-warning" style="display: none;">
-                            <i data-lucide="rotate-cw"></i> Xử lý lại GD cũ
-                        </button>
-                        <button id="fetchNamesBtn" class="btn btn-success" style="display: none;">
-                            <i data-lucide="user-check"></i> Lấy Tên từ TPOS
-                        </button>
-                        <button id="viewRawDataBtn" class="btn btn-secondary" style="display: none;">
-                            <i data-lucide="database"></i> Xem Raw Data
-                        </button>
-                        <button id="refreshBtn" class="btn btn-primary">
-                            <i data-lucide="refresh-cw"></i> Làm mới
-                        </button>
-                    </div>
-                </div>
-            </header>
+                        <div class="filter-group">
+                            <label><i data-lucide="calendar"></i> Đến ngày:</label>
+                            <div class="date-input-wrapper">
+                                <input type="text" id="filterEndDateDisplay" class="filter-input date-display"
+                                    placeholder="dd/mm/yyyy" maxlength="10">
+                                <input type="date" id="filterEndDate" class="date-input-hidden">
+                                <i data-lucide="calendar" class="date-icon"></i>
+                            </div>
+                        </div>
 
-            <!-- Filter Toggle Button & Transaction View Tabs -->
-            <div style="margin-bottom: 10px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                <button id="toggleFiltersBtn" class="btn btn-secondary" onclick="toggleFilters()">
-                    <i data-lucide="filter"></i> <span id="toggleFiltersText">Hiện bộ lọc</span>
-                </button>
+                        <div class="filter-group">
+                            <label><i data-lucide="banknote"></i> Số tiền:</label>
+                            <input type="text" id="filterAmount" class="filter-input"
+                                placeholder="VD: 100000 hoặc 100k">
+                        </div>
 
-                <!-- Transaction View Tabs -->
-                <div class="view-tabs">
-                    <button class="view-tab active" data-view="all" onclick="setViewMode('all')">
-                        <i data-lucide="list"></i> Tất cả
-                    </button>
-                    <button class="view-tab" data-view="visible" onclick="setViewMode('visible')">
-                        <i data-lucide="eye"></i> Giao dịch hiện
-                    </button>
-                    <button class="view-tab" data-view="no-phone" onclick="setViewMode('no-phone')">
-                        <i data-lucide="phone-off"></i> Chưa có SĐT <span id="noPhoneCount" class="tab-badge"></span>
-                    </button>
-                    <button class="view-tab" data-view="hidden" onclick="setViewMode('hidden')">
-                        <i data-lucide="eye-off"></i> Giao dịch ẩn <span id="hiddenCount" class="tab-badge"></span>
-                    </button>
-                </div>
-            </div>
+                        <button id="applyFiltersBtn" class="btn btn-success">
+                            <i data-lucide="check"></i> Áp dụng
+                        </button>
 
-            <!-- Filters Container (hidden by default) -->
-            <div id="filtersContainer" style="display: none;">
-                <!-- Quick Date Filters -->
-                <div class="quick-filters">
-                    <label><i data-lucide="calendar-clock"></i> Bộ lọc nhanh:</label>
-                    <div class="quick-filter-buttons">
-                        <button class="btn-quick-filter" data-filter="today">
-                            <i data-lucide="calendar-days"></i> Hôm nay
+                        <button id="resetFiltersBtn" class="btn btn-secondary">
+                            <i data-lucide="rotate-ccw"></i> Đặt lại
                         </button>
-                        <button class="btn-quick-filter" data-filter="yesterday">
-                            <i data-lucide="calendar-minus"></i> Hôm qua
-                        </button>
-                        <button class="btn-quick-filter" data-filter="thisWeek">
-                            <i data-lucide="calendar-range"></i> Tuần này
-                        </button>
-                        <button class="btn-quick-filter" data-filter="lastWeek">
-                            <i data-lucide="calendar-range"></i> Tuần trước
-                        </button>
-                        <button class="btn-quick-filter" data-filter="thisMonth">
-                            <i data-lucide="calendar"></i> Tháng này
-                        </button>
-                        <button class="btn-quick-filter" data-filter="lastMonth">
-                            <i data-lucide="calendar"></i> Tháng trước
-                        </button>
-                        <button class="btn-quick-filter" data-filter="last7days">
-                            <i data-lucide="calendar-clock"></i> 7 ngày qua
-                        </button>
-                        <button class="btn-quick-filter active" data-filter="last30days">
-                            <i data-lucide="calendar-clock"></i> 30 ngày qua
+
+                        <button id="filterGapsOnlyBtn" class="btn btn-warning"
+                            style="background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
+                            <i data-lucide="alert-triangle"></i> Chỉ GD thiếu
                         </button>
                     </div>
                 </div>
 
-                <!-- Filters -->
-                <div class="filters">
-                    <div class="filter-group">
-                        <label><i data-lucide="filter"></i> Loại giao dịch:</label>
-                        <select id="filterType" class="filter-select">
-                            <option value="">Tất cả</option>
-                            <option value="in">Tiền vào</option>
-                            <option value="out">Tiền ra</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label><i data-lucide="landmark"></i> Ngân hàng:</label>
-                        <input type="text" id="filterGateway" class="filter-input" placeholder="VD: Vietcombank">
-                    </div>
-
-                    <div class="filter-group">
-                        <label><i data-lucide="calendar"></i> Từ ngày:</label>
-                        <input type="date" id="filterStartDate" class="filter-input">
-                    </div>
-
-                    <div class="filter-group">
-                        <label><i data-lucide="calendar"></i> Đến ngày:</label>
-                        <input type="date" id="filterEndDate" class="filter-input">
-                    </div>
-
-                    <div class="filter-group">
-                        <label><i data-lucide="search"></i> Tìm kiếm:</label>
-                        <input type="text" id="filterSearch" class="filter-input"
-                            placeholder="Tên KH, SĐT, nội dung...">
-                    </div>
-
-                    <div class="filter-group">
-                        <label><i data-lucide="banknote"></i> Số tiền:</label>
-                        <input type="text" id="filterAmount" class="filter-input" placeholder="VD: 100000 hoặc 100k">
-                    </div>
-
-                    <button id="applyFiltersBtn" class="btn btn-success">
-                        <i data-lucide="check"></i> Áp dụng
-                    </button>
-
-                    <button id="resetFiltersBtn" class="btn btn-secondary">
-                        <i data-lucide="rotate-ccw"></i> Đặt lại
-                    </button>
-
-                    <button id="filterGapsOnlyBtn" class="btn btn-warning"
-                        style="background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
-                        <i data-lucide="alert-triangle"></i> Chỉ GD thiếu
-                    </button>
-                </div>
-            </div>
-
-            <script>
-                function toggleFilters() {
-                    const container = document.getElementById('filtersContainer');
-                    const text = document.getElementById('toggleFiltersText');
-                    if (container.style.display === 'none') {
-                        container.style.display = 'block';
-                        text.textContent = 'Ẩn bộ lọc';
-                    } else {
-                        container.style.display = 'none';
-                        text.textContent = 'Hiện bộ lọc';
+                <script>
+                    function toggleFilters() {
+                        const container = document.getElementById('filtersContainer');
+                        const text = document.getElementById('toggleFiltersText');
+                        if (container.style.display === 'none') {
+                            container.style.display = 'block';
+                            text.textContent = 'Ẩn bộ lọc';
+                        } else {
+                            container.style.display = 'none';
+                            text.textContent = 'Hiện bộ lọc';
+                        }
+                        // Re-render icons for newly visible elements
+                        lucide.createIcons();
                     }
-                    // Re-render icons for newly visible elements
-                    lucide.createIcons();
-                }
 
-                function setViewMode(mode) {
-                    // Update global viewMode (defined in main.js)
-                    viewMode = mode;
+                    function setViewMode(mode) {
+                        // Update global viewMode (defined in main.js)
+                        viewMode = mode;
 
-                    // Save to localStorage
-                    localStorage.setItem('bh_view_mode', mode);
+                        // Save to localStorage
+                        localStorage.setItem('bh_view_mode', mode);
 
-                    // Update tabs UI
-                    document.querySelectorAll('.view-tab').forEach(tab => {
-                        tab.classList.toggle('active', tab.dataset.view === mode);
-                    });
+                        // Update tabs UI
+                        document.querySelectorAll('.view-tab').forEach(tab => {
+                            tab.classList.toggle('active', tab.dataset.view === mode);
+                        });
 
-                    // Re-render icons
-                    lucide.createIcons();
+                        // Re-render icons
+                        lucide.createIcons();
 
-                    // Re-render table from cached data (no API call - instant!)
-                    if (typeof renderCurrentView === 'function') {
-                        renderCurrentView();
+                        // Re-render table from cached data (no API call - instant!)
+                        if (typeof renderCurrentView === 'function') {
+                            renderCurrentView();
+                        }
                     }
-                }
 
-                // Initialize view mode from localStorage on page load
-                function initViewMode() {
-                    const savedMode = localStorage.getItem('bh_view_mode') || 'all';
-                    viewMode = savedMode;
+                    // Initialize view mode from localStorage on page load
+                    function initViewMode() {
+                        const savedMode = localStorage.getItem('bh_view_mode') || 'all';
+                        viewMode = savedMode;
 
-                    // Update tabs UI
-                    document.querySelectorAll('.view-tab').forEach(tab => {
-                        tab.classList.toggle('active', tab.dataset.view === savedMode);
-                    });
-                }
-            </script>
+                        // Update tabs UI
+                        document.querySelectorAll('.view-tab').forEach(tab => {
+                            tab.classList.toggle('active', tab.dataset.view === savedMode);
+                        });
+                    }
+                </script>
 
-            <!-- Loading Indicator -->
-            <div id="loadingIndicator" class="loading" style="display: none;">
-                <i data-lucide="loader-2"></i> Đang tải dữ liệu...
-            </div>
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="loading" style="display: none;">
+                    <i data-lucide="loader-2"></i> Đang tải dữ liệu...
+                </div>
 
-            <!-- Table -->
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Ngày giờ</th>
-                            <th>Ngân hàng</th>
-                            <th>Loại</th>
-                            <th>Số tiền</th>
-                            <th>Số dư</th>
-                            <th>Nội dung</th>
-                            <th>Mã tham chiếu</th>
-                            <th>Tên khách hàng</th>
-                            <th>Số điện thoại</th>
-                            <th>Nguồn</th>
-                            <th>QR Code</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <!-- Data will be inserted here -->
-                    </tbody>
-                </table>
-            </div>
+                <!-- Table -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ngày giờ</th>
+                                <th>Số tiền</th>
+                                <th>Nội dung</th>
+                                <th>Mã tham chiếu</th>
+                                <th>Tên khách hàng</th>
+                                <th>Số điện thoại</th>
+                                <th>Nguồn</th>
+                                <th>QR Code</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Pagination -->
-            <div class="pagination" id="pagination">
-                <button id="prevPageBtn" class="btn btn-secondary" disabled>
-                    <i data-lucide="chevron-left"></i> Trước
-                </button>
-                <span id="pageInfo">Trang 1 / 1</span>
-                <button id="nextPageBtn" class="btn btn-secondary" disabled>
-                    Sau <i data-lucide="chevron-right"></i>
-                </button>
-            </div>
+                <!-- Pagination -->
+                <div class="pagination" id="pagination">
+                    <button id="prevPageBtn" class="btn btn-secondary" disabled>
+                        <i data-lucide="chevron-left"></i> Trước
+                    </button>
+                    <span id="pageInfo">Trang 1 / 1</span>
+                    <button id="nextPageBtn" class="btn btn-secondary" disabled>
+                        Sau <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
 
             </div><!-- End Balance History Panel -->
 
@@ -330,16 +454,25 @@
                 <!-- Transfer Stats Filters -->
                 <div class="ts-filters">
                     <div class="ts-filter-group">
-                        <label>Trạng thái:</label>
-                        <select id="tsStatusFilter" onchange="filterTransferStats()">
+                        <label>Ẩn/Hiện:</label>
+                        <select id="tsVisibilityFilter" onchange="filterTransferStats()">
                             <option value="all" selected>Tất cả</option>
-                            <option value="unchecked">Chưa kiểm tra</option>
-                            <option value="checked">Đã kiểm tra</option>
+                            <option value="visible">Đang hiện</option>
+                            <option value="hidden">Đang ẩn</option>
+                        </select>
+                    </div>
+                    <div class="ts-filter-group">
+                        <label>Đã KT:</label>
+                        <select id="tsVerifiedFilter" onchange="filterTransferStats()">
+                            <option value="all" selected>Tất cả</option>
+                            <option value="verified">Đã kiểm tra</option>
+                            <option value="unverified">Chưa kiểm tra</option>
                         </select>
                     </div>
                     <div class="ts-filter-group">
                         <label>Tìm kiếm:</label>
-                        <input type="text" id="tsSearchInput" placeholder="Tên, SĐT, nội dung..." oninput="filterTransferStats()">
+                        <input type="text" id="tsSearchInput" placeholder="Tên, SĐT, nội dung..."
+                            oninput="filterTransferStats()">
                     </div>
                     <div class="ts-stats-summary">
                         <span class="ts-stat">
@@ -349,7 +482,10 @@
                             <i data-lucide="clock"></i> Chưa KT: <strong id="tsUncheckedCount">0</strong>
                         </span>
                         <span class="ts-stat checked">
-                            <i data-lucide="check-circle"></i> Đã KT: <strong id="tsCheckedCount">0</strong>
+                            <i data-lucide="check-circle"></i> My KT: <strong id="tsCheckedCount">0</strong>
+                        </span>
+                        <span class="ts-stat verified">
+                            <i data-lucide="badge-check"></i> Còi KT: <strong id="tsVerifiedCount">0</strong>
                         </span>
                     </div>
                 </div>
@@ -359,15 +495,15 @@
                     <table class="data-table ts-table">
                         <thead>
                             <tr>
-                                <th>Ngày giờ</th>
-                                <th>Tên khách hàng</th>
-                                <th>Số điện thoại</th>
-                                <th>Số tiền</th>
-                                <th>Nội dung</th>
-                                <th>Ghi chú</th>
-                                <th style="width: 80px;">Ẩn/Hiện</th>
-                                <th style="width: 100px;">Đã Kiểm Tra</th>
-                                <th style="width: 80px;">Thao tác</th>
+                                <th class="col-date">Ngày giờ</th>
+                                <th class="col-name">Tên KH</th>
+                                <th class="col-phone">SĐT</th>
+                                <th class="col-amount">Số tiền</th>
+                                <th class="col-content">Nội dung</th>
+                                <th class="col-note">Ghi chú</th>
+                                <th class="col-action">My KT</th>
+                                <th class="col-action">Còi KT</th>
+                                <th class="col-action">Sửa</th>
                             </tr>
                         </thead>
                         <tbody id="tsTableBody">
@@ -387,6 +523,456 @@
                     </button>
                 </div>
             </div><!-- End Transfer Stats Panel -->
+
+            <!-- Tab Panel: Kế Toán (Accountant) -->
+            <div id="verificationPanel" class="main-tab-panel">
+
+                <!-- Dashboard Cards -->
+                <div class="acc-dashboard" id="accDashboard">
+                    <div class="acc-stat-card pending" id="accStatPending"
+                        onclick="AccountantModule.switchSubTab('pending')">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Chờ Duyệt</div>
+                        <div class="stat-sub" style="display: none;"></div>
+                    </div>
+                    <div class="acc-stat-card approved" id="accStatApproved"
+                        onclick="AccountantModule.switchSubTab('approved')">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Đã Duyệt</div>
+                        <div class="stat-sub">Hôm nay</div>
+                    </div>
+                    <div class="acc-stat-card rejected" id="accStatRejected">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Từ Chối</div>
+                        <div class="stat-sub">Hôm nay</div>
+                    </div>
+                    <div class="acc-stat-card adjustment" id="accStatAdjustment"
+                        onclick="AccountantModule.switchSubTab('adjustment')">
+                        <div class="stat-icon">🔄</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Điều Chỉnh</div>
+                        <div class="stat-sub">Hôm nay</div>
+                    </div>
+                </div>
+
+                <!-- Auto-Approve Toggle -->
+                <div id="accAutoApproveToggle" class="acc-auto-approve-toggle hidden">
+                    <div class="toggle-wrapper">
+                        <div class="toggle-info">
+                            <i data-lucide="zap" style="width:16px;height:16px"></i>
+                            <span class="toggle-label">Tự động duyệt QR/SĐT chính xác</span>
+                            <span class="toggle-hint">(1 KH khớp)</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="accAutoApproveCheckbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span id="accAutoApproveStatus" class="toggle-status status-on">Đang bật</span>
+                    </div>
+                </div>
+
+                <!-- Alert Bar (>24h warning) -->
+                <div class="acc-alert-bar hidden" id="accAlertBar">
+                    <div class="alert-content">
+                        <span class="alert-icon">⚠️</span>
+                        <span class="alert-text">3 giao dịch chờ duyệt > 24h</span>
+                    </div>
+                    <button class="alert-action" onclick="AccountantModule.switchSubTab('pending')">Xem ngay</button>
+                </div>
+
+                <!-- Sub-tabs -->
+                <div class="acc-sub-tabs" id="accSubTabs">
+                    <button class="acc-sub-tab active" data-tab="pending" id="accTabPending">
+                        <i data-lucide="clock" style="width:16px;height:16px"></i>
+                        Chờ Duyệt
+                        <span class="tab-badge" id="accPendingBadge" style="display: none;">0</span>
+                    </button>
+                    <button class="acc-sub-tab" data-tab="approved" id="accTabApproved">
+                        <i data-lucide="check-circle" style="width:16px;height:16px"></i>
+                        Đã Duyệt
+                    </button>
+                </div>
+
+                <!-- ========== SUB-PANEL: Pending Queue ========== -->
+                <div class="acc-sub-panel active" data-panel="pending" id="accPanelPending">
+
+                    <!-- Queue Header -->
+                    <div class="acc-queue-header">
+                        <div class="queue-title">
+                            <i data-lucide="list" style="width:20px;height:20px"></i>
+                            Giao dịch chờ duyệt
+                        </div>
+                        <div class="queue-actions">
+                            <button class="acc-btn acc-btn-secondary" onclick="AccountantModule.loadPendingQueue()">
+                                <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Làm mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Action Bar -->
+                    <div class="acc-bulk-bar" id="accBulkBar">
+                        <div class="bulk-info">
+                            <input type="checkbox" id="accSelectAll">
+                            <span>Đã chọn <strong id="accBulkCount">0</strong> giao dịch</span>
+                        </div>
+                        <div class="bulk-actions">
+                            <button class="acc-btn acc-btn-approve" onclick="AccountantModule.bulkApprove()">
+                                <i data-lucide="check-check" style="width:14px;height:14px"></i>
+                                Duyệt đã chọn
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters Bar (Pending) -->
+                    <div class="acc-filters-bar" id="accPendingFilters">
+                        <div class="acc-filter-group">
+                            <label>Thời gian:</label>
+                            <div class="acc-date-presets">
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="pending"
+                                    data-preset="today">Hnay</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="pending"
+                                    data-preset="yesterday">Hqua</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="pending"
+                                    data-days="7">7N</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="pending"
+                                    data-days="15">15N</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="pending"
+                                    data-days="30">30N</button>
+                            </div>
+                            <div class="acc-date-range">
+                                <input type="date" id="accPendingStartDate" class="acc-input-date">
+                                <span>-</span>
+                                <input type="date" id="accPendingEndDate" class="acc-input-date">
+                            </div>
+                        </div>
+                        <div class="acc-filter-group">
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="accPendingSearch" class="acc-input-search"
+                                placeholder="Nội dung, số tiền...">
+                        </div>
+                        <div class="acc-filter-group">
+                            <label>Nguồn:</label>
+                            <select id="accPendingSourceFilter" class="acc-input-select">
+                                <option value="">Tất cả</option>
+                                <option value="manual">Nhập tay</option>
+                                <option value="selected">Chọn KH</option>
+                                <option value="auto">Tự động</option>
+                            </select>
+                        </div>
+                        <button class="acc-btn acc-btn-primary"
+                            onclick="AccountantModule.loadPendingQueue(1)">Xem</button>
+                    </div>
+
+                    <!-- Pending Queue Table -->
+                    <div class="table-container">
+                        <table class="acc-queue-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-checkbox">
+                                        <input type="checkbox" id="accSelectAllHeader"
+                                            onchange="document.getElementById('accSelectAll').checked = this.checked; AccountantModule.toggleSelect && AccountantModule.loadPendingQueue()">
+                                    </th>
+                                    <th class="col-time">Giờ</th>
+                                    <th class="col-amount">Số tiền</th>
+                                    <th class="col-content">Nội dung CK</th>
+                                    <th class="col-staff-note">Ghi chú NV</th>
+                                    <th class="col-customer">Khách hàng</th>
+                                    <th class="col-staff">Nguồn</th>
+                                    <th class="col-wait">Chờ</th>
+                                    <th class="col-actions">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accPendingTableBody">
+                                <tr>
+                                    <td colspan="9" class="acc-loading">
+                                        <div class="loading-spinner"></div>
+                                        <div>Đang tải...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="acc-pagination" id="accPaginationPending"></div>
+
+                </div><!-- End Pending Panel -->
+
+                <!-- ========== SUB-PANEL: Approved Today ========== -->
+                <div class="acc-sub-panel" data-panel="approved" id="accPanelApproved">
+
+                    <!-- Filters -->
+                    <div class="acc-approved-filters acc-filters-bar" id="accApprovedFilters">
+                        <div class="acc-filter-group">
+                            <label>Thời gian:</label>
+                            <div class="acc-date-presets">
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="approved"
+                                    data-preset="today">Hnay</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="approved"
+                                    data-preset="yesterday">Hqua</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="approved"
+                                    data-days="7">7N</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="approved"
+                                    data-days="15">15N</button>
+                                <button class="acc-btn acc-btn-sm acc-preset-btn" data-tab="approved"
+                                    data-days="30">30N</button>
+                            </div>
+                            <div class="acc-date-range">
+                                <input type="date" id="accApprovedStartDate" class="acc-input-date">
+                                <span>-</span>
+                                <input type="date" id="accApprovedEndDate" class="acc-input-date">
+                            </div>
+                        </div>
+                        <div class="acc-filter-group">
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="accApprovedSearch" class="acc-input-search"
+                                placeholder="Nội dung, số tiền...">
+                        </div>
+                        <div class="acc-filter-group">
+                            <label>Nguồn:</label>
+                            <select id="accApprovedSourceFilter" class="acc-input-select">
+                                <option value="">Tất cả</option>
+                                <option value="manual">Nhập tay</option>
+                                <option value="selected">Chọn KH</option>
+                                <option value="auto">Tự động</option>
+                            </select>
+                        </div>
+                        <div class="acc-filter-group">
+                            <label>Người duyệt:</label>
+                            <select id="accApprovedVerifierFilter" class="acc-input-select">
+                                <option value="">Tất cả</option>
+                            </select>
+                        </div>
+                        <div class="acc-filter-group">
+                            <label>Kiểm tra:</label>
+                            <select id="accApprovedCheckFilter" class="acc-input-select">
+                                <option value="">Tất cả</option>
+                                <option value="checked">Đã kiểm tra</option>
+                                <option value="unchecked">Chưa kiểm tra</option>
+                            </select>
+                        </div>
+                        <div class="acc-filter-group">
+                            <label>Điều chỉnh:</label>
+                            <select id="accApprovedAdjustFilter" class="acc-input-select">
+                                <option value="">Tất cả</option>
+                                <option value="adjusted">Đã điều chỉnh</option>
+                                <option value="unadjusted">Chưa điều chỉnh</option>
+                            </select>
+                        </div>
+                        <button class="acc-btn acc-btn-primary"
+                            onclick="AccountantModule.loadApprovedToday(1)">Xem</button>
+                    </div>
+
+                    <!-- Approved Table -->
+                    <div class="table-container">
+                        <table class="acc-approved-table">
+                            <thead>
+                                <tr>
+                                    <th>Giờ duyệt</th>
+                                    <th>Giờ GD</th>
+                                    <th>Số tiền</th>
+                                    <th>Khách hàng</th>
+                                    <th>Nguồn</th>
+                                    <th>Duyệt bởi</th>
+                                    <th>Ghi chú</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accApprovedTableBody">
+                                <tr>
+                                    <td colspan="8" class="acc-empty-state">
+                                        <div class="empty-text">Chọn ngày để xem</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="acc-pagination" id="accPaginationApproved"></div>
+
+                </div><!-- End Approved Panel -->
+
+            </div><!-- End Verification/Accountant Panel -->
+
+            <!-- ========== MODALS ========== -->
+
+            <!-- Reject Modal -->
+            <div class="acc-modal-overlay" id="accRejectModal">
+                <div class="acc-modal">
+                    <div class="acc-modal-header">
+                        <h3>❌ Từ chối giao dịch</h3>
+                        <button class="acc-modal-close">&times;</button>
+                    </div>
+                    <div class="acc-modal-body">
+                        <div class="acc-form-group">
+                            <label for="accRejectReason">Lý do từ chối</label>
+                            <textarea id="accRejectReason"
+                                placeholder="Nhập lý do từ chối (tối thiểu 5 ký tự)"></textarea>
+                        </div>
+                    </div>
+                    <div class="acc-modal-footer">
+                        <button class="acc-btn acc-btn-secondary"
+                            onclick="document.getElementById('accRejectModal').classList.remove('visible')">Hủy</button>
+                        <button class="acc-btn acc-btn-reject" onclick="AccountantModule.confirmReject()">Xác nhận từ
+                            chối</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Change Phone Modal -->
+            <div class="acc-modal-overlay acc-change-modal" id="accChangeModal">
+                <div class="acc-modal">
+                    <div class="acc-modal-header">
+                        <h3>📱 Thay đổi SĐT khách hàng</h3>
+                        <button class="acc-modal-close">&times;</button>
+                    </div>
+                    <div class="acc-modal-body">
+                        <div class="acc-form-group">
+                            <label for="accChangePhone">Số điện thoại mới</label>
+                            <input type="tel" id="accChangePhone" placeholder="Nhập 10 số" maxlength="10"
+                                oninput="AccountantModule.lookupCustomerForChange && AccountantModule.lookupCustomerForChange(this.value)">
+                            <div id="accChangeLookupResult" class="tpos-lookup"></div>
+                        </div>
+                        <div class="acc-form-group">
+                            <label for="accChangeName">Tên khách hàng</label>
+                            <input type="text" id="accChangeName" placeholder="Tự động điền từ TPOS">
+                        </div>
+                        <p class="acc-text-muted acc-text-sm acc-mt-4">
+                            ⚠️ Thay đổi SĐT sẽ tự động DUYỆT giao dịch và CỘNG VÍ cho khách hàng mới.
+                        </p>
+                    </div>
+                    <div class="acc-modal-footer">
+                        <button class="acc-btn acc-btn-secondary"
+                            onclick="document.getElementById('accChangeModal').classList.remove('visible')">Hủy</button>
+                        <button class="acc-btn acc-btn-approve" onclick="AccountantModule.confirmChange()">Thay đổi &
+                            Duyệt</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approve Modal -->
+            <div class="acc-modal-overlay acc-approve-modal" id="accApproveModal">
+                <div class="acc-modal">
+                    <div class="acc-modal-header">
+                        <h3>✅ Duyệt giao dịch</h3>
+                        <button class="acc-modal-close">&times;</button>
+                    </div>
+                    <div class="acc-modal-body">
+                        <!-- Transaction Info Summary -->
+                        <div class="acc-approve-summary" id="accApproveSummary">
+                            <!-- Dynamically filled: amount, customer, content -->
+                        </div>
+
+                        <!-- Change Customer Section (Collapsible) -->
+                        <div class="acc-change-customer-section" id="accChangeCustomerSection">
+                            <div class="acc-change-toggle" onclick="AccountantModule.toggleChangeCustomer()">
+                                <i data-lucide="user-cog" style="width:16px;height:16px"></i>
+                                <span id="accChangeToggleText">Thay đổi thông tin khách hàng</span>
+                                <i data-lucide="chevron-down" style="width:16px;height:16px" id="accChangeToggleIcon"></i>
+                            </div>
+                            <div class="acc-change-fields" id="accChangeFields" style="display:none">
+                                <div class="acc-form-group">
+                                    <label for="accApprovePhone">Số điện thoại mới</label>
+                                    <input type="tel" id="accApprovePhone" placeholder="Nhập 10 số" maxlength="10"
+                                        oninput="AccountantModule.lookupCustomerInApprove && AccountantModule.lookupCustomerInApprove(this.value)">
+                                    <div id="accApproveLookupResult" class="tpos-lookup"></div>
+                                </div>
+                                <div class="acc-form-group">
+                                    <label for="accApproveName">Tên khách hàng</label>
+                                    <input type="text" id="accApproveName" placeholder="Tự động điền từ TPOS">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Note Input -->
+                        <div class="acc-form-group">
+                            <label for="accApproveNote">Ghi chú (tùy chọn)</label>
+                            <textarea id="accApproveNote"
+                                placeholder="Nhập ghi chú cho giao dịch này..."></textarea>
+                        </div>
+
+                        <!-- Image Upload Area -->
+                        <div class="acc-form-group">
+                            <label>Hình ảnh xác nhận chuyển khoản (tùy chọn)</label>
+                            <div class="acc-image-upload-area" id="accApproveImageArea">
+                                <!-- Paste/Drag Zone - Không click để chọn file -->
+                                <div class="acc-image-dropzone acc-paste-only" id="accApproveDropzone">
+                                    <i data-lucide="image-plus" style="width:32px;height:32px"></i>
+                                    <span>Paste (Ctrl+V) hoặc kéo thả hình vào đây</span>
+                                </div>
+
+                                <!-- Nút chọn file riêng biệt -->
+                                <button type="button" class="acc-btn acc-btn-secondary acc-btn-choose-image" id="accChooseImageBtn">
+                                    <i data-lucide="folder-open" style="width:16px;height:16px"></i>
+                                    Chọn ảnh từ máy tính
+                                </button>
+                                <input type="file" id="accApproveImageInput"
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
+                                    style="display:none">
+
+                                <!-- Image Preview -->
+                                <div class="acc-image-preview" id="accApproveImagePreview" style="display:none">
+                                    <img id="accApprovePreviewImg" src="" alt="Preview">
+                                    <div class="acc-image-overlay" id="accApproveUploadOverlay">
+                                        <div class="acc-loading-spinner"></div>
+                                        <span>Đang tải lên...</span>
+                                    </div>
+                                    <button type="button" class="acc-btn-remove-image"
+                                        onclick="AccountantModule.clearApproveImage()">
+                                        <i data-lucide="x" style="width:14px;height:14px"></i>
+                                    </button>
+                                    <span class="acc-upload-status" id="accApproveUploadStatus"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="acc-modal-footer">
+                        <button class="acc-btn acc-btn-secondary"
+                            onclick="document.getElementById('accApproveModal').classList.remove('visible')">Hủy</button>
+                        <button class="acc-btn acc-btn-approve" id="accApproveConfirmBtn"
+                            onclick="AccountantModule.confirmApprove()">
+                            <i data-lucide="check" style="width:14px;height:14px"></i>
+                            Xác nhận duyệt
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manager Review Modal -->
+            <div class="acc-modal-overlay" id="accManagerReviewModal">
+                <div class="acc-modal" style="max-width: 450px;">
+                    <div class="acc-modal-header">
+                        <h3>✓ Kiểm tra giao dịch</h3>
+                        <button class="acc-modal-close">&times;</button>
+                    </div>
+                    <div class="acc-modal-body">
+                        <!-- Transaction Summary -->
+                        <div class="acc-approve-summary" id="accReviewSummary">
+                            <!-- Dynamically filled: amount, customer, date -->
+                        </div>
+
+                        <!-- Review Note Input -->
+                        <div class="acc-form-group">
+                            <label for="accReviewNote">Ghi chú kiểm tra (đơn hàng đã sử dụng)</label>
+                            <textarea id="accReviewNote"
+                                placeholder="VD: Đã dùng cho đơn hàng #12345, khách Nguyễn Văn A..."></textarea>
+                        </div>
+                    </div>
+                    <div class="acc-modal-footer">
+                        <button class="acc-btn acc-btn-secondary"
+                            onclick="document.getElementById('accManagerReviewModal').classList.remove('visible')">Hủy</button>
+                        <button class="acc-btn acc-btn-approve" id="accReviewConfirmBtn"
+                            onclick="AccountantModule.confirmManagerReview()">
+                            <i data-lucide="check" style="width:14px;height:14px"></i>
+                            Xác nhận đã kiểm tra
+                        </button>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -442,58 +1028,38 @@
         </div>
     </div>
 
-    <!-- Customer List By Phone Modal -->
-    <div id="customerListModal" class="modal">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh;">
+    <!-- Customer Quick View Modal (New) -->
+    <div id="customerQuickViewModal" class="modal">
+        <div class="modal-content customer-quick-view" style="max-width: 500px;">
             <div class="modal-header">
-                <h2><i data-lucide="users"></i> Khách hàng với SĐT: <span id="customerListPhone"></span></h2>
-                <button class="modal-close" id="closeCustomerListModalBtn">&times;</button>
+                <h2><i data-lucide="user"></i> Khách hàng: <span id="customerQuickViewPhone"></span></h2>
+                <button class="modal-close" onclick="closeCustomerQuickViewModal()">&times;</button>
             </div>
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <div class="modal-body" style="padding: 0;">
                 <!-- Loading State -->
-                <div id="customerListLoading" style="text-align: center; padding: 40px; display: none;">
+                <div id="customerQuickViewLoading" style="text-align: center; padding: 40px;">
                     <i data-lucide="loader-2" class="animate-spin"
                         style="width: 48px; height: 48px; color: #3b82f6;"></i>
-                    <p style="margin-top: 15px; color: #6b7280;">Đang tải danh sách khách hàng...</p>
+                    <p style="margin-top: 15px; color: #6b7280;">Đang tải thông tin...</p>
                 </div>
 
                 <!-- Empty State -->
-                <div id="customerListEmpty" style="text-align: center; padding: 40px; display: none;">
+                <div id="customerQuickViewEmpty" style="text-align: center; padding: 40px; display: none;">
                     <i data-lucide="user-x" style="width: 48px; height: 48px; color: #9ca3af;"></i>
-                    <p style="margin-top: 15px; color: #6b7280;">Không tìm thấy khách hàng với số điện thoại này</p>
+                    <p style="margin-top: 15px; color: #6b7280;">Không tìm thấy khách hàng</p>
                 </div>
 
-                <!-- Customer List -->
-                <div id="customerListContent" style="display: none;">
-                    <div id="customerListCount"
-                        style="margin-bottom: 15px; padding: 10px; background: #f0f9ff; border-radius: 8px; color: #0369a1;">
-                        <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle;"></i>
-                        <span>Tìm thấy <strong id="customerListTotal">0</strong> khách hàng</span>
-                    </div>
-                    <table class="data-table" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Tên</th>
-                                <th>TPOS ID</th>
-                                <th>Trạng thái</th>
-                                <th>Tổng Công Nợ</th>
-                                <th>Địa chỉ</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="customerListTableBody">
-                        </tbody>
-                    </table>
+                <!-- Content (rendered by JS) -->
+                <div id="customerQuickViewContent" style="display: none;">
                 </div>
             </div>
             <div class="modal-footer"
-                style="padding: 15px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-                <a href="../customer-management/index.html" target="_blank" class="btn btn-primary"
+                style="padding: 15px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                <a id="customerQuickViewLink" href="#" target="_blank" class="btn btn-primary"
                     style="text-decoration: none;">
-                    <i data-lucide="external-link"></i> Mở Customer Management
+                    <i data-lucide="external-link"></i> Mở Customer 360
                 </a>
-                <button class="btn btn-secondary" onclick="closeCustomerListModal()">Đóng</button>
+                <button class="btn btn-secondary" onclick="closeCustomerQuickViewModal()">Đóng</button>
             </div>
         </div>
     </div>
@@ -502,7 +1068,7 @@
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
-                <h2><i data-lucide="user-pen"></i> Chỉnh sửa thông tin khách hàng</h2>
+                <h2><i data-lucide="pencil"></i> Chỉnh sửa thông tin khách hàng</h2>
                 <button class="modal-close" id="closeEditCustomerModalBtn">&times;</button>
             </div>
             <div class="modal-body">
@@ -519,6 +1085,38 @@
                         </label>
                         <input type="text" id="editCustomerName" class="filter-input" placeholder="Nhập tên khách hàng"
                             style="width: 100%;">
+                        <!-- TPOS lookup result container (hidden by default, shown for transaction edits) -->
+                        <div id="tposLookupContainer" style="display: none; margin-top: 8px;">
+                            <div id="tposLookupLoading" style="display: none;">
+                                Đang tìm từ TPOS...
+                            </div>
+                            <div id="tposLookupResult" style="display: none;">
+                                <!-- Single customer result -->
+                                <div id="tposLookupSingle" style="display: none;">
+                                    <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                                    <span>Tìm thấy: </span><span id="tposLookupName"></span>
+                                </div>
+                                <!-- Multiple customers dropdown - Orange warning -->
+                                <div id="tposLookupMultiple" style="display: none;">
+                                    <div class="tpos-multiple-warning">
+                                        <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                                        <span>Tìm thấy nhiều KH</span>
+                                        <span class="tpos-multi-badge">Cần duyệt</span>
+                                    </div>
+                                    <select id="tposCustomerDropdown">
+                                        <option value="">-- Chọn khách hàng --</option>
+                                    </select>
+                                </div>
+                                <!-- No customer found -->
+                                <div id="tposLookupEmpty" style="display: none;">
+                                    <i data-lucide="user-x" style="width: 14px; height: 14px;"></i>
+                                    Không tìm thấy KH trong TPOS
+                                </div>
+                            </div>
+                            <p id="tposLookupNote">
+                                Nhập đủ 10 số để tự động tìm tên từ TPOS
+                            </p>
+                        </div>
                     </div>
 
                     <div>
@@ -621,23 +1219,68 @@
 
                     <div>
                         <label for="editTSCustomerName" style="display: block; margin-bottom: 5px; font-weight: 500;">
-                            <i data-lucide="user" style="width: 16px; height: 16px; vertical-align: middle;"></i> Tên khách hàng:
+                            <i data-lucide="user" style="width: 16px; height: 16px; vertical-align: middle;"></i> Tên
+                            khách hàng:
                         </label>
-                        <input type="text" id="editTSCustomerName" class="filter-input" placeholder="Nhập tên khách hàng" style="width: 100%;">
+                        <input type="text" id="editTSCustomerName" class="filter-input"
+                            placeholder="Tự động tìm từ TPOS..." style="width: 100%; background: #f9fafb;" readonly>
                     </div>
 
                     <div>
                         <label for="editTSCustomerPhone" style="display: block; margin-bottom: 5px; font-weight: 500;">
-                            <i data-lucide="phone" style="width: 16px; height: 16px; vertical-align: middle;"></i> Số điện thoại:
+                            <i data-lucide="phone" style="width: 16px; height: 16px; vertical-align: middle;"></i> Số
+                            điện thoại:
                         </label>
-                        <input type="tel" id="editTSCustomerPhone" class="filter-input" placeholder="Nhập số điện thoại" style="width: 100%;">
+                        <input type="tel" id="editTSCustomerPhone" class="filter-input" placeholder="Nhập số điện thoại"
+                            style="width: 100%;">
+                        <!-- TPOS Lookup UI for Transfer Stats -->
+                        <div id="tsTPOSLookupContainer" style="margin-top: 8px;">
+                            <div id="tsTPOSLookupLoading" style="display: none; color: #6b7280; font-size: 13px;">
+                                <i data-lucide="loader-2"
+                                    style="width: 14px; height: 14px; animation: spin 1s linear infinite;"></i>
+                                Đang tìm từ TPOS...
+                            </div>
+                            <div id="tsTPOSLookupResult" style="display: none;">
+                                <!-- Single customer result -->
+                                <div id="tsTPOSLookupSingle"
+                                    style="display: none; padding: 8px; background: #dcfce7; border-radius: 4px; color: #166534; font-size: 13px;">
+                                    <i data-lucide="check-circle"
+                                        style="width: 14px; height: 14px; vertical-align: middle;"></i>
+                                    <span>Tìm thấy: </span><span id="tsTPOSLookupName"></span>
+                                </div>
+                                <!-- Multiple customers dropdown -->
+                                <div id="tsTPOSLookupMultiple" style="display: none;">
+                                    <div
+                                        style="padding: 8px; background: #fef3c7; border-radius: 4px; color: #92400e; font-size: 13px; margin-bottom: 8px;">
+                                        <i data-lucide="alert-triangle"
+                                            style="width: 14px; height: 14px; vertical-align: middle;"></i>
+                                        <span>Tìm thấy nhiều KH - Chọn một:</span>
+                                    </div>
+                                    <select id="tsTPOSCustomerDropdown" class="filter-input" style="width: 100%;">
+                                        <option value="">-- Chọn khách hàng --</option>
+                                    </select>
+                                </div>
+                                <!-- No customer found -->
+                                <div id="tsTPOSLookupEmpty"
+                                    style="display: none; padding: 8px; background: #fef2f2; border-radius: 4px; color: #991b1b; font-size: 13px;">
+                                    <i data-lucide="user-x"
+                                        style="width: 14px; height: 14px; vertical-align: middle;"></i>
+                                    Không tìm thấy KH trong TPOS
+                                </div>
+                            </div>
+                            <p id="tsTPOSLookupNote" style="margin-top: 6px; font-size: 12px; color: #9ca3af;">
+                                Nhập đủ 10 số để tự động tìm tên từ TPOS
+                            </p>
+                        </div>
                     </div>
 
                     <div>
                         <label for="editTSNotes" style="display: block; margin-bottom: 5px; font-weight: 500;">
-                            <i data-lucide="file-text" style="width: 16px; height: 16px; vertical-align: middle;"></i> Ghi chú:
+                            <i data-lucide="file-text" style="width: 16px; height: 16px; vertical-align: middle;"></i>
+                            Ghi chú:
                         </label>
-                        <textarea id="editTSNotes" class="filter-input" placeholder="Nhập ghi chú..." style="width: 100%; min-height: 80px; resize: vertical;"></textarea>
+                        <textarea id="editTSNotes" class="filter-input" placeholder="Nhập ghi chú..."
+                            style="width: 100%; min-height: 80px; resize: vertical;"></textarea>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -739,21 +1382,38 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="../js/firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="../shared/js/firebase-config.js"></script>
+    <!-- Shop Config + Token Manager for TPOS auth -->
+    <script src="../shared/js/shop-config.js"></script>
+    <script src="../shared/js/token-manager.js"></script>
 
     <!-- Navigation & Auth -->
-    <script src="../js/navigation-modern.js"></script>
+    <script defer src="../shared/js/navigation-modern.js"></script>
+    <script src="../shared/js/notification-system.js"></script>
 
-    <!-- Page Scripts -->
-    <script src="auth.js"></script>
-    <script src="cache.js"></script>
-    <script src="config.js"></script>
-    <script src="qr-generator.js"></script>
-    <script src="customer-info.js"></script>
-    <script src="main.js"></script>
-    <script src="transfer-stats.js"></script>
+    <!-- Permission helpers (bridge to authManager) -->
+    <script>
+        window.hasPermission = (level) => window.authManager?.hasPermission?.(level) ?? false;
+        window.hasDetailedPermission = (pageId, action) => window.authManager?.hasDetailedPermission?.(pageId, action) ?? false;
+    </script>
+
+    <!-- Page Scripts - v=20260311a for cache busting -->
+    <script src="js/config.js?v=20260311a"></script>
+    <script src="js/qr-generator.js?v=20260311a"></script>
+    <script src="js/customer-info.js?v=20260311a"></script>
+    <script src="../shared/js/audit-logger.js"></script>
+    <script src="../shared/js/tpos-customer-lookup.js"></script>
+    <!-- Balance History sub-modules (load order: core -> filters -> table -> verification -> aggregator) -->
+    <script src="js/balance-core.js?v=20260311a"></script>
+    <script src="js/balance-filters.js?v=20260311a"></script>
+    <script src="js/balance-table.js?v=20260311a"></script>
+    <script src="js/balance-verification.js?v=20260311a"></script>
+    <script src="js/main.js?v=20260311a"></script>
+    <script src="js/transfer-stats.js?v=20260123b"></script>
+    <script src="js/accountant.js?v=20260123b"></script>
+    <script src="js/live-mode.js?v=20260123b"></script>
 
     <!-- Initialize Lucide Icons, View Mode, and Main Tabs -->
     <script>
@@ -761,6 +1421,16 @@
 
         // Main Tab Switching
         function switchMainTab(section) {
+            // Get previous section to handle cleanup
+            const previousSection = localStorage.getItem('bh_main_tab') || 'balance-history';
+
+            // Cleanup Live Mode when switching away
+            if (previousSection === 'live-mode' && section !== 'live-mode') {
+                if (window.LiveModeModule && typeof window.LiveModeModule.destroy === 'function') {
+                    window.LiveModeModule.destroy();
+                }
+            }
+
             // Update tab buttons
             document.querySelectorAll('.main-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.section === section);
@@ -771,13 +1441,33 @@
                 panel.classList.remove('active');
             });
 
-            if (section === 'balance-history') {
+            if (section === 'live-mode') {
+                document.getElementById('liveModePanel').classList.add('active');
+                // Initialize Live Mode
+                if (window.LiveModeModule && typeof window.LiveModeModule.init === 'function') {
+                    window.LiveModeModule.init();
+                }
+            } else if (section === 'balance-history') {
                 document.getElementById('balanceHistoryPanel').classList.add('active');
+                // Reload if flagged for update (from Transfer Stats edit)
+                if (window._balanceHistoryNeedsReload && typeof loadData === 'function') {
+                    loadData();
+                    window._balanceHistoryNeedsReload = false;
+                }
             } else if (section === 'transfer-stats') {
                 document.getElementById('transferStatsPanel').classList.add('active');
                 // Load transfer stats when switching to this tab
                 if (typeof loadTransferStats === 'function') {
                     loadTransferStats();
+                    // Clear reload flag if set
+                    window._transferStatsNeedsReload = false;
+                }
+            } else if (section === 'verification') {
+                document.getElementById('verificationPanel').classList.add('active');
+                // Initialize Accountant Module when switching to this tab
+                if (window.AccountantModule) {
+                    window.AccountantModule.loadDashboardStats();
+                    window.AccountantModule.loadPendingQueue();
                 }
             }
 

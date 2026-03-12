@@ -7,7 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const navigationFilePath = path.join(__dirname, '../js/navigation-modern.js');
+const navigationFilePath = path.join(__dirname, '../shared/js/navigation-modern.js');
 
 // Read navigation-modern.js
 const content = fs.readFileSync(navigationFilePath, 'utf8');

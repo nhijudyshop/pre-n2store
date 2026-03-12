@@ -1,0 +1,13 @@
+{
+  "name": "attendance-sync",
+  "version": "5.0.0",
+  "description": "Raw ZK protocol (TCP+UDP auto-detect), no ZK library",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.11.0"
+  }
+}

@@ -24,7 +24,7 @@ app.use(cors({
         'http://localhost:5500',         // Local development for frontend
         'http://localhost:3000'          // Local development for this server itself
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Auth-Data', 'X-User-Id'],
     credentials: false // credentials cannot be true when origin is *
 }));
@@ -188,11 +188,13 @@ const customersRoutes = require('./routes/customers');
 const returnOrdersRoutes = require('./routes/return-orders');
 const cloudflareBackupRoutes = require('./routes/cloudflare-backup');
 const realtimeRoutes = require('./routes/realtime');
-const { saveRealtimeUpdate } = require('./routes/realtime');
+const { saveRealtimeUpdate, upsertPendingCustomer } = require('./routes/realtime');
 const geminiRoutes = require('./routes/gemini');
 const deepseekRoutes = require('./routes/deepseek');
 const telegramBotRoutes = require('./routes/telegram-bot');
 const uploadImageRoutes = require('./routes/upload');
+const quyTrinhRoutes = require('./routes/quy-trinh');
+const goongPlacesRoutes = require('./routes/goong-places');
 
 // === FIREBASE REPLACEMENT ROUTES (SSE + PostgreSQL) ===
 const realtimeSseRoutes = require('./routes/realtime-sse');
@@ -206,6 +208,7 @@ const attributeRoutes = require('./routes/attribute.routes');
 const facebookRoutes = require('./routes/facebook.routes');
 const dynamicHeadersRoutes = require('./routes/dynamic-headers.routes');
 const customer360Routes = require('./routes/customer-360');
+const v2Router = require('./routes/v2');  // Unified API v2
 const tposSavedRoutes = require('./routes/tpos-saved');
 
 // Mount routes
@@ -217,12 +220,15 @@ app.use('/api/sepay', sepayWebhookRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/tpos-saved', tposSavedRoutes);
 app.use('/api', customer360Routes);  // Customer 360° routes: /api/customer, /api/wallet, /api/ticket
+app.use('/api/v2', v2Router);  // Unified API v2: /api/v2/customers, /api/v2/wallets, /api/v2/tickets, /api/v2/analytics
 app.use('/api/return-orders', returnOrdersRoutes);
 app.use('/api/realtime', realtimeRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/deepseek', deepseekRoutes);
 app.use('/api/telegram', telegramBotRoutes);
 app.use('/api/upload', uploadImageRoutes);
+app.use('/api/quy-trinh', quyTrinhRoutes);
+app.use('/api/goong-places', goongPlacesRoutes);
 
 // === FIREBASE REPLACEMENT ROUTES ===
 // SSE for realtime updates (replaces Firebase listeners)
@@ -438,6 +444,10 @@ class RealtimeClient {
                 saveRealtimeUpdate(this.db, updateData)
                     .then(() => console.log('[SERVER-WS] Update saved to DB'))
                     .catch(err => console.error('[SERVER-WS] Failed to save update:', err.message));
+
+                // Also upsert to pending_customers for tracking unread
+                upsertPendingCustomer(this.db, updateData)
+                    .catch(err => console.error('[SERVER-WS] Failed to upsert pending:', err.message));
             }
         }
     }

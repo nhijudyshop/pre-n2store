@@ -340,4 +340,21 @@ CREATE TRIGGER update_note_snapshots_timestamp
 -- - tag_updates
 -- - dropped_products
 -- - note_snapshots
+-- - conversation_post_types
 -- =====================================================
+
+-- 12. Bảng lưu post_type của conversation (livestream detection)
+-- Khi load messages, post.type được lưu lại để filter livestream nhanh
+CREATE TABLE IF NOT EXISTS conversation_post_types (
+    conversation_id VARCHAR(500) PRIMARY KEY,
+    page_id VARCHAR(255),
+    post_id VARCHAR(500),
+    post_type VARCHAR(50),
+    live_video_status VARCHAR(50),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_conv_post_types_page ON conversation_post_types(page_id);
+CREATE INDEX IF NOT EXISTS idx_conv_post_types_type ON conversation_post_types(post_type);
+
+COMMENT ON TABLE conversation_post_types IS 'Cache post_type per conversation for fast livestream filtering';

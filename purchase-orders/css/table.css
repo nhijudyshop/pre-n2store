@@ -1,0 +1,688 @@
+/**
+ * TABLE STYLES
+ * File: table.css
+ * Purpose: Purchase order table styles with row spanning, image zoom, sync status
+ * Matches React app: PurchaseOrderList.tsx styling
+ */
+
+/* ========================================
+   TABLE WRAPPER
+   ======================================== */
+
+.table-wrapper {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    overflow-x: auto;
+    box-shadow: var(--shadow-soft);
+}
+
+/* ========================================
+   MAIN TABLE
+   ======================================== */
+
+.po-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.po-table thead {
+    background: linear-gradient(180deg, hsl(214, 32%, 97%), hsl(214, 32%, 95%));
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.po-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.po-table td {
+    padding: 12px 16px;
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-border-light);
+    border-right: 1px solid var(--color-border-light);
+}
+
+.po-table td:last-child {
+    border-right: none;
+}
+
+/* ========================================
+   COLUMN WIDTHS
+   ======================================== */
+
+.col-date { width: 120px; }
+.col-supplier { width: 150px; }
+.col-invoice { width: 140px; overflow: visible; }
+.col-product { min-width: 180px; }
+.col-code { width: 100px; }
+.col-variant { width: 80px; }
+.col-qty { width: 60px; text-align: center; }
+.col-purchase-price { width: 130px; overflow: visible; }
+.col-selling-price { width: 130px; overflow: visible; }
+.col-notes { width: 120px; }
+.col-status { width: 140px; }
+.col-actions { width: 150px; }
+
+/* ========================================
+   ROW STYLES
+   ======================================== */
+
+.order-row {
+    transition: background-color 0.15s ease;
+}
+
+.order-row:hover {
+    background-color: hsl(214, 32%, 97%);
+}
+
+.order-row.selected {
+    background-color: hsl(217, 91%, 95%);
+}
+
+.order-row.selected:hover {
+    background-color: hsl(217, 91%, 92%);
+}
+
+/* First row of each order (has spanned cells) */
+.order-row--first {
+    border-top: 2px solid var(--color-border);
+}
+
+.po-table tbody tr:first-child.order-row--first {
+    border-top: none;
+}
+
+/* Processing state - disabled look */
+.order-row--processing {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Deleted product styling */
+.col-product--deleted {
+    background-color: hsl(0, 0%, 95%);
+    color: var(--color-text-muted);
+}
+
+/* Spanned cells */
+.po-table td[rowspan] {
+    vertical-align: top;
+}
+
+/* ========================================
+   CELL CONTENT STYLES
+   ======================================== */
+
+/* Date cell */
+.cell-date {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.cell-date .cell-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.date-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.date-main {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.date-time {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+/* Supplier cell */
+.cell-supplier {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.supplier-name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.supplier-meta {
+    font-size: 12px;
+}
+
+/* Invoice cell */
+.cell-invoice {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+}
+
+.invoice-amounts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.invoice-amount--main {
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 14px;
+}
+
+.invoice-amount--calculated {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-danger);
+}
+
+/* Price mismatch highlighting */
+.col-invoice--mismatch {
+    background-color: hsl(0, 84%, 95%) !important;
+    border: 2px solid hsl(0, 84%, 70%) !important;
+}
+
+/* Product cell */
+.cell-product {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.product-name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+}
+
+.product-code {
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    background: var(--color-muted);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+/* Variant badge */
+.variant-badge {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* Quantity */
+.qty-value {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    display: block;
+    text-align: center;
+}
+
+/* Price cells */
+.cell-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.price-value {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    text-align: right;
+}
+
+/* Notes */
+.notes-hover {
+    max-width: 120px;
+    cursor: help;
+}
+
+.notes-text {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* Status cell */
+.cell-status {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+/* ========================================
+   IMAGE STYLES WITH ZOOM ON HOVER
+   ======================================== */
+
+/* Invoice thumbnail */
+.invoice-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-md);
+    overflow: visible;
+    cursor: pointer;
+    position: relative;
+}
+
+.invoice-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    transition: transform 0.2s ease;
+}
+
+.invoice-thumb--empty {
+    width: 80px;
+    height: 80px;
+    background: var(--color-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-md);
+}
+
+.thumb-count {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+/* Mini thumbnails for price/product images */
+.price-images,
+.product-images {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.mini-thumb {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+/* ========================================
+   IMAGE ZOOM ON HOVER (like React scale-[7])
+   ======================================== */
+
+.image-zoom-container {
+    position: relative;
+    overflow: visible;
+}
+
+.zoomable-image {
+    transition: transform 0.2s ease, z-index 0s;
+    transform-origin: left center;
+}
+
+/* Invoice image zoom - scale 7x */
+.invoice-thumb:hover .zoomable-image {
+    transform: scale(7);
+    z-index: 100;
+    position: relative;
+    box-shadow: var(--shadow-xl);
+    border-radius: var(--radius-md);
+}
+
+/* Mini image zoom - scale 14x (like React scale-[14]) */
+.mini-thumb:hover {
+    transform: scale(14);
+    z-index: 100;
+    position: relative;
+    box-shadow: var(--shadow-xl);
+    transform-origin: left center;
+}
+
+/* Ensure zoomed images appear above everything */
+td:has(.zoomable-image:hover),
+td:has(.mini-thumb:hover) {
+    overflow: visible;
+    z-index: 50;
+}
+
+/* ========================================
+   SYNC STATUS BADGES
+   ======================================== */
+
+.sync-status-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.sync-badge--processing {
+    background: var(--color-muted);
+    color: var(--color-text-secondary);
+}
+
+.sync-badge--processing .spin {
+    animation: spin 1s linear infinite;
+}
+
+.sync-badge--failed {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+
+.col-actions__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-buttons .btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.action-buttons .btn-icon:hover:not(:disabled) {
+    background: var(--color-muted);
+}
+
+.action-buttons .btn-icon:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.action-buttons .btn-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Action icon colors */
+.text-amber { color: hsl(38, 92%, 50%); }
+.text-blue { color: var(--color-primary); }
+.text-green { color: var(--color-success); }
+.text-teal { color: #0d9488; }
+.text-purple { color: hsl(270, 50%, 50%); }
+
+.btn-danger svg {
+    color: var(--color-danger);
+}
+
+/* ========================================
+   CHECKBOX STYLES
+   ======================================== */
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: background-color 0.15s ease;
+}
+
+.checkbox-wrapper:hover {
+    background: var(--color-muted);
+}
+
+.checkbox-wrapper.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.checkbox-wrapper--header {
+    padding: 4px;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+}
+
+/* ========================================
+   BULK ACTION TOOLBAR
+   ======================================== */
+
+.bulk-action-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, var(--color-primary), hsl(217, 91%, 55%));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    color: white;
+    margin-bottom: -1px;
+}
+
+.bulk-action-toolbar__info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.bulk-action-toolbar__count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
+
+.bulk-action-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bulk-action-toolbar .btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.bulk-action-toolbar .btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.bulk-action-toolbar .btn-danger {
+    background: rgba(239, 68, 68, 0.8);
+    border-color: transparent;
+}
+
+.bulk-action-toolbar .btn-danger:hover {
+    background: rgba(239, 68, 68, 1);
+}
+
+.bulk-action-toolbar .btn-ghost {
+    background: transparent;
+    border: none;
+}
+
+/* ========================================
+   STATUS BADGE
+   ======================================== */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* ========================================
+   EMPTY & LOADING STATES
+   ======================================== */
+
+.table-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+}
+
+.table-empty__icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: var(--color-muted);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+}
+
+.table-empty__icon svg {
+    width: 32px;
+    height: 32px;
+}
+
+.table-empty__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 8px;
+}
+
+.table-empty__description {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+/* Skeleton loading */
+.skeleton-row td {
+    padding: 16px;
+}
+
+.skeleton {
+    background: linear-gradient(90deg, var(--color-muted) 25%, hsl(214, 32%, 90%) 50%, var(--color-muted) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ========================================
+   TEXT UTILITIES
+   ======================================== */
+
+.text-muted {
+    color: var(--color-text-muted);
+}
+
+.text-xs {
+    font-size: 12px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+/* ========================================
+   LEGACY SUPPORT (backwards compatibility)
+   ======================================== */
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: var(--radius-full);
+}
+
+.badge-info {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.badge-success {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.badge-warning {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
+.badge-danger {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}

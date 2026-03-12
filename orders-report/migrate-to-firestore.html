@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Migration: Realtime DB → Firestore</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #666; font-size: 1.2em; margin-top: 0; }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover { background: #3367d6; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        button.danger { background: #ea4335; }
+        button.danger:hover { background: #c5221f; }
+        button.success { background: #34a853; }
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .log .success { color: #4ec9b0; }
+        .log .error { color: #f48771; }
+        .log .info { color: #9cdcfe; }
+        .log .warn { color: #dcdcaa; }
+        .status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .status.ready { background: #e8f5e9; color: #2e7d32; }
+        .status.running { background: #fff3e0; color: #e65100; }
+        .status.done { background: #e3f2fd; color: #1565c0; }
+        .status.error { background: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Firebase Migration Tool</h1>
+    <p>Migrate data từ Realtime Database → Firestore</p>
+
+    <div class="card">
+        <h2>📊 Status</h2>
+        <div id="status" class="status ready">⏳ Đang chờ Firebase khởi tạo...</div>
+    </div>
+
+    <div class="card">
+        <h2>🚀 Actions</h2>
+        <button id="btnPreview" onclick="previewData()">👁️ Preview Data</button>
+        <button id="btnMigrate" onclick="migrateData()" class="success">✅ Migrate to Firestore</button>
+        <button id="btnVerify" onclick="verifyMigration()">🔍 Verify Migration</button>
+    </div>
+
+    <div class="card">
+        <h2>📝 Log</h2>
+        <div id="log" class="log">Ready...\n</div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase config - same as your project
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI_j5kAXxoNlTLl47qPFb6Jgv1YbLRLDI",
+            authDomain: "n2shop-69e37.firebaseapp.com",
+            databaseURL: "https://n2shop-69e37-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "n2shop-69e37",
+            storageBucket: "n2shop-69e37.firebasestorage.app",
+            messagingSenderId: "598906493303",
+            appId: "1:598906493303:web:46d6236a1fdc2eff33e972"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const rtdb = firebase.database();
+        const firestore = firebase.firestore();
+
+        // Update status
+        document.getElementById('status').textContent = '✅ Firebase initialized. Ready to migrate.';
+        document.getElementById('status').className = 'status ready';
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `<span class="${type}">[${timestamp}] ${message}</span>\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function previewData() {
+            log('=== PREVIEW DATA ===', 'info');
+
+            try {
+                // 1. Employee Ranges
+                const er = await rtdb.ref('settings/employee_ranges').once('value');
+                log(`Employee Ranges: ${er.val() ? JSON.stringify(er.val()).length + ' bytes' : 'null'}`, 'info');
+
+                // 2. Employee Ranges by Campaign
+                const erc = await rtdb.ref('settings/employee_ranges_by_campaign').once('value');
+                log(`Employee Ranges by Campaign: ${erc.val() ? Object.keys(erc.val()).length + ' campaigns' : 'null'}`, 'info');
+
+                // 3. Campaigns
+                const camps = await rtdb.ref('user_campaigns').once('value');
+                log(`Campaigns: ${camps.val() ? Object.keys(camps.val()).length + ' items' : 'null'}`, 'info');
+
+                // 4. User Preferences
+                const prefs = await rtdb.ref('user_preferences').once('value');
+                log(`User Preferences: ${prefs.val() ? Object.keys(prefs.val()).length + ' users' : 'null'}`, 'info');
+
+                // 5. Product Stats
+                const stats = await rtdb.ref('product_stats').once('value');
+                log(`Product Stats: ${stats.val() ? Object.keys(stats.val()).length + ' items' : 'null'}`, 'info');
+
+                // 6. Pancake Images
+                const images = await rtdb.ref('pancake_images').once('value');
+                log(`Pancake Images: ${images.val() ? Object.keys(images.val()).length + ' items' : 'null'}`, 'info');
+
+                log('=== PREVIEW COMPLETE ===', 'success');
+            } catch (error) {
+                log('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function migrateData() {
+            const status = document.getElementById('status');
+            status.textContent = '🔄 Migrating...';
+            status.className = 'status running';
+
+            log('=== STARTING MIGRATION ===', 'info');
+
+            try {
+                // 1. Migrate employee_ranges
+                log('Migrating employee_ranges...', 'info');
+                const er = await rtdb.ref('settings/employee_ranges').once('value');
+                if (er.val()) {
+                    await firestore.collection('settings').doc('employee_ranges').set({
+                        ranges: er.val()
+                    });
+                    log('✅ employee_ranges migrated', 'success');
+                } else {
+                    log('⚠️ employee_ranges is empty, skipped', 'warn');
+                }
+
+                // 2. Migrate employee_ranges_by_campaign
+                log('Migrating employee_ranges_by_campaign...', 'info');
+                const erc = await rtdb.ref('settings/employee_ranges_by_campaign').once('value');
+                if (erc.val()) {
+                    await firestore.collection('settings').doc('employee_ranges_by_campaign').set(erc.val());
+                    log('✅ employee_ranges_by_campaign migrated', 'success');
+                } else {
+                    log('⚠️ employee_ranges_by_campaign is empty, skipped', 'warn');
+                }
+
+                // 3. Migrate user_campaigns → campaigns collection
+                log('Migrating campaigns...', 'info');
+                const camps = await rtdb.ref('user_campaigns').once('value');
+                if (camps.val()) {
+                    let count = 0;
+                    for (const [id, data] of Object.entries(camps.val())) {
+                        await firestore.collection('campaigns').doc(id).set(data);
+                        count++;
+                    }
+                    log(`✅ ${count} campaigns migrated`, 'success');
+                } else {
+                    log('⚠️ user_campaigns is empty, skipped', 'warn');
+                }
+
+                // 4. Migrate user_preferences
+                log('Migrating user_preferences...', 'info');
+                const prefs = await rtdb.ref('user_preferences').once('value');
+                if (prefs.val()) {
+                    let count = 0;
+                    for (const [userId, data] of Object.entries(prefs.val())) {
+                        await firestore.collection('user_preferences').doc(userId).set(data);
+                        count++;
+                    }
+                    log(`✅ ${count} user preferences migrated`, 'success');
+                } else {
+                    log('⚠️ user_preferences is empty, skipped', 'warn');
+                }
+
+                // 5. Migrate product_stats
+                log('Migrating product_stats...', 'info');
+                const stats = await rtdb.ref('product_stats').once('value');
+                if (stats.val()) {
+                    let count = 0;
+                    for (const [id, data] of Object.entries(stats.val())) {
+                        await firestore.collection('product_stats').doc(id).set(data);
+                        count++;
+                    }
+                    log(`✅ ${count} product stats migrated`, 'success');
+                } else {
+                    log('⚠️ product_stats is empty, skipped', 'warn');
+                }
+
+                // 6. Migrate pancake_images
+                log('Migrating pancake_images...', 'info');
+                const images = await rtdb.ref('pancake_images').once('value');
+                if (images.val()) {
+                    const entries = Object.entries(images.val());
+                    let count = 0;
+                    // Batch in groups of 50 to avoid timeout
+                    for (let i = 0; i < entries.length; i += 50) {
+                        const batch = entries.slice(i, i + 50);
+                        for (const [key, data] of batch) {
+                            await firestore.collection('pancake_images').doc(key).set(data);
+                            count++;
+                        }
+                        log(`  Progress: ${count}/${entries.length}`, 'info');
+                    }
+                    log(`✅ ${count} pancake images migrated`, 'success');
+                } else {
+                    log('⚠️ pancake_images is empty, skipped', 'warn');
+                }
+
+                log('=== MIGRATION COMPLETE ===', 'success');
+                status.textContent = '✅ Migration complete!';
+                status.className = 'status done';
+
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+                status.textContent = '❌ Migration failed: ' + error.message;
+                status.className = 'status error';
+            }
+        }
+
+        async function verifyMigration() {
+            log('=== VERIFYING MIGRATION ===', 'info');
+
+            try {
+                // Check Firestore collections
+                const checks = [
+                    { name: 'settings/employee_ranges', path: firestore.collection('settings').doc('employee_ranges') },
+                    { name: 'settings/employee_ranges_by_campaign', path: firestore.collection('settings').doc('employee_ranges_by_campaign') },
+                    { name: 'campaigns', path: firestore.collection('campaigns') },
+                    { name: 'user_preferences', path: firestore.collection('user_preferences') },
+                    { name: 'product_stats', path: firestore.collection('product_stats') },
+                    { name: 'pancake_images', path: firestore.collection('pancake_images') }
+                ];
+
+                for (const check of checks) {
+                    if (check.path.get) {
+                        // Document
+                        const doc = await check.path.get();
+                        if (doc.exists) {
+                            log(`✅ ${check.name}: exists`, 'success');
+                        } else {
+                            log(`⚠️ ${check.name}: not found`, 'warn');
+                        }
+                    } else {
+                        // Collection
+                        const snapshot = await check.path.get();
+                        log(`✅ ${check.name}: ${snapshot.size} documents`, 'success');
+                    }
+                }
+
+                log('=== VERIFICATION COMPLETE ===', 'success');
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

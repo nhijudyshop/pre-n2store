@@ -266,7 +266,8 @@ CREATE TABLE IF NOT EXISTS customer_tickets (
         'WRONG_SHIP',       -- Ship nham
         'CUSTOMER_DEBT',    -- Khach no
         'DISCOUNT',         -- Giam gia
-        'REJECT_PARTIAL'    -- Khach tu choi 1 phan
+        'REJECT_PARTIAL',   -- Khach tu choi 1 phan
+        'RETURN_OLD_ORDER'  -- Tra hang don cu
     )),
 
     -- Timeline tracking

@@ -1,0 +1,1412 @@
+<!--
+  Tab Bill Đã Xóa
+  Hiển thị danh sách các đơn đã yêu cầu hủy từ invoiceStatusDelete
+  Dữ liệu từ localStorage + Firebase
+-->
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bill Đã Xóa - N2Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="css/tab1-orders.css" />
+    <style>
+        body {
+            background: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .main-content {
+            padding: 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-title i {
+            color: #ef4444;
+        }
+
+        .page-subtitle {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .stats-badge {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .filter-select {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 150px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #ef4444;
+        }
+
+        .btn-refresh {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-refresh:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .data-table th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #991b1b;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #fecaca;
+        }
+
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s;
+        }
+
+        .data-table tbody tr:hover {
+            background: #fef2f2;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Order Number */
+        .order-number {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .order-ref {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Customer Info */
+        .customer-name {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .customer-phone {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Amount */
+        .amount {
+            font-weight: 600;
+            color: #059669;
+        }
+
+        /* Cancel Reason */
+        .cancel-reason {
+            background: #fef2f2;
+            color: #991b1b;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Timestamp */
+        .timestamp {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .timestamp-date {
+            font-weight: 500;
+            color: #475569;
+        }
+
+        /* User Badge */
+        .user-badge {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-view {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .btn-view:hover {
+            background: #bfdbfe;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+        .btn-hide {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .btn-hide:hover {
+            background: #fde68a;
+        }
+
+        .btn-show {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .btn-show:hover {
+            background: #a7f3d0;
+        }
+
+        /* Status Tabs */
+        .status-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .status-tab {
+            padding: 10px 20px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-tab:hover {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .status-tab.active {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #dc2626;
+        }
+
+        .status-tab .tab-count {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .status-tab.active .tab-count {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Hidden row styling */
+        .row-hidden {
+            background: #f8fafc !important;
+            opacity: 0.7;
+        }
+
+        .row-hidden:hover {
+            background: #f1f5f9 !important;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Loading State */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #fee2e2;
+            border-top-color: #ef4444;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Bill Preview Hover Tooltip - Fixed position to avoid overflow clipping */
+        .cancel-reason-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .cancel-reason {
+            cursor: pointer;
+        }
+
+        /* Global hover preview container - appended to body */
+        #globalBillPreview {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+            padding: 8px;
+            width: 380px;
+            max-height: 480px;
+            overflow: hidden;
+        }
+
+        #globalBillPreview.show {
+            display: block;
+            animation: fadeInUp 0.2s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #globalBillPreview iframe {
+            width: 100%;
+            height: 420px;
+            border: none;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        #globalBillPreview .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        #globalBillPreview .preview-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #991b1b;
+        }
+
+        #globalBillPreview .preview-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0 4px;
+        }
+
+        #globalBillPreview .preview-close:hover {
+            color: #ef4444;
+        }
+
+        /* Bill Preview Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 1000px;
+            width: 95%;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #991b1b;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .detail-item {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .bill-preview-frame {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 16px;
+            }
+
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: unset;
+            }
+
+            .data-table {
+                font-size: 13px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 10px 8px;
+            }
+
+            .cancel-reason {
+                max-width: 150px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Global Bill Preview (positioned fixed) -->
+    <div id="globalBillPreview" onmouseenter="cancelHideBillPreview()" onmouseleave="hideBillPreview()">
+        <div class="preview-header">
+            <span class="preview-title"><i class="fas fa-receipt"></i> Bill Preview</span>
+            <button class="preview-close" onclick="hideBillPreview()">&times;</button>
+        </div>
+        <iframe id="globalBillFrame"></iframe>
+    </div>
+
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1 class="page-title">
+                    <i class="fas fa-trash-alt"></i>
+                    Bill Đã Xóa
+                </h1>
+                <span class="page-subtitle">Danh sách đơn hàng đã xử lý hủy</span>
+            </div>
+            <div class="stats-badge" id="totalCount">
+                <i class="fas fa-clock"></i> 0 đơn đã xóa
+            </div>
+        </div>
+
+        <!-- Status Tabs -->
+        <div class="status-tabs" id="statusTabs">
+            <button class="status-tab active" data-status="all" onclick="setStatusTab('all')">
+                <i class="fas fa-list"></i> Tất cả
+                <span class="tab-count" id="countAll">0</span>
+            </button>
+            <button class="status-tab" data-status="visible" onclick="setStatusTab('visible')">
+                <i class="fas fa-eye"></i> Hiện
+                <span class="tab-count" id="countVisible">0</span>
+            </button>
+            <button class="status-tab" data-status="hidden" onclick="setStatusTab('hidden')">
+                <i class="fas fa-eye-slash"></i> Ẩn
+                <span class="tab-count" id="countHidden">0</span>
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Tìm theo số phiếu, tên khách, SĐT..."
+                    oninput="filterTable()" />
+            </div>
+
+            <select class="filter-select" id="userFilter" onchange="filterTable()">
+                <option value="all">Tất cả người hủy</option>
+            </select>
+
+            <select class="filter-select" id="dateFilter" onchange="filterTable()">
+                <option value="all">Tất cả thời gian</option>
+                <option value="today">Hôm nay</option>
+                <option value="yesterday">Hôm qua</option>
+                <option value="3days">3 ngày gần đây</option>
+                <option value="7days">7 ngày gần đây</option>
+            </select>
+
+            <button class="btn-refresh" onclick="loadData()">
+                <i class="fas fa-sync-alt"></i>
+                Làm mới
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px">#</th>
+                        <th>Số phiếu</th>
+                        <th>Khách hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Lý do hủy</th>
+                        <th>Thời gian yêu cầu</th>
+                        <th>Người hủy</th>
+                        <th style="width: 120px">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="8">
+                            <div class="loading-state">
+                                <div class="loading-spinner"></div>
+                                <p>Đang tải dữ liệu...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bill Preview Modal -->
+    <div id="billPreviewModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-invoice"></i> Chi tiết đơn hủy</h3>
+                <button class="modal-close" onclick="closeBillModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-detail-grid" id="modalDetailGrid">
+                    <!-- Populated by JS -->
+                </div>
+                <h4 style="margin-bottom: 16px; color: #64748b;"><i class="fas fa-receipt"></i> Bill Preview</h4>
+                <iframe id="billPreviewFrame" class="bill-preview-frame"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="../shared/js/firebase-config.js"></script>
+    <script src="../shared/js/indexed-db-store.js"></script>
+    <script src="../shared/js/shared-auth-manager.js"></script>
+    <script src="../shared/js/notification-system.js"></script>
+
+    <!-- Bill Service for generating bill preview -->
+    <script src="js/utils/bill-service.js"></script>
+
+    <script>
+        // =====================================================
+        // DATA STORE
+        // =====================================================
+
+        const DELETE_STORAGE_KEY = 'invoiceStatusDelete_v2';
+        const DELETE_FIRESTORE_COLLECTION = 'invoice_status_delete_v2';
+        const TAB_STATE_KEY = 'pendingDeleteTabState';
+
+        let allData = [];
+        let filteredData = [];
+        let currentStatusTab = 'all'; // 'all', 'visible', 'hidden'
+        const billPreviewCache = new Map();
+
+        // Load saved tab state
+        function loadTabState() {
+            try {
+                const saved = localStorage.getItem(TAB_STATE_KEY);
+                if (saved) {
+                    currentStatusTab = saved;
+                }
+            } catch (e) {
+                console.warn('[PENDING-DELETE] Error loading tab state:', e);
+            }
+        }
+
+        // Save tab state
+        function saveTabState(tab) {
+            try {
+                localStorage.setItem(TAB_STATE_KEY, tab);
+            } catch (e) {
+                console.warn('[PENDING-DELETE] Error saving tab state:', e);
+            }
+        }
+
+        // Set active status tab
+        function setStatusTab(tab) {
+            currentStatusTab = tab;
+            saveTabState(tab);
+
+            // Update tab UI
+            document.querySelectorAll('.status-tab').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.status === tab) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Re-filter and render
+            filterTable();
+        }
+
+        // Update tab counts
+        function updateTabCounts() {
+            const visibleCount = allData.filter(d => !d.hidden).length;
+            const hiddenCount = allData.filter(d => d.hidden).length;
+            const allCount = allData.length;
+
+            document.getElementById('countAll').textContent = allCount;
+            document.getElementById('countVisible').textContent = visibleCount;
+            document.getElementById('countHidden').textContent = hiddenCount;
+        }
+
+        // Toggle hidden status for an entry
+        async function toggleHidden(key, index) {
+            const item = allData.find(d => d.id === key);
+            if (!item) {
+                console.warn('[PENDING-DELETE] Item not found:', key);
+                return;
+            }
+
+            // Toggle hidden status
+            item.hidden = !item.hidden;
+
+            // Update localStorage
+            try {
+                const saved = localStorage.getItem(DELETE_STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.data && parsed.data[key]) {
+                        parsed.data[key].hidden = item.hidden;
+                        localStorage.setItem(DELETE_STORAGE_KEY, JSON.stringify(parsed));
+                    }
+                }
+
+                // Sync to Firestore
+                const db = firebase.firestore();
+                const authState = window.authManager?.getAuthState?.() ||
+                    window.authManager?.getAuthData?.();
+                const username = authState?.username || authState?.userType?.split('-')[0] || 'default';
+                const docRef = db.collection(DELETE_FIRESTORE_COLLECTION).doc(username);
+
+                await docRef.set({
+                    data: { [key]: { hidden: item.hidden } }
+                }, { merge: true });
+
+                console.log(`[PENDING-DELETE] Toggled hidden for ${key}: ${item.hidden}`);
+            } catch (e) {
+                console.error('[PENDING-DELETE] Error toggling hidden:', e);
+            }
+
+            // Update counts and re-render
+            updateTabCounts();
+            filterTable();
+        }
+
+        // =====================================================
+        // LOAD DATA
+        // =====================================================
+
+        async function loadData() {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8">
+                            <div class="loading-state">
+                                <div class="loading-spinner"></div>
+                                <p>Đang tải dữ liệu...</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+            try {
+                const dataMap = new Map();
+
+                // 1. Load from localStorage
+                const saved = localStorage.getItem(DELETE_STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.data) {
+                        const entries = Array.isArray(parsed.data)
+                            ? parsed.data
+                            : Object.entries(parsed.data);
+
+                        entries.forEach(([key, value]) => {
+                            if (typeof key === 'string' && value) {
+                                dataMap.set(key, value);
+                            } else if (Array.isArray(key) && key.length === 2) {
+                                dataMap.set(key[0], key[1]);
+                            }
+                        });
+                    }
+                }
+                console.log(`[PENDING-DELETE] Loaded ${dataMap.size} from localStorage`);
+
+                // 2. Load from Firestore
+                try {
+                    const db = firebase.firestore();
+                    const authState = window.authManager?.getAuthState?.() ||
+                        window.authManager?.getAuthData?.();
+                    const username = authState?.username || authState?.userType?.split('-')[0] || 'default';
+
+                    const docRef = db.collection(DELETE_FIRESTORE_COLLECTION).doc(username);
+                    const doc = await docRef.get();
+
+                    if (doc.exists) {
+                        const firestoreData = doc.data();
+                        if (firestoreData.data) {
+                            const entries = Object.entries(firestoreData.data);
+                            entries.forEach(([key, value]) => {
+                                // Merge: Firestore wins for newer data
+                                const existing = dataMap.get(key);
+                                if (!existing || (value.deletedAt > (existing.deletedAt || 0))) {
+                                    dataMap.set(key, value);
+                                }
+                            });
+                        }
+                        console.log(`[PENDING-DELETE] Merged from Firestore, total: ${dataMap.size}`);
+                    }
+                } catch (firebaseError) {
+                    console.warn('[PENDING-DELETE] Firebase load error:', firebaseError);
+                }
+
+                // Convert to array and sort by deletedAt desc
+                allData = Array.from(dataMap.entries())
+                    .map(([id, data]) => ({ id, ...data }))
+                    .sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+
+                // Update user filter options
+                updateUserFilter();
+
+                // Update tab counts
+                updateTabCounts();
+
+                // Apply filters and render
+                filterTable();
+
+            } catch (error) {
+                console.error('[PENDING-DELETE] Load error:', error);
+                tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <h3>Lỗi tải dữ liệu</h3>
+                                    <p>${error.message}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+            }
+        }
+
+        // =====================================================
+        // FILTER & RENDER
+        // =====================================================
+
+        function updateUserFilter() {
+            // Build unique users with displayName mapping
+            const userMap = new Map();
+            allData.forEach(d => {
+                if (d.deletedBy) {
+                    // Use displayName if available, otherwise use deletedBy
+                    const displayName = d.deletedByDisplayName || d.deletedBy;
+                    userMap.set(d.deletedBy, displayName);
+                }
+            });
+
+            const select = document.getElementById('userFilter');
+            select.innerHTML = '<option value="all">Tất cả người hủy</option>';
+            userMap.forEach((displayName, username) => {
+                select.innerHTML += `<option value="${username}">${displayName}</option>`;
+            });
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const userFilter = document.getElementById('userFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+            const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
+            const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+            filteredData = allData.filter(item => {
+                // Status tab filter (hidden/visible)
+                if (currentStatusTab === 'visible' && item.hidden) return false;
+                if (currentStatusTab === 'hidden' && !item.hidden) return false;
+
+                // Search filter
+                if (searchTerm) {
+                    const searchFields = [
+                        item.Number,
+                        item.Reference,
+                        item.ReceiverName,
+                        item.PartnerDisplayName,
+                        item.ReceiverPhone,
+                        item.cancelReason
+                    ].map(f => (f || '').toLowerCase()).join(' ');
+
+                    if (!searchFields.includes(searchTerm)) return false;
+                }
+
+                // User filter
+                if (userFilter !== 'all' && item.deletedBy !== userFilter) return false;
+
+                // Date filter
+                if (dateFilter !== 'all' && item.deletedAt) {
+                    const itemDate = new Date(item.deletedAt);
+                    switch (dateFilter) {
+                        case 'today':
+                            if (itemDate < today) return false;
+                            break;
+                        case 'yesterday':
+                            if (itemDate < yesterday || itemDate >= today) return false;
+                            break;
+                        case '3days':
+                            if (itemDate < threeDaysAgo) return false;
+                            break;
+                        case '7days':
+                            if (itemDate < sevenDaysAgo) return false;
+                            break;
+                    }
+                }
+
+                return true;
+            });
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('tableBody');
+            const totalCount = document.getElementById('totalCount');
+
+            // Clear bill preview cache when re-rendering
+            billPreviewCache.clear();
+
+            totalCount.innerHTML = `<i class="fas fa-clock"></i> ${filteredData.length} đơn đã xóa`;
+
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>Không có đơn đã xóa</h3>
+                                    <p>Chưa có yêu cầu hủy đơn nào được ghi nhận</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                return;
+            }
+
+            tableBody.innerHTML = filteredData.map((item, index) => {
+                const number = item.Number || 'N/A';
+                const reference = item.Reference || item.SaleOnlineId || '';
+                const customerName = item.ReceiverName || item.PartnerDisplayName || 'N/A';
+                const customerPhone = item.ReceiverPhone || '';
+                const amount = formatCurrency(item.AmountTotal || item.CashOnDelivery || 0);
+                const reason = item.cancelReason || 'Không có lý do';
+                const deletedAt = item.deletedAt ? formatDateTime(item.deletedAt) : 'N/A';
+                const deletedByDisplay = item.deletedByDisplayName || item.deletedBy || 'N/A';
+                const isHidden = item.hidden;
+                const rowClass = isHidden ? 'row-hidden' : '';
+
+                // Hide/Show button
+                const hideShowBtn = isHidden
+                    ? `<button class="btn-action btn-show" onclick="toggleHidden('${item.id}', ${index})" title="Hiện lại">
+                               <i class="fas fa-eye"></i> Hiện
+                           </button>`
+                    : `<button class="btn-action btn-hide" onclick="toggleHidden('${item.id}', ${index})" title="Ẩn">
+                               <i class="fas fa-eye-slash"></i> Ẩn
+                           </button>`;
+
+                return `
+                        <tr class="${rowClass}">
+                            <td>${index + 1}</td>
+                            <td>
+                                <div class="order-number">${number}</div>
+                                ${reference ? `<div class="order-ref">${reference}</div>` : ''}
+                            </td>
+                            <td>
+                                <div class="customer-name">${customerName}</div>
+                                ${customerPhone ? `<div class="customer-phone"><i class="fas fa-phone"></i> ${customerPhone}</div>` : ''}
+                            </td>
+                            <td class="amount">${amount}</td>
+                            <td>
+                                <div class="cancel-reason-wrapper"
+                                     onmouseenter="showBillPreview(${index}, event)"
+                                     onmouseleave="hideBillPreviewDelayed()">
+                                    <div class="cancel-reason" title="${escapeHtml(reason)}">
+                                        <i class="fas fa-comment-dots"></i> ${escapeHtml(reason)}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="timestamp">
+                                    <div class="timestamp-date">${deletedAt}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="user-badge">${deletedByDisplay}</span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                    <button class="btn-action btn-view" onclick="viewBill(${index})" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i> Xem
+                                    </button>
+                                    ${hideShowBtn}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+            }).join('');
+        }
+
+        // =====================================================
+        // VIEW BILL MODAL
+        // =====================================================
+
+        function viewBill(index) {
+            const item = filteredData[index];
+            if (!item) return;
+
+            const modal = document.getElementById('billPreviewModal');
+            const detailGrid = document.getElementById('modalDetailGrid');
+            const iframe = document.getElementById('billPreviewFrame');
+
+            // Populate detail grid
+            detailGrid.innerHTML = `
+                    <div class="detail-item">
+                        <div class="detail-label">Số phiếu</div>
+                        <div class="detail-value">${item.Number || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Khách hàng</div>
+                        <div class="detail-value">${item.ReceiverName || item.PartnerDisplayName || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">SĐT</div>
+                        <div class="detail-value">${item.ReceiverPhone || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Địa chỉ</div>
+                        <div class="detail-value">${item.ReceiverAddress || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tổng tiền</div>
+                        <div class="detail-value" style="color: #059669;">${formatCurrency(item.AmountTotal || item.CashOnDelivery || 0)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">COD</div>
+                        <div class="detail-value">${formatCurrency(item.CashOnDelivery || 0)}</div>
+                    </div>
+                    <div class="detail-item" style="grid-column: 1 / -1; background: #fef2f2;">
+                        <div class="detail-label" style="color: #dc2626;">Lý do hủy</div>
+                        <div class="detail-value" style="color: #991b1b;">${escapeHtml(item.cancelReason || 'Không có')}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Người yêu cầu hủy</div>
+                        <div class="detail-value">${item.deletedByDisplayName || item.deletedBy || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Thời gian yêu cầu</div>
+                        <div class="detail-value">${item.deletedAt ? formatDateTime(item.deletedAt) : 'N/A'}</div>
+                    </div>
+                `;
+
+            // Generate bill preview
+            try {
+                const enrichedOrder = {
+                    Id: item.Id || item.id,
+                    Number: item.Number,
+                    Reference: item.Reference,
+                    DateInvoice: item.DateInvoice || item.timestamp, // Keep original date from stored data
+                    PartnerDisplayName: item.PartnerDisplayName || item.ReceiverName,
+                    DeliveryPrice: item.DeliveryPrice,
+                    CashOnDelivery: item.CashOnDelivery,
+                    PaymentAmount: item.PaymentAmount,
+                    Discount: item.Discount,
+                    AmountTotal: item.AmountTotal,
+                    AmountUntaxed: item.AmountUntaxed,
+                    CarrierName: item.CarrierName,
+                    UserName: item.UserName,
+                    SessionIndex: item.SessionIndex,
+                    Comment: item.Comment,
+                    DeliveryNote: item.DeliveryNote,
+                    SaleOnlineIds: item.SaleOnlineIds || [item.SaleOnlineId || item.id],
+                    OrderLines: item.OrderLines || [],
+                    Partner: {
+                        Name: item.ReceiverName,
+                        Phone: item.ReceiverPhone,
+                        Street: item.ReceiverAddress
+                    }
+                };
+
+                // Generate bill using BillService
+                let billHTML = null;
+                if (typeof BillService !== 'undefined' && BillService.generateCustomBillHTML) {
+                    billHTML = BillService.generateCustomBillHTML(enrichedOrder, { walletBalance: item.PaymentAmount || 0 });
+                }
+
+                if (billHTML) {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(billHTML);
+                    iframeDoc.close();
+                } else {
+                    // Fallback: Show order lines as simple table
+                    const orderLines = item.OrderLines || [];
+                    let linesHTML = orderLines.map(line => `
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0;">${line.ProductName || line.ProductNameGet || 'N/A'}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">${line.Quantity || line.ProductUOMQty || 1}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: right;">${formatCurrency(line.PriceUnit || line.Price || 0)}</td>
+                            </tr>
+                        `).join('');
+
+                    const fallbackHTML = `
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <style>
+                                    body { font-family: sans-serif; padding: 20px; }
+                                    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+                                    th { background: #f8fafc; padding: 10px; text-align: left; border: 1px solid #e2e8f0; }
+                                </style>
+                            </head>
+                            <body>
+                                <h3 style="color: #64748b;">Chi tiết sản phẩm</h3>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Sản phẩm</th>
+                                            <th style="text-align: center;">SL</th>
+                                            <th style="text-align: right;">Đơn giá</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${linesHTML || '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #94a3b8;">Không có dữ liệu sản phẩm</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </body>
+                            </html>
+                        `;
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(fallbackHTML);
+                    iframeDoc.close();
+                }
+            } catch (e) {
+                console.error('Error generating bill preview:', e);
+                iframe.srcdoc = '<p style="padding: 20px; color: #94a3b8;">Không thể tạo bill preview</p>';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeBillModal() {
+            document.getElementById('billPreviewModal').style.display = 'none';
+        }
+
+        // Close modal on overlay click
+        document.getElementById('billPreviewModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeBillModal();
+            }
+        });
+
+        // =====================================================
+        // BILL HOVER PREVIEW (Global Fixed Position)
+        // =====================================================
+
+        let hidePreviewTimeout = null;
+        let currentPreviewIndex = -1;
+
+        function showBillPreview(index, event) {
+            const item = filteredData[index];
+            if (!item) return;
+
+            // Cancel any pending hide
+            cancelHideBillPreview();
+
+            const preview = document.getElementById('globalBillPreview');
+            const iframe = document.getElementById('globalBillFrame');
+
+            // Position the preview near the mouse
+            const rect = event.target.getBoundingClientRect();
+            let left = rect.left;
+            let top = rect.bottom + 10;
+
+            // Adjust if too far right
+            if (left + 400 > window.innerWidth) {
+                left = window.innerWidth - 410;
+            }
+
+            // Adjust if too far down
+            if (top + 500 > window.innerHeight) {
+                top = rect.top - 490;
+            }
+
+            preview.style.left = Math.max(10, left) + 'px';
+            preview.style.top = Math.max(10, top) + 'px';
+
+            // Show preview
+            preview.classList.add('show');
+
+            // Load bill content if not cached or different index
+            if (currentPreviewIndex !== index) {
+                currentPreviewIndex = index;
+                loadBillContent(item, iframe);
+            }
+        }
+
+        function loadBillContent(item, iframe) {
+            try {
+                const enrichedOrder = {
+                    Id: item.Id || item.id,
+                    Number: item.Number,
+                    Reference: item.Reference,
+                    DateInvoice: item.DateInvoice || item.timestamp, // Keep original date from stored data
+                    PartnerDisplayName: item.PartnerDisplayName || item.ReceiverName,
+                    DeliveryPrice: item.DeliveryPrice,
+                    CashOnDelivery: item.CashOnDelivery,
+                    PaymentAmount: item.PaymentAmount,
+                    Discount: item.Discount,
+                    AmountTotal: item.AmountTotal,
+                    AmountUntaxed: item.AmountUntaxed,
+                    CarrierName: item.CarrierName,
+                    UserName: item.UserName,
+                    SessionIndex: item.SessionIndex,
+                    Comment: item.Comment,
+                    DeliveryNote: item.DeliveryNote,
+                    SaleOnlineIds: item.SaleOnlineIds || [item.SaleOnlineId || item.id],
+                    OrderLines: item.OrderLines || [],
+                    Partner: {
+                        Name: item.ReceiverName,
+                        Phone: item.ReceiverPhone,
+                        Street: item.ReceiverAddress
+                    }
+                };
+
+                let billHTML = null;
+                if (typeof BillService !== 'undefined' && BillService.generateCustomBillHTML) {
+                    billHTML = BillService.generateCustomBillHTML(enrichedOrder, { walletBalance: item.PaymentAmount || 0 });
+                }
+
+                if (billHTML) {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(billHTML);
+                    iframeDoc.close();
+                }
+            } catch (e) {
+                console.error('Error generating bill preview:', e);
+            }
+        }
+
+        function hideBillPreview() {
+            const preview = document.getElementById('globalBillPreview');
+            preview.classList.remove('show');
+            currentPreviewIndex = -1;
+        }
+
+        function hideBillPreviewDelayed() {
+            hidePreviewTimeout = setTimeout(hideBillPreview, 200);
+        }
+
+        function cancelHideBillPreview() {
+            if (hidePreviewTimeout) {
+                clearTimeout(hidePreviewTimeout);
+                hidePreviewTimeout = null;
+            }
+        }
+
+        // =====================================================
+        // UTILITIES
+        // =====================================================
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN').format(value || 0) + 'đ';
+        }
+
+        function formatDateTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // =====================================================
+        // INITIALIZATION
+        // =====================================================
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize auth manager if needed
+            if (typeof AuthManager !== 'undefined' && !window.authManager) {
+                window.authManager = new AuthManager({ redirectUrl: '../index.html' });
+            }
+
+            // Load saved tab state and update UI
+            loadTabState();
+            document.querySelectorAll('.status-tab').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.status === currentStatusTab) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Load data
+            setTimeout(loadData, 500);
+        });
+
+        // Keyboard shortcut: Escape to close modal
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeBillModal();
+            }
+        });
+    </script>
+</body>
+
+</html>
