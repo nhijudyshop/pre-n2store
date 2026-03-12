@@ -328,8 +328,9 @@ class VariantGeneratorDialog {
      */
     async loadCSVData() {
         try {
-            const repoBase = window.location.pathname.match(/\/n2store\//)?.[0] ?
-                window.location.pathname.substring(0, window.location.pathname.indexOf('/n2store/') + '/n2store/'.length) : '/';
+            const repoMatch = window.location.pathname.match(/\/(?:pre-)?n2store\//);
+            const repoBase = repoMatch ?
+                window.location.pathname.substring(0, repoMatch.index + repoMatch[0].length) : '/';
             const basePath = `${repoBase}purchase-orders/`;
 
             const [attrsText, valsText] = await Promise.all([
