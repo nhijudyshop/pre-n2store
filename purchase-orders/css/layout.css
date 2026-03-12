@@ -6,16 +6,8 @@
 
 /* Main Content */
 .main-content {
-    margin-left: var(--sidebar-width);
     min-height: 100vh;
     padding: var(--spacing-lg);
-    transition: margin-left 0.3s ease;
-}
-
-@media (max-width: 1024px) {
-    .main-content {
-        margin-left: 0;
-    }
 }
 
 /* Page Header */

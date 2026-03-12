@@ -20,19 +20,7 @@ body {
 }
 
 .main-content {
-    margin-left: var(--sidebar-width);
     padding: var(--spacing-xl);
-    transition: margin-left var(--transition-slow);
-}
-
-.sidebar.collapsed~.main-content {
-    margin-left: 0;
-}
-
-@media (max-width: 1024px) {
-    .main-content {
-        margin-left: 0;
-    }
 }
 
 .container {

@@ -758,28 +758,6 @@ button.success {
     margin-right: 8px;
 }
 
-/* Sidebar icons */
-.nav-item i,
-.nav-item svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-/* User avatar icons */
-.user-avatar i,
-.user-avatar svg {
-    width: 24px;
-    height: 24px;
-}
-
-.user-avatar-large i,
-.user-avatar-large svg {
-    width: 24px;
-    height: 24px;
-    color: white;
-}
-
 /* Template button icons */
 .template-btn i,
 .template-btn svg {

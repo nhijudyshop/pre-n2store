@@ -353,17 +353,12 @@
    ===================================================== */
 
 @media print {
-    .sidebar,
     .top-bar,
     .edit-button,
     .delete-button,
     .btn,
     .btn-icon {
         display: none !important;
-    }
-
-    .main-content {
-        margin-left: 0 !important;
     }
 
     .modern-table {

@@ -420,17 +420,12 @@
    ===================================================== */
 
 @media print {
-    .sidebar,
     .top-bar,
     .filter-section,
     .btn,
     .btn-icon,
     .modal-overlay {
         display: none !important;
-    }
-
-    .main-content {
-        margin-left: 0 !important;
     }
 
     .modern-table {
