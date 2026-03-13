@@ -140,6 +140,7 @@ class PurchaseOrderUIComponents {
         container.innerHTML = config.TAB_CONFIG.map(tab => {
             const count = counts[tab.status] || 0;
             const isActive = activeTab === tab.status;
+            const badgeHtml = tab.isSpecial ? '' : `<span class="tab-badge">${count}</span>`;
 
             return `
                 <button class="tab-btn ${isActive ? 'active' : ''}"
@@ -147,7 +148,7 @@ class PurchaseOrderUIComponents {
                         data-status="${tab.status}">
                     <i data-lucide="${tab.icon}"></i>
                     <span>${tab.label}</span>
-                    <span class="tab-badge">${count}</span>
+                    ${badgeHtml}
                 </button>
             `;
         }).join('');

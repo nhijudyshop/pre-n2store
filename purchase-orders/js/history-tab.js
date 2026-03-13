@@ -1,0 +1,513 @@
+/**
+ * PURCHASE ORDERS MODULE - HISTORY TAB (Lịch sử)
+ * File: history-tab.js
+ * Purpose: Fetch and display FastPurchaseOrder data from TPOS API with paging
+ */
+
+window.PurchaseOrderHistory = (function () {
+    'use strict';
+
+    const PROXY_URL = 'https://chatomni-proxy.nhijudyshop.workers.dev';
+    const PAGE_SIZE = 20;
+
+    let currentPage = 1;
+    let totalCount = 0;
+    let isLoading = false;
+    let currentData = [];
+
+    // DOM containers (set during init)
+    let tableContainer = null;
+    let paginationContainer = null;
+    let filterContainer = null;
+
+    // Filter state
+    let filterStartDate = null;
+    let filterEndDate = null;
+    let searchTerm = '';
+
+    /**
+     * Initialize with default date range (current month)
+     */
+    function init() {
+        tableContainer = document.getElementById('tableContainer');
+        paginationContainer = document.getElementById('pagination');
+        filterContainer = document.getElementById('filterBar');
+
+        // Default: current month
+        const now = new Date();
+        filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        filterEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+        renderHistoryFilterBar();
+        loadPage(1);
+    }
+
+    /**
+     * Render a simplified filter bar for history tab
+     */
+    function renderHistoryFilterBar() {
+        if (!filterContainer) return;
+
+        const fmt = (d) => {
+            if (!d) return '';
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+
+        filterContainer.innerHTML = `
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label class="filter-label">Từ ngày</label>
+                    <div class="input-icon">
+                        <i data-lucide="calendar"></i>
+                        <input type="date" id="historyStartDate" class="filter-input" value="${fmt(filterStartDate)}">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Đến ngày</label>
+                    <div class="input-icon">
+                        <i data-lucide="calendar"></i>
+                        <input type="date" id="historyEndDate" class="filter-input" value="${fmt(filterEndDate)}">
+                    </div>
+                </div>
+                <div class="filter-group filter-group--search">
+                    <label class="filter-label">Tìm NCC</label>
+                    <div class="input-icon">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="historySearchInput" class="filter-input"
+                               value="${searchTerm}"
+                               placeholder="Tên NCC... (Enter để tìm)">
+                    </div>
+                </div>
+                <div class="filter-group filter-group--actions">
+                    <button id="btnHistoryFilter" class="btn btn-primary">
+                        <i data-lucide="search"></i>
+                        <span>Tìm</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        const applyFilters = () => {
+            const s = document.getElementById('historyStartDate').value;
+            const e = document.getElementById('historyEndDate').value;
+            filterStartDate = s ? new Date(s) : null;
+            filterEndDate = e ? new Date(e + 'T23:59:59') : null;
+            searchTerm = (document.getElementById('historySearchInput').value || '').trim();
+            loadPage(1);
+        };
+
+        document.getElementById('btnHistoryFilter').addEventListener('click', applyFilters);
+
+        const searchInput = document.getElementById('historySearchInput');
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyFilters();
+            }
+        });
+        // Clear search: when input is emptied, reload full list
+        searchInput.addEventListener('input', () => {
+            if (searchInput.value === '' && searchTerm !== '') {
+                searchTerm = '';
+                loadPage(1);
+            }
+        });
+    }
+
+    /**
+     * Build the OData URL for FastPurchaseOrder
+     */
+    function buildUrl(page) {
+        const skip = (page - 1) * PAGE_SIZE;
+        let url = `${PROXY_URL}/odata/FastPurchaseOrder/OdataService.GetView?&$top=${PAGE_SIZE}`;
+        if (skip > 0) url += `&$skip=${skip}`;
+        url += `&$orderby=DateInvoice+desc,Id+desc`;
+
+        // Build filter
+        const filters = ["Type eq 'invoice'"];
+        if (filterStartDate) {
+            const iso = toUTCISOString(filterStartDate);
+            filters.push(`DateInvoice ge ${iso}`);
+        }
+        if (filterEndDate) {
+            const iso = toUTCISOString(filterEndDate);
+            filters.push(`DateInvoice le ${iso}`);
+        }
+        if (searchTerm) {
+            // Remove Vietnamese diacritics for PartnerNameNoSign search
+            const normalized = removeVietnameseDiacritics(searchTerm).toLowerCase();
+            filters.push(`contains(PartnerNameNoSign,'${encodeODataString(normalized)}')`);
+        }
+        url += `&$filter=(${filters.join(' and ')})`;
+        url += `&$count=true`;
+
+        return url;
+    }
+
+    /**
+     * Convert date to UTC ISO string for OData filter (offset +07:00 → subtract 7h)
+     */
+    function toUTCISOString(date) {
+        const utc = new Date(date.getTime() - 7 * 60 * 60 * 1000);
+        return utc.toISOString().replace('Z', '+00:00');
+    }
+
+    /**
+     * Load a page of data from TPOS API
+     */
+    async function loadPage(page) {
+        if (isLoading) return;
+        isLoading = true;
+        currentPage = page;
+
+        renderLoading();
+
+        try {
+            const token = await getAuthToken();
+            const url = buildUrl(page);
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    'tposappversion': '6.2.6.1',
+                    'x-requested-with': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            totalCount = data['@odata.count'] || 0;
+            currentData = data.value || [];
+
+            renderTable(currentData);
+            renderPagination();
+        } catch (error) {
+            console.error('[History] Load failed:', error);
+            renderError(error.message);
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    /**
+     * Get auth token from TPOSClient
+     */
+    async function getAuthToken() {
+        if (window.TPOSClient?.getToken) {
+            return await window.TPOSClient.getToken();
+        }
+        if (window.tokenManager?.getToken) {
+            return await window.tokenManager.getToken();
+        }
+        throw new Error('Không có token manager khả dụng');
+    }
+
+    /**
+     * Format number as VND (with dot separator)
+     */
+    function formatMoney(value) {
+        if (!value && value !== 0) return '';
+        return new Intl.NumberFormat('vi-VN').format(value);
+    }
+
+    /**
+     * Format date from ISO string
+     */
+    function formatDate(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year}\n${hours}:${minutes}`;
+    }
+
+    /**
+     * Render the history table
+     */
+    function renderTable(items) {
+        if (!tableContainer) return;
+
+        if (!items || items.length === 0) {
+            tableContainer.innerHTML = `
+                <div class="table-empty">
+                    <div class="table-empty__icon"><i data-lucide="inbox"></i></div>
+                    <div class="table-empty__title">Không có dữ liệu</div>
+                    <div class="table-empty__description">Không tìm thấy hóa đơn nào trong khoảng thời gian này</div>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            return;
+        }
+
+        const rows = items.map((item, idx) => {
+            const dateFormatted = formatDate(item.DateInvoice);
+            const dateParts = dateFormatted.split('\n');
+            return `
+                <tr class="order-row ${idx === 0 ? 'order-row--first' : ''}" style="border-top: ${idx > 0 ? '1px solid var(--color-border-light)' : 'none'}">
+                    <td>
+                        <div class="cell-supplier">
+                            <span class="supplier-name">${escapeHtml(item.PartnerDisplayName || '')}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="date-info">
+                            <span class="date-main">${dateParts[0] || ''}</span>
+                            <span class="date-time">${dateParts[1] || ''}</span>
+                        </div>
+                    </td>
+                    <td><span style="font-family: monospace; font-size: 13px;">${escapeHtml(item.Number || '')}</span></td>
+                    <td><span style="font-family: monospace; font-size: 13px; color: var(--color-text-muted);">${escapeHtml(item.VatInvoiceNumber || '')}</span></td>
+                    <td class="text-right"><span class="price-value">${formatMoney(item.AmountTotal)}</span></td>
+                    <td class="text-right"><span class="price-value" style="color: ${item.Residual > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">${formatMoney(item.Residual)}</span></td>
+                    <td>${renderState(item.ShowState, item.State)}</td>
+                    <td><span style="font-size: 13px;">${escapeHtml(item.UserName || '')}</span></td>
+                    <td><span style="font-size: 13px;">${escapeHtml(item.CompanyName || '')}</span></td>
+                    <td>
+                        <div class="action-buttons" style="flex-direction: row;">
+                            <button class="btn-icon text-blue" title="Xem chi tiết" onclick="window.PurchaseOrderHistory.viewDetail(${item.Id})">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        tableContainer.innerHTML = `
+            <div class="table-wrapper">
+                <table class="po-table">
+                    <thead>
+                        <tr>
+                            <th>Nhà cung cấp</th>
+                            <th style="width: 120px;">Ngày đơn hàng</th>
+                            <th>Số</th>
+                            <th>Số hóa đơn đỏ</th>
+                            <th class="text-right">Tổng tiền</th>
+                            <th class="text-right">Còn nợ</th>
+                            <th>Trạng thái</th>
+                            <th>Nhân viên</th>
+                            <th>Công ty</th>
+                            <th style="width: 60px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    /**
+     * Render state badge matching the screenshot style
+     */
+    function renderState(showState, state) {
+        const colors = {
+            'open': { bg: '#d1fae5', text: '#059669', border: '#a7f3d0' },
+            'paid': { bg: '#dbeafe', text: '#2563eb', border: '#bfdbfe' },
+            'draft': { bg: '#f3f4f6', text: '#6b7280', border: '#e5e7eb' },
+            'cancel': { bg: '#fee2e2', text: '#dc2626', border: '#fecaca' }
+        };
+        const c = colors[state] || colors['open'];
+        return `<span class="status-badge" style="background: ${c.bg}; color: ${c.text}; border: 1px solid ${c.border};">${escapeHtml(showState || state || '')}</span>`;
+    }
+
+    /**
+     * Render pagination controls
+     */
+    function renderPagination() {
+        if (!paginationContainer) return;
+
+        const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+        if (totalPages <= 0) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+
+        const startItem = totalCount > 0 ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+        const endItem = Math.min(currentPage * PAGE_SIZE, totalCount);
+
+        // Generate page numbers
+        const pages = generatePageNumbers(currentPage, totalPages, 5);
+
+        paginationContainer.innerHTML = `
+            <div class="pagination">
+                <div class="pagination__info">
+                    Hiển thị ${startItem} - ${endItem} trong ${totalCount} hóa đơn
+                </div>
+                <div class="pagination__controls">
+                    ${totalPages > 1 ? `
+                        <button class="pagination__btn pagination__btn--prev ${currentPage <= 1 ? 'disabled' : ''}"
+                                data-page="${currentPage - 1}" ${currentPage <= 1 ? 'disabled' : ''}>
+                            <i data-lucide="chevron-left"></i>
+                        </button>
+
+                        ${pages.map(p => {
+                            if (p === '...') return '<span class="pagination__ellipsis">...</span>';
+                            const isActive = p === currentPage;
+                            return `<button class="pagination__btn pagination__btn--page ${isActive ? 'active' : ''}"
+                                            data-page="${p}" ${isActive ? 'disabled' : ''}>${p}</button>`;
+                        }).join('')}
+
+                        <button class="pagination__btn pagination__btn--next ${currentPage >= totalPages ? 'disabled' : ''}"
+                                data-page="${currentPage + 1}" ${currentPage >= totalPages ? 'disabled' : ''}>
+                            <i data-lucide="chevron-right"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Bind click handlers
+        paginationContainer.querySelectorAll('.pagination__btn[data-page]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = parseInt(btn.dataset.page, 10);
+                if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                    loadPage(page);
+                }
+            });
+        });
+    }
+
+    /**
+     * Generate page numbers array
+     */
+    function generatePageNumbers(current, total, maxVisible) {
+        if (total <= maxVisible) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+
+        const pages = [];
+        const half = Math.floor(maxVisible / 2);
+        let start = current - half;
+        let end = current + half;
+
+        if (start < 1) { start = 1; end = maxVisible; }
+        if (end > total) { end = total; start = total - maxVisible + 1; }
+
+        if (start > 1) {
+            pages.push(1);
+            if (start > 2) pages.push('...');
+        }
+
+        for (let i = start; i <= end; i++) {
+            if (i >= 1 && i <= total && !pages.includes(i)) pages.push(i);
+        }
+
+        if (end < total) {
+            if (end < total - 1) pages.push('...');
+            if (!pages.includes(total)) pages.push(total);
+        }
+
+        return pages;
+    }
+
+    /**
+     * Render loading state
+     */
+    function renderLoading() {
+        if (!tableContainer) return;
+        tableContainer.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Đang tải dữ liệu lịch sử...</div>
+            </div>
+        `;
+        if (paginationContainer) paginationContainer.innerHTML = '';
+    }
+
+    /**
+     * Render error state
+     */
+    function renderError(message) {
+        if (!tableContainer) return;
+        tableContainer.innerHTML = `
+            <div class="error-state">
+                <div class="error-state__icon"><i data-lucide="alert-circle"></i></div>
+                <div class="error-state__title">Không thể tải dữ liệu</div>
+                <div class="error-state__description">${escapeHtml(message)}</div>
+                <button class="btn btn-outline" onclick="window.PurchaseOrderHistory.reload()">
+                    <i data-lucide="refresh-cw"></i>
+                    <span>Thử lại</span>
+                </button>
+            </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    /**
+     * View detail - open TPOS URL for this invoice
+     */
+    function viewDetail(id) {
+        window.open(`https://tomato.tpos.vn/FastPurchaseOrder/Edit/${id}`, '_blank');
+    }
+
+    /**
+     * Remove Vietnamese diacritics for search (PartnerNameNoSign is already without diacritics)
+     */
+    function removeVietnameseDiacritics(str) {
+        if (window.ProductCodeGenerator?.removeVietnameseDiacritics) {
+            return window.ProductCodeGenerator.removeVietnameseDiacritics(str);
+        }
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+    }
+
+    /**
+     * Escape single quotes for OData string values
+     */
+    function encodeODataString(str) {
+        return str.replace(/'/g, "''");
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    /**
+     * Reload current page
+     */
+    function reload() {
+        loadPage(currentPage);
+    }
+
+    /**
+     * Destroy / cleanup when switching away from history tab
+     */
+    function destroy() {
+        currentData = [];
+        currentPage = 1;
+        totalCount = 0;
+        searchTerm = '';
+    }
+
+    return {
+        init,
+        destroy,
+        reload,
+        viewDetail
+    };
+})();
+
+console.log('[Purchase Orders] History tab loaded');

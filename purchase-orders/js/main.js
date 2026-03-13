@@ -210,6 +210,7 @@ class PurchaseOrderController {
         // Orders changed
         this.unsubscribers.push(
             this.dataManager.on('ordersChange', (orders) => {
+                if (this.currentTab === 'HISTORY') return;
                 this.renderTable(orders);
             })
         );
@@ -258,6 +259,7 @@ class PurchaseOrderController {
         // Page changed
         this.unsubscribers.push(
             this.dataManager.on('pageChange', (paginationInfo) => {
+                if (this.currentTab === 'HISTORY') return;
                 this.renderPagination(paginationInfo);
                 this.renderTableForCurrentPage();
             })
@@ -423,10 +425,34 @@ class PurchaseOrderController {
     handleTabChange(status) {
         if (status === this.currentTab) return;
 
+        // If leaving history tab, destroy it
+        if (this.currentTab === 'HISTORY' && window.PurchaseOrderHistory) {
+            window.PurchaseOrderHistory.destroy();
+        }
+
         this.currentTab = status;
         this.ui.updateActiveTab(status, this.elements.tabsContainer);
+
+        if (status === 'HISTORY') {
+            // History tab: use TPOS API module
+            this.dataManager.clearSelection();
+            if (window.PurchaseOrderHistory) {
+                window.PurchaseOrderHistory.init();
+            }
+            return;
+        }
+
         this.dataManager.clearSelection();
         this.dataManager.loadOrders(status, true);
+
+        // Re-render filter bar for Firestore tabs
+        this.ui.renderFilterBar(this.dataManager.filters, this.elements.filterContainer, {
+            onDateChange: (start, end) => this.dataManager.setDateRange(start, end),
+            onQuickFilter: (filter) => this.dataManager.setQuickFilter(filter),
+            onSearch: (term) => this.dataManager.setSearchTerm(term),
+            onStatusFilter: (status) => this.dataManager.setStatusFilter(status),
+            onClear: () => this.dataManager.clearFilters()
+        });
     }
 
     /**

@@ -64,7 +64,8 @@ const ALLOWED_TRANSITIONS = {
 const TAB_CONFIG = [
     { id: 'draft', label: 'Nháp', status: OrderStatus.DRAFT, icon: 'file-edit' },
     { id: 'awaiting-purchase', label: 'Chờ mua', status: OrderStatus.AWAITING_PURCHASE, icon: 'shopping-cart' },
-    { id: 'awaiting-delivery', label: 'Chờ hàng', status: OrderStatus.AWAITING_DELIVERY, icon: 'truck' }
+    { id: 'awaiting-delivery', label: 'Chờ hàng', status: OrderStatus.AWAITING_DELIVERY, icon: 'truck' },
+    { id: 'history', label: 'Lịch sử', status: 'HISTORY', icon: 'history', isSpecial: true }
 ];
 
 // ========================================
