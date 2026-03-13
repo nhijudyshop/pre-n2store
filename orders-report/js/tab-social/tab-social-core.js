@@ -187,6 +187,11 @@ async function initSocialTab() {
         // Populate tag filter
         populateTagFilter();
 
+        // Initialize tag panel (right side filter)
+        if (typeof initTagPanel === 'function') {
+            initTagPanel();
+        }
+
         // Update search result count
         updateSearchResultCount();
 
