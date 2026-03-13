@@ -395,6 +395,7 @@ window.PurchaseOrderHistory = (function () {
             expandedRows[orderId] = lines;
             contentDiv.innerHTML = renderExpandedContent(orderId, item, lines);
             if (typeof lucide !== 'undefined') lucide.createIcons();
+            bindNoteCheckboxes(contentDiv);
         } catch (error) {
             console.error('[History] Expand failed:', error);
             contentDiv.innerHTML = `<div style="padding: 12px 16px; color: var(--color-danger); font-size: 13px;">Lỗi: ${escapeHtml(error.message)}</div>`;
@@ -410,15 +411,30 @@ window.PurchaseOrderHistory = (function () {
             return '<div style="padding: 12px 16px; color: var(--color-text-muted); font-size: 13px;">Không có chi tiết sản phẩm</div>';
         }
 
-        const lineRows = lines.map((line, idx) => `
+        const supplierName = item?.PartnerDisplayName || '';
+        const lineRows = lines.map((line, idx) => {
+            const lineKey = `${orderId}_${line.Id}`;
+            return `
             <tr>
                 <td style="text-align: center; width: 40px;">${idx + 1}</td>
                 <td style="font-weight: 500;">${escapeHtml(line.Name || line.ProductNameGet || line.ProductName || '')}</td>
                 <td style="text-align: right; width: 80px;">${line.ProductQty ?? ''}</td>
                 <td style="text-align: right; width: 120px;">${formatMoney(line.PriceUnit)}</td>
                 <td style="text-align: right; width: 120px;">${formatMoney(line.PriceSubTotal)}</td>
-            </tr>
-        `).join('');
+                <td style="text-align: center; width: 36px;">
+                    <input type="checkbox" class="note-product-cb" title="Thêm vào Ghi chú"
+                           data-key="${lineKey}"
+                           data-order-id="${orderId}"
+                           data-line-id="${line.Id}"
+                           data-product-name="${escapeHtml(line.Name || line.ProductNameGet || line.ProductName || '')}"
+                           data-product-code="${escapeHtml(line.ProductBarcode || line.Product?.DefaultCode || '')}"
+                           data-supplier="${escapeHtml(supplierName)}"
+                           data-qty="${line.ProductQty || 0}"
+                           data-price="${line.PriceUnit || 0}"
+                           style="width: 15px; height: 15px; cursor: pointer; accent-color: #3b82f6;">
+                </td>
+            </tr>`;
+        }).join('');
 
         const totalAmount = item?.AmountTotal || lines.reduce((s, l) => s + (l.PriceSubTotal || 0), 0);
         const residual = item?.Residual ?? totalAmount;
@@ -433,22 +449,56 @@ window.PurchaseOrderHistory = (function () {
                             <th style="padding: 6px 8px; text-align: right; width: 80px;">Số lượng</th>
                             <th style="padding: 6px 8px; text-align: right; width: 120px;">Đơn giá</th>
                             <th style="padding: 6px 8px; text-align: right; width: 120px;">Tổng</th>
+                            <th style="padding: 6px 8px; text-align: center; width: 36px;" title="Ghi chú">📝</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${lineRows}
                         <tr style="border-top: 1px solid #cbd5e1;">
-                            <td colspan="4" style="padding: 6px 8px; text-align: right; font-weight: 600;">Tổng tiền:</td>
+                            <td colspan="5" style="padding: 6px 8px; text-align: right; font-weight: 600;">Tổng tiền:</td>
                             <td style="padding: 6px 8px; text-align: right; font-weight: 700;">${formatMoney(totalAmount)}</td>
                         </tr>
                         <tr>
-                            <td colspan="4" style="padding: 6px 8px; text-align: right; font-weight: 600;">Còn nợ:</td>
+                            <td colspan="5" style="padding: 6px 8px; text-align: right; font-weight: 600;">Còn nợ:</td>
                             <td style="padding: 6px 8px; text-align: right; font-weight: 700; color: ${residual > 0 ? 'var(--color-danger)' : 'var(--color-success)'};">${formatMoney(residual)}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         `;
+    }
+
+    /**
+     * Bind note checkboxes inside expanded content
+     */
+    function bindNoteCheckboxes(container) {
+        container.querySelectorAll('.note-product-cb').forEach(cb => {
+            cb.addEventListener('change', () => {
+                if (cb.checked) {
+                    const noteItem = {
+                        key: cb.dataset.key,
+                        orderId: parseInt(cb.dataset.orderId, 10),
+                        lineId: parseInt(cb.dataset.lineId, 10),
+                        productName: cb.dataset.productName,
+                        productCode: cb.dataset.productCode,
+                        supplierName: cb.dataset.supplier,
+                        quantity: parseFloat(cb.dataset.qty) || 0,
+                        priceUnit: parseFloat(cb.dataset.price) || 0,
+                        note: `${cb.dataset.supplier} gửi`,
+                        createdAt: Date.now()
+                    };
+                    if (window.PurchaseOrderNotes?.addItem) {
+                        window.PurchaseOrderNotes.addItem(noteItem);
+                    }
+                    cb.disabled = true;
+                    cb.closest('tr').style.opacity = '0.5';
+                } else {
+                    if (window.PurchaseOrderNotes?.removeByKey) {
+                        window.PurchaseOrderNotes.removeByKey(cb.dataset.key);
+                    }
+                }
+            });
+        });
     }
 
     /**

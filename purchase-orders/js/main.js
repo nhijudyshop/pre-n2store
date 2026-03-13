@@ -210,7 +210,7 @@ class PurchaseOrderController {
         // Orders changed
         this.unsubscribers.push(
             this.dataManager.on('ordersChange', (orders) => {
-                if (this.currentTab === 'HISTORY') return;
+                if (this.currentTab === 'HISTORY' || this.currentTab === 'NOTES') return;
                 this.renderTable(orders);
             })
         );
@@ -259,7 +259,7 @@ class PurchaseOrderController {
         // Page changed
         this.unsubscribers.push(
             this.dataManager.on('pageChange', (paginationInfo) => {
-                if (this.currentTab === 'HISTORY') return;
+                if (this.currentTab === 'HISTORY' || this.currentTab === 'NOTES') return;
                 this.renderPagination(paginationInfo);
                 this.renderTableForCurrentPage();
             })
@@ -302,7 +302,7 @@ class PurchaseOrderController {
 
         // Restore tab from URL hash, default to DRAFT
         const hash = window.location.hash.replace('#', '');
-        const validTabs = [...Object.values(this.config.OrderStatus), 'HISTORY'];
+        const validTabs = [...Object.values(this.config.OrderStatus), 'HISTORY', 'NOTES'];
         this.currentTab = validTabs.includes(hash) ? hash : this.config.OrderStatus.DRAFT;
 
         // Load stats & counts (always needed for summary cards + tab badges)
@@ -312,15 +312,21 @@ class PurchaseOrderController {
         ]);
 
         if (this.currentTab === 'HISTORY') {
-            // History tab: init TPOS module
             if (window.PurchaseOrderHistory) {
                 window.PurchaseOrderHistory.init();
+            }
+        } else if (this.currentTab === 'NOTES') {
+            if (window.PurchaseOrderNotes) {
+                window.PurchaseOrderNotes.init();
             }
         } else {
             // Firestore tabs: load orders + filter bar
             await this.dataManager.loadOrders(this.currentTab, true);
             this.renderFilterBarWithHandlers();
         }
+
+        // Check overdue notes and show banner
+        this.checkOverdueNotes();
     }
 
     /**
@@ -335,6 +341,73 @@ class PurchaseOrderController {
             onClear: () => this.dataManager.clearFilters(),
             onReload: () => this.dataManager.refresh()
         });
+    }
+
+    // ========================================
+    // OVERDUE NOTES NOTIFICATION
+    // ========================================
+
+    async checkOverdueNotes() {
+        if (!window.PurchaseOrderNotes) return;
+        try {
+            const grouped = await window.PurchaseOrderNotes.getOverdueItems();
+            const suppliers = Object.keys(grouped);
+            if (suppliers.length === 0) {
+                // Remove existing banner if any
+                document.getElementById('overdueBanner')?.remove();
+                return;
+            }
+
+            // Build banner
+            let existing = document.getElementById('overdueBanner');
+            if (!existing) {
+                existing = document.createElement('div');
+                existing.id = 'overdueBanner';
+                // Insert before filter bar
+                const main = document.querySelector('.main-content');
+                const filterBar = document.getElementById('filterBar');
+                if (main && filterBar) {
+                    main.insertBefore(existing, filterBar);
+                } else {
+                    document.body.appendChild(existing);
+                }
+            }
+
+            const totalItems = suppliers.reduce((s, k) => s + grouped[k].length, 0);
+            const supplierList = suppliers.map(name => {
+                const items = grouped[name];
+                const productNames = items.map(it => it.productName).join(', ');
+                return `<div class="overdue-supplier" style="cursor: pointer; padding: 4px 0;" data-supplier="${name.replace(/"/g, '&quot;')}">
+                    <strong>${name}</strong>: ${items.length} SP — <span style="font-size: 12px; color: #991b1b;">${productNames}</span>
+                </div>`;
+            }).join('');
+
+            existing.innerHTML = `
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 18px;">⚠️</span>
+                        <strong style="color: #991b1b;">Quá hạn 15 ngày: ${totalItems} sản phẩm từ ${suppliers.length} NCC</strong>
+                        <button id="btnDismissOverdue" style="margin-left: auto; background: none; border: none; cursor: pointer; font-size: 16px; color: #991b1b;">✕</button>
+                    </div>
+                    <div id="overdueDetails" style="font-size: 13px; color: #7f1d1d;">
+                        ${supplierList}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('btnDismissOverdue')?.addEventListener('click', () => {
+                existing.remove();
+            });
+
+            // Click on supplier → go to Notes tab
+            existing.querySelectorAll('.overdue-supplier').forEach(el => {
+                el.addEventListener('click', () => {
+                    this.handleTabChange('NOTES');
+                });
+            });
+        } catch (e) {
+            console.warn('[Overdue] Check failed:', e);
+        }
     }
 
     // ========================================
@@ -442,9 +515,12 @@ class PurchaseOrderController {
     handleTabChange(status) {
         if (status === this.currentTab) return;
 
-        // If leaving history tab, destroy it
+        // If leaving special tabs, destroy them
         if (this.currentTab === 'HISTORY' && window.PurchaseOrderHistory) {
             window.PurchaseOrderHistory.destroy();
+        }
+        if (this.currentTab === 'NOTES' && window.PurchaseOrderNotes) {
+            window.PurchaseOrderNotes.destroy();
         }
 
         this.currentTab = status;
@@ -457,6 +533,15 @@ class PurchaseOrderController {
             this.dataManager.clearSelection();
             if (window.PurchaseOrderHistory) {
                 window.PurchaseOrderHistory.init();
+            }
+            return;
+        }
+
+        if (status === 'NOTES') {
+            // Notes tab: product notes module
+            this.dataManager.clearSelection();
+            if (window.PurchaseOrderNotes) {
+                window.PurchaseOrderNotes.init();
             }
             return;
         }
