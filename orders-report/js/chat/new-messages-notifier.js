@@ -594,6 +594,12 @@
      */
     function waitForTableRows(maxWait = 10000) {
         return new Promise((resolve) => {
+            // If tab1 table body doesn't exist in DOM (e.g. Social tab is active), skip polling
+            const tableBody = document.getElementById('tableBody');
+            if (!tableBody) {
+                resolve(false);
+                return;
+            }
             const startTime = Date.now();
             const check = () => {
                 const rows = document.querySelectorAll('tr[data-psid]');

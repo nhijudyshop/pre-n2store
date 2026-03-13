@@ -372,8 +372,13 @@
                             : Object.entries(firestoreData.data);
                         entries.forEach(([key, value]) => {
                             const existingEntry = this._data.get(key);
-                            // Only update if server data is newer or entry doesn't exist locally
-                            if (!existingEntry || (value.timestamp && value.timestamp > (existingEntry.timestamp || 0))) {
+                            // Only update if data actually changed (deep compare)
+                            const valueTs = value.timestamp?.toMillis ? value.timestamp.toMillis() : (value.timestamp || 0);
+                            const existingTs = existingEntry?.timestamp?.toMillis ? existingEntry.timestamp.toMillis() : (existingEntry?.timestamp || 0);
+                            const isNew = !existingEntry;
+                            const isNewer = valueTs > existingTs;
+                            const isDataDifferent = isNew || isNewer || (!isNewer && JSON.stringify(value) !== JSON.stringify(existingEntry));
+                            if (isNew || (value.timestamp && isDataDifferent)) {
                                 this._data.set(key, value);
                                 hasChanges = true;
                                 changedKeys.push(key);
@@ -445,8 +450,13 @@
                         : Object.entries(firestoreData.data);
                     entries.forEach(([key, value]) => {
                         const existingEntry = this._data.get(key);
-                        // Only update if server data is newer or entry doesn't exist locally
-                        if (!existingEntry || (value.timestamp && value.timestamp > (existingEntry.timestamp || 0))) {
+                        // Only update if data actually changed (deep compare)
+                        const valueTs = value.timestamp?.toMillis ? value.timestamp.toMillis() : (value.timestamp || 0);
+                        const existingTs = existingEntry?.timestamp?.toMillis ? existingEntry.timestamp.toMillis() : (existingEntry?.timestamp || 0);
+                        const isNew = !existingEntry;
+                        const isNewer = valueTs > existingTs;
+                        const isDataDifferent = isNew || isNewer || (!isNewer && JSON.stringify(value) !== JSON.stringify(existingEntry));
+                        if (isNew || (value.timestamp && isDataDifferent)) {
                             this._data.set(key, value);
                             hasChanges = true;
                             changedKeys.push(key);

@@ -270,13 +270,10 @@ async function initSocialTab() {
         // Update search result count
         updateSearchResultCount();
 
-        // Setup real-time listeners for cross-device sync
-        if (typeof setupSocialOrdersListener === 'function') {
-            setupSocialOrdersListener();
-        }
-        if (typeof setupSocialTagsListener === 'function') {
-            setupSocialTagsListener();
-        }
+        // Real-time listeners DISABLED - tab social chỉ 1 nhân viên phụ trách, không cần cross-device sync
+        // Nếu cần bật lại: bỏ comment 2 dòng bên dưới
+        // if (typeof setupSocialOrdersListener === 'function') setupSocialOrdersListener();
+        // if (typeof setupSocialTagsListener === 'function') setupSocialTagsListener();
 
         // Load currentUserIdentifier from Firestore (needed for cancel order to save canceller name)
         if (!window.currentUserIdentifier) {

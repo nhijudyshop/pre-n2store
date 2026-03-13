@@ -15,6 +15,7 @@ const SOCIAL_TAGS_COLLECTION = 'social_tags';
 let _socialOrdersUnsubscribe = null;
 let _socialTagsUnsubscribe = null;
 let _firestoreAvailable = null; // null = unknown, true/false after check
+let _lastOrdersSnapshotHash = null; // Track data hash to skip redundant re-renders
 
 // ===== FIRESTORE HELPER =====
 function _getFirestoreDB() {
@@ -361,6 +362,14 @@ function setupSocialOrdersListener() {
                 snapshot.forEach(doc => {
                     orders.push({ id: doc.id, ...doc.data() });
                 });
+
+                // Quick hash to detect actual data changes (avoid redundant re-renders)
+                const snapshotHash = orders.map(o => o.id + ':' + (o.updatedAt || o.createdAt || '')).join('|');
+                if (snapshotHash === _lastOrdersSnapshotHash) {
+                    console.log('[SocialFirebase] Real-time: no changes detected, skipping re-render (' + orders.length + ' orders)');
+                    return;
+                }
+                _lastOrdersSnapshotHash = snapshotHash;
 
                 // Update state
                 SocialOrderState.orders = orders;
