@@ -14,6 +14,8 @@ window.PurchaseOrderHistory = (function () {
     let totalCount = 0;
     let isLoading = false;
     let currentData = [];
+    // Track expanded rows: { orderId: orderLinesData[] }
+    const expandedRows = {};
 
     // DOM containers (set during init)
     let tableContainer = null;
@@ -241,10 +243,13 @@ window.PurchaseOrderHistory = (function () {
         const rows = items.map((item, idx) => {
             const dateFormatted = formatDate(item.DateInvoice);
             const dateParts = dateFormatted.split('\n');
+            const isExpanded = !!expandedRows[item.Id];
             return `
-                <tr class="order-row ${idx === 0 ? 'order-row--first' : ''}" style="border-top: ${idx > 0 ? '1px solid var(--color-border-light)' : 'none'}">
+                <tr class="order-row ${idx === 0 ? 'order-row--first' : ''} ${isExpanded ? 'order-row--expanded' : ''}"
+                    data-order-id="${item.Id}" style="border-top: ${idx > 0 ? '1px solid var(--color-border-light)' : 'none'}; cursor: pointer;">
                     <td>
-                        <div class="cell-supplier">
+                        <div class="cell-supplier" style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" style="width: 14px; height: 14px; flex-shrink: 0; color: var(--color-text-muted);"></i>
                             <span class="supplier-name">${escapeHtml(item.PartnerDisplayName || '')}</span>
                         </div>
                     </td>
@@ -263,9 +268,16 @@ window.PurchaseOrderHistory = (function () {
                     <td><span style="font-size: 13px;">${escapeHtml(item.CompanyName || '')}</span></td>
                     <td>
                         <div class="action-buttons" style="flex-direction: row;">
-                            <button class="btn-icon text-blue" title="Xem chi tiết" onclick="window.PurchaseOrderHistory.viewDetail(${item.Id})">
+                            <button class="btn-icon text-blue" title="Xem trên TPOS" onclick="event.stopPropagation(); window.PurchaseOrderHistory.viewDetail(${item.Id})">
                                 <i data-lucide="eye"></i>
                             </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="expand-row" id="expand-${item.Id}" style="display: ${isExpanded ? 'table-row' : 'none'};">
+                    <td colspan="10" style="padding: 0; background: #f8fafc;">
+                        <div class="expand-content" id="expand-content-${item.Id}">
+                            ${isExpanded ? renderExpandedContent(item.Id, item) : ''}
                         </div>
                     </td>
                 </tr>
@@ -297,6 +309,108 @@ window.PurchaseOrderHistory = (function () {
         `;
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Bind row click to toggle expand
+        tableContainer.querySelectorAll('tr.order-row[data-order-id]').forEach(row => {
+            row.addEventListener('click', () => {
+                const orderId = parseInt(row.dataset.orderId, 10);
+                toggleExpandRow(orderId);
+            });
+        });
+    }
+
+    /**
+     * Toggle expand/collapse for a row
+     */
+    async function toggleExpandRow(orderId) {
+        const expandRow = document.getElementById(`expand-${orderId}`);
+        const contentDiv = document.getElementById(`expand-content-${orderId}`);
+        const mainRow = tableContainer.querySelector(`tr.order-row[data-order-id="${orderId}"]`);
+        if (!expandRow || !contentDiv) return;
+
+        if (expandedRows[orderId]) {
+            // Collapse
+            delete expandedRows[orderId];
+            expandRow.style.display = 'none';
+            mainRow?.classList.remove('order-row--expanded');
+            // Update chevron icon
+            const icon = mainRow?.querySelector('.cell-supplier i');
+            if (icon) { icon.setAttribute('data-lucide', 'chevron-right'); lucide.createIcons(); }
+            return;
+        }
+
+        // Expand: show loading, fetch data
+        expandRow.style.display = 'table-row';
+        mainRow?.classList.add('order-row--expanded');
+        const icon = mainRow?.querySelector('.cell-supplier i');
+        if (icon) { icon.setAttribute('data-lucide', 'chevron-down'); lucide.createIcons(); }
+
+        const item = currentData.find(d => d.Id === orderId);
+        contentDiv.innerHTML = '<div style="padding: 12px 16px; color: var(--color-text-muted); font-size: 13px;">Đang tải chi tiết...</div>';
+
+        try {
+            const url = `${PROXY_URL}/api/odata/FastPurchaseOrder(${orderId})/OrderLines?$expand=Product,ProductUOM,Account`;
+            const response = await window.TPOSClient.authenticatedFetch(url);
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            const data = await response.json();
+            const lines = data.value || [];
+            expandedRows[orderId] = lines;
+            contentDiv.innerHTML = renderExpandedContent(orderId, item, lines);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        } catch (error) {
+            console.error('[History] Expand failed:', error);
+            contentDiv.innerHTML = `<div style="padding: 12px 16px; color: var(--color-danger); font-size: 13px;">Lỗi: ${escapeHtml(error.message)}</div>`;
+        }
+    }
+
+    /**
+     * Render expanded detail content (order lines table)
+     */
+    function renderExpandedContent(orderId, item, lines) {
+        if (!lines) lines = expandedRows[orderId];
+        if (!lines || lines.length === 0) {
+            return '<div style="padding: 12px 16px; color: var(--color-text-muted); font-size: 13px;">Không có chi tiết sản phẩm</div>';
+        }
+
+        const lineRows = lines.map((line, idx) => `
+            <tr>
+                <td style="text-align: center; width: 40px;">${idx + 1}</td>
+                <td style="font-weight: 500;">${escapeHtml(line.Name || line.ProductNameGet || line.ProductName || '')}</td>
+                <td style="text-align: right; width: 80px;">${line.ProductQty ?? ''}</td>
+                <td style="text-align: right; width: 120px;">${formatMoney(line.PriceUnit)}</td>
+                <td style="text-align: right; width: 120px;">${formatMoney(line.PriceSubTotal)}</td>
+            </tr>
+        `).join('');
+
+        const totalAmount = item?.AmountTotal || lines.reduce((s, l) => s + (l.PriceSubTotal || 0), 0);
+        const residual = item?.Residual ?? totalAmount;
+
+        return `
+            <div style="padding: 8px 16px 12px 36px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #e2e8f0; font-weight: 600;">
+                            <th style="padding: 6px 8px; text-align: center; width: 40px;">STT</th>
+                            <th style="padding: 6px 8px; text-align: left;">Sản phẩm</th>
+                            <th style="padding: 6px 8px; text-align: right; width: 80px;">Số lượng</th>
+                            <th style="padding: 6px 8px; text-align: right; width: 120px;">Đơn giá</th>
+                            <th style="padding: 6px 8px; text-align: right; width: 120px;">Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lineRows}
+                        <tr style="border-top: 1px solid #cbd5e1;">
+                            <td colspan="4" style="padding: 6px 8px; text-align: right; font-weight: 600;">Tổng tiền:</td>
+                            <td style="padding: 6px 8px; text-align: right; font-weight: 700;">${formatMoney(totalAmount)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding: 6px 8px; text-align: right; font-weight: 600;">Còn nợ:</td>
+                            <td style="padding: 6px 8px; text-align: right; font-weight: 700; color: ${residual > 0 ? 'var(--color-danger)' : 'var(--color-success)'};">${formatMoney(residual)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
     /**
@@ -487,6 +601,8 @@ window.PurchaseOrderHistory = (function () {
         currentPage = 1;
         totalCount = 0;
         searchTerm = '';
+        // Clear expanded state
+        Object.keys(expandedRows).forEach(k => delete expandedRows[k]);
     }
 
     return {
