@@ -124,7 +124,7 @@ window.PurchaseOrderHistory = (function () {
      */
     function buildUrl(page) {
         const skip = (page - 1) * PAGE_SIZE;
-        let url = `${PROXY_URL}/odata/FastPurchaseOrder/OdataService.GetView?&$top=${PAGE_SIZE}`;
+        let url = `${PROXY_URL}/api/odata/FastPurchaseOrder/OdataService.GetView?&$top=${PAGE_SIZE}`;
         if (skip > 0) url += `&$skip=${skip}`;
         url += `&$orderby=DateInvoice+desc,Id+desc`;
 
@@ -168,17 +168,12 @@ window.PurchaseOrderHistory = (function () {
         renderLoading();
 
         try {
-            const token = await getAuthToken();
+            if (!window.TPOSClient?.authenticatedFetch) {
+                throw new Error('TPOSClient not available');
+            }
             const url = buildUrl(page);
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json, text/javascript, */*; q=0.01',
-                    'tposappversion': '6.2.6.1',
-                    'x-requested-with': 'XMLHttpRequest'
-                }
-            });
+            const response = await window.TPOSClient.authenticatedFetch(url);
 
             if (!response.ok) {
                 throw new Error(`API error: ${response.status}`);
@@ -196,19 +191,6 @@ window.PurchaseOrderHistory = (function () {
         } finally {
             isLoading = false;
         }
-    }
-
-    /**
-     * Get auth token from TPOSClient
-     */
-    async function getAuthToken() {
-        if (window.TPOSClient?.getToken) {
-            return await window.TPOSClient.getToken();
-        }
-        if (window.tokenManager?.getToken) {
-            return await window.tokenManager.getToken();
-        }
-        throw new Error('Không có token manager khả dụng');
     }
 
     /**
