@@ -294,8 +294,8 @@ class VariantGeneratorDialog {
         this.searchFilters = {};
         this.csvLoaded = false;
 
-        // Load CSV data on construction
-        this.loadCSVData();
+        // Load CSV data on construction (store promise to avoid duplicate calls)
+        this._loadPromise = this.loadCSVData();
     }
 
     /**
@@ -332,9 +332,18 @@ class VariantGeneratorDialog {
                 window.location.pathname.substring(0, window.location.pathname.indexOf('/n2store/') + '/n2store/'.length) : '/';
             const basePath = `${repoBase}purchase-orders/`;
 
+            const [attrsResp, valsResp] = await Promise.all([
+                fetch(`${basePath}product_attributes_rows.csv`),
+                fetch(`${basePath}product_attribute_values_rows.csv`)
+            ]);
+
+            if (!attrsResp.ok || !valsResp.ok) {
+                throw new Error(`CSV fetch failed: attributes=${attrsResp.status}, values=${valsResp.status}`);
+            }
+
             const [attrsText, valsText] = await Promise.all([
-                fetch(`${basePath}product_attributes_rows.csv`).then(r => r.text()),
-                fetch(`${basePath}product_attribute_values_rows.csv`).then(r => r.text())
+                attrsResp.text(),
+                valsResp.text()
             ]);
 
             const attrsRows = this.parseCSV(attrsText);
@@ -383,6 +392,11 @@ class VariantGeneratorDialog {
                 this.searchFilters[attr.key] = '';
             }
 
+            // Validate that we got actual attribute data
+            if (this.attributes.length === 0 || Object.keys(this.attributeConfig).length === 0) {
+                throw new Error('CSV parsed but no valid attributes found');
+            }
+
             this.csvLoaded = true;
             console.log('[VariantGenerator] Loaded CSV data:', this.attributes.map(a => `${a.name}(${a.values.length})`).join(', '));
         } catch (error) {
@@ -409,7 +423,7 @@ class VariantGeneratorDialog {
 
         // Wait for CSV data if not yet loaded
         if (!this.csvLoaded) {
-            await this.loadCSVData();
+            await (this._loadPromise || this.loadCSVData());
         }
 
         // Reset selections
