@@ -6,11 +6,13 @@
 // ===== MODAL STATE =====
 let isEditMode = false;
 let _currentTposPartnerId = null; // TPOS Partner Id from phone lookup or customer creation
+let _noteImages = []; // Images attached to note
 
 // ===== OPEN MODAL =====
 function openCreateOrderModal() {
     isEditMode = false;
     _currentTposPartnerId = null;
+    _noteImages = [];
 
     // Reset form
     document.getElementById('orderForm')?.reset();
@@ -39,6 +41,9 @@ function openCreateOrderModal() {
 
     // Init product section with empty list
     _initSocialProductSection([]);
+
+    // Clear note images preview
+    renderNoteImagesPreview();
 
     // Show modal
     const modal = document.getElementById('orderModalOverlay');
@@ -69,6 +74,7 @@ function openEditOrderModal(orderId) {
     document.getElementById('orderSource').value = order.source || 'manual';
     document.getElementById('orderNote').value = order.note || '';
     document.getElementById('orderProducts').value = JSON.stringify(order.products || []);
+    _noteImages = order.noteImages ? [...order.noteImages] : [];
 
     // Update title
     const title = document.getElementById('orderModalTitle');
@@ -78,6 +84,9 @@ function openEditOrderModal(orderId) {
 
     // Init product section with existing products
     _initSocialProductSection(mappedProducts);
+
+    // Render note images preview
+    renderNoteImagesPreview();
 
     // Show modal
     const modal = document.getElementById('orderModalOverlay');
@@ -248,6 +257,7 @@ function saveOrder() {
                 totalQuantity,
                 totalAmount,
                 note,
+                noteImages: _noteImages || [],
                 tposPartnerId: _currentTposPartnerId || existingOrder.tposPartnerId || null,
                 updatedAt: Date.now(),
             };
@@ -278,6 +288,7 @@ function saveOrder() {
             tags: [],
             status: 'draft',
             note,
+            noteImages: _noteImages || [],
             tposPartnerId: _currentTposPartnerId || null,
             pageId: '',
             psid: '',
@@ -730,6 +741,147 @@ function openCreateCustomerModal() {
     });
 }
 
+// ===== NOTE IMAGE HANDLING =====
+
+/**
+ * Render note images preview in modal
+ */
+function renderNoteImagesPreview() {
+    const container = document.getElementById('noteImagesPreview');
+    if (!container) return;
+
+    if (_noteImages.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = _noteImages.map((img, i) => `
+        <div style="position: relative; display: inline-block;">
+            <img src="${img}" style="width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer;"
+                 onclick="openNoteImagePreview('${img.replace(/'/g, "\\'")}')" />
+            <button type="button" onclick="removeNoteImage(${i})"
+                style="position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; line-height: 1;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+/**
+ * Remove a note image by index
+ */
+function removeNoteImage(index) {
+    _noteImages.splice(index, 1);
+    renderNoteImagesPreview();
+}
+
+/**
+ * Compress image blob and return base64 data URL
+ */
+function compressNoteImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 800;
+                let w = img.width;
+                let h = img.height;
+                if (w > MAX_SIZE || h > MAX_SIZE) {
+                    if (w > h) {
+                        h = Math.round(h * MAX_SIZE / w);
+                        w = MAX_SIZE;
+                    } else {
+                        w = Math.round(w * MAX_SIZE / h);
+                        h = MAX_SIZE;
+                    }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+/**
+ * Handle file input upload for note images
+ */
+async function handleNoteImageUpload(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        const dataUrl = await compressNoteImage(file);
+        _noteImages.push(dataUrl);
+    }
+    renderNoteImagesPreview();
+    event.target.value = ''; // reset file input
+}
+
+/**
+ * Handle paste event for note images
+ */
+async function handleNoteImagePaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            if (blob) {
+                const dataUrl = await compressNoteImage(blob);
+                _noteImages.push(dataUrl);
+                renderNoteImagesPreview();
+            }
+            return;
+        }
+    }
+}
+
+// Init paste handler for note area
+function initNotePasteHandler() {
+    const pasteArea = document.getElementById('notePasteArea');
+    if (pasteArea) {
+        pasteArea.addEventListener('paste', handleNoteImagePaste);
+        pasteArea.addEventListener('click', () => pasteArea.focus());
+    }
+
+    // Also allow paste on the textarea itself
+    const noteTextarea = document.getElementById('orderNote');
+    if (noteTextarea) {
+        noteTextarea.addEventListener('paste', async (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    const blob = item.getAsFile();
+                    if (blob) {
+                        const dataUrl = await compressNoteImage(blob);
+                        _noteImages.push(dataUrl);
+                        renderNoteImagesPreview();
+                    }
+                    return;
+                }
+            }
+        });
+    }
+}
+
+// Init when DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNotePasteHandler);
+} else {
+    initNotePasteHandler();
+}
+
 // ===== EXPORTS =====
 window.openCreateOrderModal = openCreateOrderModal;
 window.openEditOrderModal = openEditOrderModal;
@@ -743,3 +895,6 @@ window.clearSelectedPost = clearSelectedPost;
 window.copyPostId = copyPostId;
 window.openRetailSaleFromSocial = openRetailSaleFromSocial;
 window.openCreateCustomerModal = openCreateCustomerModal;
+window.handleNoteImageUpload = handleNoteImageUpload;
+window.removeNoteImage = removeNoteImage;
+window.renderNoteImagesPreview = renderNoteImagesPreview;
