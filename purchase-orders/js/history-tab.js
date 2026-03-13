@@ -387,6 +387,10 @@ window.PurchaseOrderHistory = (function () {
         contentDiv.innerHTML = '<div style="padding: 12px 16px; color: var(--color-text-muted); font-size: 13px;">Đang tải chi tiết...</div>';
 
         try {
+            // Ensure Notes items are loaded so we can check existing keys
+            if (window.PurchaseOrderNotes?.loadItems) {
+                await window.PurchaseOrderNotes.loadItems();
+            }
             const url = `${PROXY_URL}/api/odata/FastPurchaseOrder(${orderId})/OrderLines?$expand=Product,ProductUOM,Account`;
             const response = await window.TPOSClient.authenticatedFetch(url);
             if (!response.ok) throw new Error(`API error: ${response.status}`);
@@ -414,8 +418,9 @@ window.PurchaseOrderHistory = (function () {
         const supplierName = item?.PartnerDisplayName || '';
         const lineRows = lines.map((line, idx) => {
             const lineKey = `${orderId}_${line.Id}`;
+            const alreadyInNotes = window.PurchaseOrderNotes?.hasKey?.(lineKey) || false;
             return `
-            <tr>
+            <tr${alreadyInNotes ? ' style="opacity: 0.5;"' : ''}>
                 <td style="text-align: center; width: 40px;">${idx + 1}</td>
                 <td style="font-weight: 500;">${escapeHtml(line.Name || line.ProductNameGet || line.ProductName || '')}</td>
                 <td style="text-align: right; width: 80px;">${line.ProductQty ?? ''}</td>
@@ -431,6 +436,7 @@ window.PurchaseOrderHistory = (function () {
                            data-supplier="${escapeHtml(supplierName)}"
                            data-qty="${line.ProductQty || 0}"
                            data-price="${line.PriceUnit || 0}"
+                           ${alreadyInNotes ? 'checked disabled' : ''}
                            style="width: 15px; height: 15px; cursor: pointer; accent-color: #3b82f6;">
                 </td>
             </tr>`;

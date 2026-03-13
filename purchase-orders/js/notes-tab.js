@@ -283,13 +283,18 @@ window.PurchaseOrderNotes = (function () {
         return div.innerHTML;
     }
 
+    function hasKey(key) {
+        return items.some(it => it.key === key);
+    }
+
     return {
         init,
         destroy,
         addItem,
         removeByKey,
         getOverdueItems,
-        loadItems
+        loadItems,
+        hasKey
     };
 })();
 
