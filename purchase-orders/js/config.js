@@ -66,7 +66,7 @@ const TAB_CONFIG = [
     { id: 'awaiting-purchase', label: 'Chờ mua', status: OrderStatus.AWAITING_PURCHASE, icon: 'shopping-cart' },
     { id: 'awaiting-delivery', label: 'Chờ hàng', status: OrderStatus.AWAITING_DELIVERY, icon: 'truck' },
     { id: 'history', label: 'Lịch sử', status: 'HISTORY', icon: 'history', isSpecial: true },
-    { id: 'notes', label: 'Ghi chú', status: 'NOTES', icon: 'sticky-note', isSpecial: true }
+    { id: 'notes', label: 'Hàng bán dùm', status: 'NOTES', icon: 'sticky-note', isSpecial: true }
 ];
 
 // ========================================

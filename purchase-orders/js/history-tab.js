@@ -484,7 +484,7 @@ window.PurchaseOrderHistory = (function () {
                         supplierName: cb.dataset.supplier,
                         quantity: parseFloat(cb.dataset.qty) || 0,
                         priceUnit: parseFloat(cb.dataset.price) || 0,
-                        note: `${cb.dataset.supplier} gửi`,
+                        note: `${cb.dataset.supplier} bán dùm`,
                         createdAt: Date.now()
                     };
                     if (window.PurchaseOrderNotes?.addItem) {

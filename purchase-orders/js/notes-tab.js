@@ -14,6 +14,7 @@ window.PurchaseOrderNotes = (function () {
 
     let items = []; // Array of note items
     let loaded = false;
+    let searchTerm = '';
 
     // DOM containers
     let tableContainer = null;
@@ -130,17 +131,25 @@ window.PurchaseOrderNotes = (function () {
 
         if (paginationContainer) paginationContainer.innerHTML = '';
 
-        // Simple filter bar with just a reload button
         if (filterContainer) {
             filterContainer.innerHTML = `
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label class="filter-label" style="font-weight: 600; font-size: 14px;">
-                            Sản phẩm ghi chú từ tab Lịch sử
+                            Hàng bán dùm từ tab Lịch sử
                         </label>
                         <span style="font-size: 12px; color: var(--color-text-muted);">
                             Tự xóa sau ${EXPIRE_DAYS} ngày · Cảnh báo sau ${OVERDUE_DAYS} ngày
                         </span>
+                    </div>
+                    <div class="filter-group filter-group--search">
+                        <label class="filter-label">Tìm NCC</label>
+                        <div class="input-icon">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="notesSearchInput" class="filter-input"
+                                   value="${searchTerm}"
+                                   placeholder="Tên NCC... (Enter để tìm)">
+                        </div>
                     </div>
                     <div class="filter-group filter-group--actions">
                         <button id="btnNotesReload" class="btn btn-outline" title="Tải lại">
@@ -154,6 +163,13 @@ window.PurchaseOrderNotes = (function () {
                 loaded = false;
                 init();
             });
+            const searchInput = document.getElementById('notesSearchInput');
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); searchTerm = searchInput.value.trim(); renderNotesTable(); }
+            });
+            searchInput.addEventListener('input', () => {
+                if (searchInput.value === '' && searchTerm !== '') { searchTerm = ''; renderNotesTable(); }
+            });
         }
 
         await loadItems();
@@ -163,7 +179,12 @@ window.PurchaseOrderNotes = (function () {
     function renderNotesTable() {
         if (!tableContainer) return;
 
-        if (!items || items.length === 0) {
+        // Filter by search
+        const filtered = searchTerm
+            ? items.filter(it => (it.supplierName || '').toLowerCase().includes(searchTerm.toLowerCase()))
+            : items;
+
+        if (!filtered || filtered.length === 0) {
             tableContainer.innerHTML = `
                 <div class="table-empty">
                     <div class="table-empty__icon"><i data-lucide="clipboard"></i></div>
@@ -175,7 +196,8 @@ window.PurchaseOrderNotes = (function () {
             return;
         }
 
-        const rows = items.map((item, idx) => {
+        const rows = filtered.map((item, idx) => {
+            const realIdx = items.indexOf(item);
             const cd = getCountdown(item.createdAt);
             const countdownHtml = cd.overdue
                 ? '<span style="color: var(--color-danger); font-weight: 700;">Quá hạn!</span>'
@@ -184,21 +206,21 @@ window.PurchaseOrderNotes = (function () {
             return `
                 <tr style="border-top: ${idx > 0 ? '1px solid var(--color-border-light)' : 'none'};">
                     <td style="width: 40px; text-align: center; font-size: 12px; color: var(--color-text-muted);">${idx + 1}</td>
+                    <td><span style="font-size: 13px;">${escapeHtml(item.supplierName || '')}</span></td>
                     <td>
                         <div style="font-weight: 500; font-size: 13px;">${escapeHtml(item.productName || '')}</div>
                         <div style="font-size: 11px; color: var(--color-text-muted);">${escapeHtml(item.productCode || '')}</div>
                     </td>
-                    <td><span style="font-size: 13px;">${escapeHtml(item.supplierName || '')}</span></td>
                     <td style="text-align: right;"><span style="font-size: 13px;">${item.quantity || ''}</span></td>
                     <td>
-                        <input type="text" class="note-edit-input" data-idx="${idx}"
+                        <input type="text" class="note-edit-input" data-idx="${realIdx}"
                                value="${escapeHtml(item.note || '')}"
                                style="width: 100%; border: 1px solid var(--color-border); border-radius: 6px; padding: 4px 8px; font-size: 13px; background: white;">
                     </td>
                     <td style="text-align: center;">${countdownHtml}</td>
                     <td style="text-align: center; font-size: 12px; color: var(--color-text-muted);">${formatDate(item.createdAt)}</td>
                     <td style="text-align: center; width: 40px;">
-                        <button class="btn-icon text-danger note-delete-btn" data-idx="${idx}" title="Xóa">
+                        <button class="btn-icon text-danger note-delete-btn" data-idx="${realIdx}" title="Xóa">
                             <i data-lucide="trash-2"></i>
                         </button>
                     </td>
@@ -212,8 +234,8 @@ window.PurchaseOrderNotes = (function () {
                     <thead>
                         <tr>
                             <th style="width: 40px;">#</th>
-                            <th>Sản phẩm</th>
                             <th>Nhà cung cấp</th>
+                            <th>Sản phẩm</th>
                             <th style="text-align: right; width: 70px;">SL</th>
                             <th>Ghi chú</th>
                             <th style="text-align: center; width: 90px;">Còn lại</th>
