@@ -12,7 +12,7 @@ const CONFIG = {
     API_BASE_PARTNER: 'https://chatomni-proxy.nhijudyshop.workers.dev/api',
     ENDPOINT: 'Report/PartnerDebtReport',
     RESULT_SELECTION: 'supplier',
-    DEFAULT_PAGE_SIZE: 20,
+    DEFAULT_PAGE_SIZE: 1000,
     DETAIL_PAGE_SIZE: 20,
     COLUMN_VISIBILITY_KEY: 'supplierDebt_columnVisibility',
     FIREBASE_COLLECTION: 'supplier_debt_notes'
