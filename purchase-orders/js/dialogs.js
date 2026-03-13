@@ -1313,6 +1313,7 @@ class InventoryPickerDialog {
         this.searchTerm = '';
         this.isLoading = false;
         this.proxyUrl = 'https://chatomni-proxy.nhijudyshop.workers.dev';
+        this._imageBatchId = 0;
     }
 
     /**
@@ -1709,6 +1710,7 @@ class InventoryPickerDialog {
     }
 
     close() {
+        if (this._zoomCleanup) this._zoomCleanup();
         if (this.modalElement) {
             this.modalElement.remove();
             this.modalElement = null;
@@ -1904,6 +1906,7 @@ class InventoryPickerDialog {
 
         document.body.appendChild(this.modalElement);
         this.bindEvents();
+        this.initImageZoomHover();
     }
 
     renderProductsList() {
@@ -1978,10 +1981,10 @@ class InventoryPickerDialog {
                                 transition: background 0.15s;
                                 ${isSelected ? 'background: #eff6ff;' : ''}
                             " onmouseover="if(!this.dataset.selected)this.style.background='#f9fafb'" onmouseout="if(!this.dataset.selected)this.style.background='${isSelected ? '#eff6ff' : 'transparent'}'" ${isSelected ? 'data-selected="true"' : ''}>
-                                <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6;" class="inventory-image-cell">
                                     ${imageUrl
-                                        ? `<img src="${imageUrl}" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;">`
-                                        : `<div style="width: 40px; height: 40px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                        ? `<img src="${imageUrl}" alt="" class="inventory-thumb" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" data-product-id="${product.id}">`
+                                        : `<div class="inventory-thumb-placeholder" data-product-id="${product.id}" style="width: 40px; height: 40px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5">
                                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
@@ -2067,10 +2070,10 @@ class InventoryPickerDialog {
 
                         return `
                             <tr data-product-id="${product.id}" data-selected="true" style="background: #eff6ff; cursor: pointer;">
-                                <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6;" class="inventory-image-cell">
                                     ${imageUrl
-                                        ? `<img src="${imageUrl}" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;">`
-                                        : `<div style="width: 40px; height: 40px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                        ? `<img src="${imageUrl}" alt="" class="inventory-thumb" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" data-product-id="${product.id}">`
+                                        : `<div class="inventory-thumb-placeholder" data-product-id="${product.id}" style="width: 40px; height: 40px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5">
                                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
@@ -2164,6 +2167,147 @@ class InventoryPickerDialog {
                 countText.textContent = `Tìm thấy ${this.filteredProducts.length} sản phẩm${modeLabel}`;
             }
         }
+
+        // Load images for visible products
+        this.loadImagesForVisibleProducts();
+    }
+
+    /**
+     * Batch load images for visible search result products.
+     * Fetches product details from TPOS API for products without cached images,
+     * then updates the image cells in-place without re-rendering the whole list.
+     */
+    async loadImagesForVisibleProducts() {
+        if (!this.modalElement) return;
+
+        // Collect product IDs that don't have images yet
+        const productsNeedingImages = [];
+        const rows = this.modalElement.querySelectorAll('#inventoryProductsList tr[data-product-id]');
+
+        rows.forEach(row => {
+            const productId = row.dataset.productId;
+            const cachedDetails = this.getProductDetailsFromCache(productId);
+            const hasImage = cachedDetails?.image || this.products.find(p => String(p.id) === productId)?.image;
+            if (!hasImage) {
+                productsNeedingImages.push({ id: productId, row });
+            }
+        });
+
+        if (productsNeedingImages.length === 0) return;
+
+        // Limit concurrent fetches to avoid overwhelming the API
+        const BATCH_SIZE = 5;
+        const batchId = ++this._imageBatchId;
+
+        for (let i = 0; i < productsNeedingImages.length; i += BATCH_SIZE) {
+            // Abort if a new search happened
+            if (this._imageBatchId !== batchId) return;
+
+            const batch = productsNeedingImages.slice(i, i + BATCH_SIZE);
+            const promises = batch.map(async ({ id, row }) => {
+                try {
+                    // Check cache again (might have been fetched by another batch)
+                    let details = this.getProductDetailsFromCache(id);
+                    if (!details) {
+                        details = await this.fetchProductDetails(id);
+                        if (details) {
+                            this.saveProductDetailsToCache(id, details);
+                        }
+                    }
+
+                    if (details?.image && this._imageBatchId === batchId) {
+                        // Update image cell in-place
+                        const imgCell = row.querySelector('.inventory-image-cell');
+                        if (imgCell) {
+                            imgCell.innerHTML = `<img src="${details.image}" alt="" class="inventory-thumb" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" data-product-id="${id}">`;
+                        }
+
+                        // Also update row data (qty, prices) if available
+                        const qtyCell = row.querySelector('td:nth-child(4)');
+                        if (qtyCell && details.qtyAvailable != null) {
+                            qtyCell.textContent = details.qtyAvailable;
+                        }
+                        const buyCell = row.querySelector('td:nth-child(5)');
+                        if (buyCell && details.purchasePrice) {
+                            buyCell.textContent = this.formatPrice(details.purchasePrice);
+                        }
+                        const sellCell = row.querySelector('td:nth-child(6)');
+                        if (sellCell && details.sellingPrice) {
+                            sellCell.textContent = this.formatPrice(details.sellingPrice);
+                        }
+                    }
+                } catch (err) {
+                    console.warn(`[InventoryPicker] Failed to load image for product ${id}:`, err);
+                }
+            });
+
+            await Promise.all(promises);
+        }
+    }
+
+    /**
+     * Initialize image zoom hover for the inventory picker modal.
+     * Shows a large preview next to the cursor when hovering over product thumbnails.
+     */
+    initImageZoomHover() {
+        if (!this.modalElement) return;
+
+        let zoomEl = null;
+
+        const getOrCreateZoom = () => {
+            if (!zoomEl) {
+                zoomEl = document.createElement('img');
+                zoomEl.className = 'inventory-zoom-preview';
+                document.body.appendChild(zoomEl);
+            }
+            return zoomEl;
+        };
+
+        const positionZoom = (e, el) => {
+            const offset = 16;
+            const w = 280, h = 280;
+            let x = e.clientX + offset;
+            let y = e.clientY - h / 2;
+
+            if (x + w > window.innerWidth) x = e.clientX - w - offset;
+            if (y < 4) y = 4;
+            if (y + h > window.innerHeight - 4) y = window.innerHeight - h - 4;
+
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+        };
+
+        const listContainer = this.modalElement.querySelector('#inventoryProductsList');
+        if (!listContainer) return;
+
+        listContainer.addEventListener('mouseenter', (e) => {
+            const thumb = e.target.closest('.inventory-thumb');
+            if (!thumb) return;
+            const zoom = getOrCreateZoom();
+            zoom.src = thumb.src;
+            zoom.classList.add('visible');
+            positionZoom(e, zoom);
+        }, true);
+
+        listContainer.addEventListener('mousemove', (e) => {
+            const thumb = e.target.closest('.inventory-thumb');
+            if (!thumb || !zoomEl) return;
+            positionZoom(e, zoomEl);
+        }, true);
+
+        listContainer.addEventListener('mouseleave', (e) => {
+            const thumb = e.target.closest('.inventory-thumb');
+            if (!thumb || !zoomEl) return;
+            zoomEl.classList.remove('visible');
+        }, true);
+
+        // Clean up zoom element when modal is closed
+        this._zoomCleanup = () => {
+            if (zoomEl) {
+                zoomEl.remove();
+                zoomEl = null;
+            }
+        };
     }
 
     /**
