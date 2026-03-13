@@ -104,8 +104,8 @@ export function addCorsHeaders(response) {
  */
 export function proxyResponseWithCors(response) {
     const newResponse = new Response(response.body, response);
-    newResponse.headers.set('Access-Control-Allow-Origin', '*');
-    newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, tposappversion, x-tpos-lang, feature-version');
+    Object.entries(CORS_HEADERS).forEach(([key, value]) => {
+        newResponse.headers.set(key, value);
+    });
     return newResponse;
 }

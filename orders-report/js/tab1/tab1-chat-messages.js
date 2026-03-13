@@ -1084,6 +1084,16 @@ async function sendMessageInternal(messageData) {
     } catch (error) {
         console.error('[MESSAGE] Error:', error);
 
+        // Network/CORS errors - don't attempt fallback (would also fail)
+        if (error.isNetworkError) {
+            if (window.notificationManager) {
+                window.notificationManager.show(error.message, 'error', 8000);
+            } else {
+                alert(error.message);
+            }
+            return;
+        }
+
         // Special handling for 24-hour policy error or user unavailable (551) error
         if (error.is24HourError || error.isUserUnavailable) {
             const errorType = error.is24HourError ? '24H' : '551';

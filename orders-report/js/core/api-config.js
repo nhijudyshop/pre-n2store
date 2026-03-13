@@ -100,13 +100,25 @@ const API_CONFIG = {
     },
 
     /**
-     * Simple Fetch wrapper
+     * Fetch wrapper with CORS/network error handling
      * @param {string} url - Full URL
      * @param {object} options - Fetch options
      * @returns {Promise<Response>}
      */
     smartFetch: async function (url, options = {}) {
-        return fetch(url, options);
+        try {
+            return await fetch(url, options);
+        } catch (err) {
+            // Network or CORS errors throw TypeError
+            if (err instanceof TypeError) {
+                const sanitizedUrl = url.replace(/access_token=[^&]+/g, 'access_token=***');
+                console.error('[SMART-FETCH] Network/CORS error:', err.message, 'URL:', sanitizedUrl);
+                const error = new Error(`Lỗi kết nối: ${err.message}. Kiểm tra mạng hoặc thử lại.`);
+                error.isNetworkError = true;
+                throw error;
+            }
+            throw err;
+        }
     },
 
     /**
