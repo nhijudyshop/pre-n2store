@@ -103,19 +103,11 @@
                             <div class="column-toggle-dropdown" id="columnToggleDropdown">
                                 <div class="column-toggle-item">
                                     <input type="checkbox" id="col-code" checked>
-                                    <label for="col-code">Mã khách hàng</label>
+                                    <label for="col-code">Mã NCC</label>
                                 </div>
                                 <div class="column-toggle-item">
                                     <input type="checkbox" id="col-name" checked>
-                                    <label for="col-name">Tên KH/Facebook</label>
-                                </div>
-                                <div class="column-toggle-item">
-                                    <input type="checkbox" id="col-phone" checked>
-                                    <label for="col-phone">Điện thoại</label>
-                                </div>
-                                <div class="column-toggle-item">
-                                    <input type="checkbox" id="col-begin" checked>
-                                    <label for="col-begin">Nợ đầu kỳ</label>
+                                    <label for="col-name">Tên NCC</label>
                                 </div>
                                 <div class="column-toggle-item">
                                     <input type="checkbox" id="col-debit" checked>
@@ -146,26 +138,14 @@
                     <thead>
                         <tr>
                             <th class="col-code-header" data-col="code">
-                                Mã khách hàng
+                                Mã NCC
                                 <button class="filter-btn" data-column="code">
                                     <i data-lucide="filter" style="width: 12px; height: 12px;"></i>
                                 </button>
                             </th>
                             <th class="col-name" data-col="name">
-                                Tên KH/Facebook
+                                Tên NCC
                                 <button class="filter-btn" data-column="name">
-                                    <i data-lucide="filter" style="width: 12px; height: 12px;"></i>
-                                </button>
-                            </th>
-                            <th class="col-phone" data-col="phone">
-                                Điện thoại
-                                <button class="filter-btn" data-column="phone">
-                                    <i data-lucide="filter" style="width: 12px; height: 12px;"></i>
-                                </button>
-                            </th>
-                            <th class="col-number" data-col="begin">
-                                Nợ đầu kỳ
-                                <button class="filter-btn" data-column="begin">
                                     <i data-lucide="filter" style="width: 12px; height: 12px;"></i>
                                 </button>
                             </th>
@@ -196,8 +176,6 @@
                         <tr class="total-row">
                             <td data-col="code"><strong>Tổng</strong></td>
                             <td data-col="name"></td>
-                            <td data-col="phone"></td>
-                            <td data-col="begin" class="col-number" id="totalBegin">0</td>
                             <td data-col="debit" class="col-number" id="totalDebit">0</td>
                             <td data-col="credit" class="col-number" id="totalCredit">0</td>
                             <td data-col="end" class="col-number" id="totalEnd">0</td>
