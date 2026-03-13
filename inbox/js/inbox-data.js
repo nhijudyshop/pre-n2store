@@ -74,7 +74,7 @@ class InboxDataManager {
 
             // Sync groups + labels from server (cross-device)
             await this.loadGroupsFromServer();
-            this.syncLabelsFromServer();
+            await this.syncLabelsFromServer();
 
             this.recalculateGroupCounts();
             this.buildMaps();
@@ -592,6 +592,9 @@ class InboxDataManager {
 
     recalculateGroupCounts(typeFilter = 'all') {
         this.groups.forEach(g => { g.count = 0; });
+
+        // Count from loaded conversations (supports type filter)
+        const countedConvIds = new Set();
         this.conversations.forEach(conv => {
             if (typeFilter !== 'all' && conv.type !== typeFilter) return;
             const labels = conv.labels || ['new'];
@@ -599,7 +602,21 @@ class InboxDataManager {
                 const group = this.groups.find(g => g.id === labelId);
                 if (group) group.count++;
             }
+            countedConvIds.add(conv.id);
         });
+
+        // Also count from labelMap for non-loaded conversations (when no type filter)
+        if (typeFilter === 'all') {
+            for (const [convId, labels] of Object.entries(this.labelMap)) {
+                if (countedConvIds.has(convId)) continue;
+                const labelArr = Array.isArray(labels) ? labels : [labels];
+                for (const labelId of labelArr) {
+                    if (labelId === 'new') continue;
+                    const group = this.groups.find(g => g.id === labelId);
+                    if (group) group.count++;
+                }
+            }
+        }
     }
 
     getConversations({ search = '', filter = 'all', groupFilters = null } = {}) {
