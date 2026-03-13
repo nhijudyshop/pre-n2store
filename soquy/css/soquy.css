@@ -1149,6 +1149,13 @@
     text-decoration: none;
 }
 
+/* Note Column - max 60 chars then wrap */
+.cashbook-table td.cell-note {
+    max-width: 60ch;
+    white-space: normal;
+    word-break: break-word;
+}
+
 /* Star Icon */
 .cashbook-table td i[data-lucide="star"] {
     width: 16px;

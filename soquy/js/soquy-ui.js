@@ -593,6 +593,8 @@ const SoquyUI = (function () {
                     } else {
                         rowHtml += `<td class="image-cell">-</td>`;
                     }
+                } else if (col.key === 'note') {
+                    rowHtml += `<td class="cell-note">${getCellValue(v, col.key)}</td>`;
                 } else {
                     rowHtml += `<td>${getCellValue(v, col.key)}</td>`;
                 }
