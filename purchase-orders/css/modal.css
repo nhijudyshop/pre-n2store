@@ -533,6 +533,34 @@
     color: var(--color-danger);
 }
 
+/* Inventory Image Hover & Zoom */
+.inventory-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.inventory-zoom-preview {
+    position: fixed;
+    z-index: 15000;
+    pointer-events: none;
+    width: 280px;
+    height: 280px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    padding: 6px;
+}
+
+.inventory-zoom-preview.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
 /* ========================================
    SHIPPING FEE DIALOG
    ======================================== */
