@@ -248,8 +248,7 @@ window.PurchaseOrderHistory = (function () {
                 <tr class="order-row ${idx === 0 ? 'order-row--first' : ''} ${isExpanded ? 'order-row--expanded' : ''}"
                     data-order-id="${item.Id}" style="border-top: ${idx > 0 ? '1px solid var(--color-border-light)' : 'none'}; cursor: pointer;">
                     <td>
-                        <div class="cell-supplier" style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" style="width: 14px; height: 14px; flex-shrink: 0; color: var(--color-text-muted);"></i>
+                        <div class="cell-supplier">
                             <span class="supplier-name">${escapeHtml(item.PartnerDisplayName || '')}</span>
                         </div>
                     </td>
@@ -260,22 +259,13 @@ window.PurchaseOrderHistory = (function () {
                         </div>
                     </td>
                     <td><span style="font-family: monospace; font-size: 13px;">${escapeHtml(item.Number || '')}</span></td>
-                    <td><span style="font-family: monospace; font-size: 13px; color: var(--color-text-muted);">${escapeHtml(item.VatInvoiceNumber || '')}</span></td>
                     <td class="text-right"><span class="price-value">${formatMoney(item.AmountTotal)}</span></td>
-                    <td class="text-right"><span class="price-value" style="color: ${item.Residual > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">${formatMoney(item.Residual)}</span></td>
                     <td>${renderState(item.ShowState, item.State)}</td>
                     <td><span style="font-size: 13px;">${escapeHtml(item.UserName || '')}</span></td>
                     <td><span style="font-size: 13px;">${escapeHtml(item.CompanyName || '')}</span></td>
-                    <td>
-                        <div class="action-buttons" style="flex-direction: row;">
-                            <button class="btn-icon text-blue" title="Xem trên TPOS" onclick="event.stopPropagation(); window.PurchaseOrderHistory.viewDetail(${item.Id})">
-                                <i data-lucide="eye"></i>
-                            </button>
-                        </div>
-                    </td>
                 </tr>
                 <tr class="expand-row" id="expand-${item.Id}" style="display: ${isExpanded ? 'table-row' : 'none'};">
-                    <td colspan="10" style="padding: 0; background: #f8fafc;">
+                    <td colspan="7" style="padding: 0; background: #f8fafc;">
                         <div class="expand-content" id="expand-content-${item.Id}">
                             ${isExpanded ? renderExpandedContent(item.Id, item) : ''}
                         </div>
@@ -292,13 +282,10 @@ window.PurchaseOrderHistory = (function () {
                             <th>Nhà cung cấp</th>
                             <th style="width: 120px;">Ngày đơn hàng</th>
                             <th>Số</th>
-                            <th>Số hóa đơn đỏ</th>
                             <th class="text-right">Tổng tiền</th>
-                            <th class="text-right">Còn nợ</th>
                             <th>Trạng thái</th>
                             <th>Nhân viên</th>
                             <th>Công ty</th>
-                            <th style="width: 60px;">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -333,17 +320,12 @@ window.PurchaseOrderHistory = (function () {
             delete expandedRows[orderId];
             expandRow.style.display = 'none';
             mainRow?.classList.remove('order-row--expanded');
-            // Update chevron icon
-            const icon = mainRow?.querySelector('.cell-supplier i');
-            if (icon) { icon.setAttribute('data-lucide', 'chevron-right'); lucide.createIcons(); }
             return;
         }
 
         // Expand: show loading, fetch data
         expandRow.style.display = 'table-row';
         mainRow?.classList.add('order-row--expanded');
-        const icon = mainRow?.querySelector('.cell-supplier i');
-        if (icon) { icon.setAttribute('data-lucide', 'chevron-down'); lucide.createIcons(); }
 
         const item = currentData.find(d => d.Id === orderId);
         contentDiv.innerHTML = '<div style="padding: 12px 16px; color: var(--color-text-muted); font-size: 13px;">Đang tải chi tiết...</div>';
