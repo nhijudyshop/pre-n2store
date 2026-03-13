@@ -346,6 +346,11 @@ function performTableSearch() {
     renderTable();
     updateSearchResultCount();
     updateSearchClearButton();
+
+    // Update tag panel counts if visible
+    if (typeof renderTagPanelCards === 'function') {
+        renderTagPanelCards();
+    }
 }
 
 function clearSearch() {
