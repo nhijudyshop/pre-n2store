@@ -46,11 +46,12 @@ const DEFAULT_TAGS = [
     { id: 'tag_return', name: 'Khách cũ', color: '#8b5cf6' },
 ];
 
-// ===== LOCAL STORAGE KEYS =====
+// ===== STORAGE KEYS =====
 const SOCIAL_ORDERS_STORAGE_KEY = 'socialOrders';
 const SOCIAL_TAGS_STORAGE_KEY = 'socialOrderTags';
+const SOCIAL_TAGS_IDB_KEY = 'social_tags_cache'; // IndexedDB key for tags
 
-// ===== LOCAL STORAGE PERSISTENCE =====
+// ===== LOCAL STORAGE PERSISTENCE (Orders - no images, smaller data) =====
 function saveSocialOrdersToStorage() {
     try {
         localStorage.setItem(SOCIAL_ORDERS_STORAGE_KEY, JSON.stringify(SocialOrderState.orders));
@@ -69,21 +70,94 @@ function loadSocialOrdersFromStorage() {
     }
 }
 
+// ===== INDEXEDDB PERSISTENCE (Tags - may contain base64 images) =====
+/**
+ * Save tags to IndexedDB (primary local cache) + localStorage (fallback).
+ * IndexedDB handles large data (images) better than localStorage's 5MB limit.
+ */
 function saveSocialTagsToStorage() {
+    const tags = SocialOrderState.tags;
+
+    // Primary: IndexedDB (async, large capacity)
+    if (window.indexedDBStorage) {
+        window.indexedDBStorage.setItem(SOCIAL_TAGS_IDB_KEY, tags).catch(e => {
+            console.error('[Tab Social] Failed to save tags to IndexedDB:', e);
+        });
+    }
+
+    // Fallback: localStorage (sync, for quick reads if IndexedDB not ready)
+    // Strip images to avoid localStorage quota issues
     try {
-        localStorage.setItem(SOCIAL_TAGS_STORAGE_KEY, JSON.stringify(SocialOrderState.tags));
+        const tagsWithoutImages = tags.map(t => {
+            const { image, ...rest } = t;
+            return rest;
+        });
+        localStorage.setItem(SOCIAL_TAGS_STORAGE_KEY, JSON.stringify(tagsWithoutImages));
     } catch (e) {
-        console.error('[Tab Social] Failed to save tags to localStorage:', e);
+        console.warn('[Tab Social] Failed to save tags to localStorage (fallback):', e);
     }
 }
 
+/**
+ * Load tags from IndexedDB first, fallback to localStorage, then defaults.
+ * This is synchronous-compatible: returns cached data immediately.
+ * For async IndexedDB load, use loadSocialTagsFromStorageAsync().
+ */
 function loadSocialTagsFromStorage() {
+    // Synchronous fallback: localStorage (may not have images)
     try {
         const data = localStorage.getItem(SOCIAL_TAGS_STORAGE_KEY);
         return data ? JSON.parse(data) : DEFAULT_TAGS;
     } catch (e) {
         console.error('[Tab Social] Failed to load tags from localStorage:', e);
         return DEFAULT_TAGS;
+    }
+}
+
+/**
+ * Async version: loads from IndexedDB (with images), falls back to localStorage.
+ * @returns {Promise<Array>} Tags array
+ */
+async function loadSocialTagsFromStorageAsync() {
+    // Try IndexedDB first (has full data including images)
+    if (window.indexedDBStorage) {
+        try {
+            const tags = await window.indexedDBStorage.getItem(SOCIAL_TAGS_IDB_KEY);
+            if (tags && Array.isArray(tags) && tags.length > 0) {
+                console.log('[Tab Social] Loaded', tags.length, 'tags from IndexedDB cache');
+                return tags;
+            }
+        } catch (e) {
+            console.warn('[Tab Social] Failed to load tags from IndexedDB:', e);
+        }
+    }
+
+    // Fallback to localStorage (sync, may not have images)
+    return loadSocialTagsFromStorage();
+}
+
+/**
+ * Migrate existing tags from localStorage to IndexedDB (one-time).
+ * Called during init to ensure IndexedDB has the data.
+ */
+async function migrateTagsToIndexedDB() {
+    if (!window.indexedDBStorage) return;
+
+    try {
+        const existing = await window.indexedDBStorage.getItem(SOCIAL_TAGS_IDB_KEY);
+        if (existing && Array.isArray(existing) && existing.length > 0) {
+            return; // Already migrated
+        }
+
+        // Migrate from localStorage
+        const localData = localStorage.getItem(SOCIAL_TAGS_STORAGE_KEY);
+        if (localData) {
+            const tags = JSON.parse(localData);
+            await window.indexedDBStorage.setItem(SOCIAL_TAGS_IDB_KEY, tags);
+            console.log('[Tab Social] Migrated', tags.length, 'tags from localStorage to IndexedDB');
+        }
+    } catch (e) {
+        console.warn('[Tab Social] Tag migration to IndexedDB failed:', e);
     }
 }
 
@@ -165,14 +239,17 @@ async function initSocialTab() {
             console.warn('[Tab Social] Pancake Token Manager not available');
         }
 
-        // Load data from Firestore (source of truth), fallback to localStorage
+        // Migrate tags to IndexedDB if needed (one-time)
+        await migrateTagsToIndexedDB();
+
+        // Load data from Firestore (source of truth), fallback to local cache
         if (typeof loadSocialOrdersFromFirebase === 'function') {
             SocialOrderState.orders = await loadSocialOrdersFromFirebase();
             SocialOrderState.tags = await loadSocialTagsFromFirebase();
         } else {
             // Fallback if firebase module not loaded
             SocialOrderState.orders = loadSocialOrdersFromStorage();
-            SocialOrderState.tags = loadSocialTagsFromStorage();
+            SocialOrderState.tags = await loadSocialTagsFromStorageAsync();
         }
         // Apply default filters (status=draft) and render table
         performTableSearch();
@@ -240,7 +317,7 @@ async function loadOrders() {
         SocialOrderState.tags = await loadSocialTagsFromFirebase();
     } else {
         SocialOrderState.orders = loadSocialOrdersFromStorage();
-        SocialOrderState.tags = loadSocialTagsFromStorage();
+        SocialOrderState.tags = await loadSocialTagsFromStorageAsync();
     }
     performTableSearch();
     populateTagFilter();
@@ -260,3 +337,4 @@ window.debounce = debounce;
 window.loadOrders = loadOrders;
 window.saveSocialOrdersToStorage = saveSocialOrdersToStorage;
 window.saveSocialTagsToStorage = saveSocialTagsToStorage;
+window.loadSocialTagsFromStorageAsync = loadSocialTagsFromStorageAsync;

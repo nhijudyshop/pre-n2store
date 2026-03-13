@@ -85,7 +85,11 @@ async function loadSocialOrdersFromFirebase() {
 async function loadSocialTagsFromFirebase() {
     const db = _getFirestoreDB();
     if (!db) {
-        console.warn('[SocialFirebase] Firestore not available for tags, using localStorage');
+        console.warn('[SocialFirebase] Firestore not available for tags, using local cache');
+        // Prefer IndexedDB (has images), fallback to localStorage
+        if (typeof loadSocialTagsFromStorageAsync === 'function') {
+            return await loadSocialTagsFromStorageAsync();
+        }
         return loadSocialTagsFromStorage();
     }
 
@@ -97,15 +101,19 @@ async function loadSocialTagsFromFirebase() {
             tags = doc.data().tags;
             console.log('[SocialFirebase] Loaded', tags.length, 'tags from Firestore');
         } else {
-            // No tags in Firestore yet. Try localStorage first (may have user-created tags)
-            const localTags = loadSocialTagsFromStorage();
-            // Only use localStorage tags if they are NOT just the defaults
-            // (compare by checking if any non-default tags exist)
+            // No tags in Firestore yet. Try local cache first (may have user-created tags)
+            let localTags;
+            if (typeof loadSocialTagsFromStorageAsync === 'function') {
+                localTags = await loadSocialTagsFromStorageAsync();
+            } else {
+                localTags = loadSocialTagsFromStorage();
+            }
+            // Only use local tags if they are NOT just the defaults
             const defaultIds = new Set(DEFAULT_TAGS.map(t => t.id));
             const hasCustomTags = localTags.some(t => !defaultIds.has(t.id));
             if (hasCustomTags || localTags.length > DEFAULT_TAGS.length) {
                 tags = localTags;
-                console.log('[SocialFirebase] Using localStorage tags (has custom tags):', tags.length);
+                console.log('[SocialFirebase] Using local cache tags (has custom tags):', tags.length);
             } else {
                 tags = DEFAULT_TAGS;
                 console.log('[SocialFirebase] Using default tags');
@@ -118,11 +126,14 @@ async function loadSocialTagsFromFirebase() {
         tags = recoverOrphanTags(tags);
 
         SocialOrderState.tags = tags;
-        saveSocialTagsToStorage();
+        saveSocialTagsToStorage(); // Saves to both IndexedDB + localStorage
         return tags;
     } catch (e) {
         console.error('[SocialFirebase] Error loading tags:', e);
-        // On error, use localStorage cache but NEVER save back to Firestore
+        // On error, use local cache but NEVER save back to Firestore
+        if (typeof loadSocialTagsFromStorageAsync === 'function') {
+            return await loadSocialTagsFromStorageAsync();
+        }
         return loadSocialTagsFromStorage();
     }
 }
