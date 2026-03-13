@@ -422,13 +422,7 @@
                 <span>Gán Sản Phẩm - STT</span>
                 <i data-lucide="check" class="check-icon"></i>
             </div>
-            <div class="mobile-dropdown-item" onclick="switchMobileTab('statistics', 'Thống Kê')"
-                data-mobile-tab="statistics">
-                <i data-lucide="bar-chart-3"></i>
-                <span>Thống Kê</span>
-                <i data-lucide="check" class="check-icon"></i>
-            </div>
-            <div class="mobile-dropdown-item" onclick="switchMobileTab('overview', 'Báo Cáo Tổng Hợp')"
+<div class="mobile-dropdown-item" onclick="switchMobileTab('overview', 'Báo Cáo Tổng Hợp')"
                 data-mobile-tab="overview">
                 <i data-lucide="file-bar-chart"></i>
                 <span>Báo Cáo Tổng Hợp</span>
@@ -473,11 +467,7 @@
                     <i data-lucide="link" class="tab-icon"></i>
                     Gán Sản Phẩm - STT
                 </button>
-                <button class="tab-button" onclick="switchTab('statistics')" data-tab="statistics">
-                    <i data-lucide="bar-chart-3" class="tab-icon"></i>
-                    Thống Kê
-                </button>
-                <button class="tab-button" onclick="switchTab('overview')" data-tab="overview">
+<button class="tab-button" onclick="switchTab('overview')" data-tab="overview">
                     <i data-lucide="file-bar-chart" class="tab-icon"></i>
                     Báo Cáo Tổng Hợp
                 </button>
@@ -528,11 +518,7 @@
             <iframe id="ordersFrame" src="tab1-orders.html"></iframe>
         </div>
 
-        <div id="statisticsTab" class="tab-content">
-            <iframe id="statisticsFrame" src="tab2-statistics.html"></iframe>
-        </div>
-
-        <div id="productAssignmentTab" class="tab-content">
+<div id="productAssignmentTab" class="tab-content">
             <iframe id="productAssignmentFrame" src="tab3-product-assignment.html"></iframe>
         </div>
 
@@ -603,10 +589,6 @@
 
             if (tabName === 'orders') {
                 document.getElementById('ordersTab').classList.add('active');
-            } else if (tabName === 'statistics') {
-                document.getElementById('statisticsTab').classList.add('active');
-                // Trigger statistics refresh when switching to it
-                refreshStatistics();
             } else if (tabName === 'product-assignment') {
                 document.getElementById('productAssignmentTab').classList.add('active');
                 // Send orders data to product assignment tab
@@ -666,7 +648,6 @@
             const titleMap = {
                 orders: 'Quản Lý Đơn Hàng',
                 'product-assignment': 'Gán Sản Phẩm - STT',
-                statistics: 'Thống Kê',
                 overview: 'Báo Cáo Tổng Hợp',
                 'social-orders': 'Đơn Social',
                 'pending-delete': 'Bill Đã Xóa',
@@ -692,17 +673,6 @@
         window.addEventListener('storage', function (e) {
             if (e.key === 'tab1_filter_data') {
                 showSyncIndicator();
-                // Notify Tab 2 about data change
-                const statisticsFrame = document.getElementById('statisticsFrame');
-                if (statisticsFrame && statisticsFrame.contentWindow) {
-                    statisticsFrame.contentWindow.postMessage(
-                        {
-                            type: 'FILTER_UPDATE',
-                            data: JSON.parse(e.newValue),
-                        },
-                        '*'
-                    );
-                }
             }
         });
 
@@ -937,23 +907,7 @@
             return name.length > maxLength ? name.substring(0, maxLength) + '...' : name;
         }
 
-        function refreshStatistics() {
-            const statisticsFrame = document.getElementById('statisticsFrame');
-            if (statisticsFrame && statisticsFrame.contentWindow) {
-                const filterData = localStorage.getItem('tab1_filter_data');
-                if (filterData) {
-                    statisticsFrame.contentWindow.postMessage(
-                        {
-                            type: 'REFRESH_DATA',
-                            data: JSON.parse(filterData),
-                        },
-                        '*'
-                    );
-                }
-            }
-        }
-
-        function showSyncIndicator() {
+function showSyncIndicator() {
             const indicator = document.getElementById('syncIndicator');
             indicator.classList.add('show');
             setTimeout(() => {
@@ -979,7 +933,6 @@
                 savedTab &&
                 [
                     'orders',
-                    'statistics',
                     'product-assignment',
                     'overview',
                     'social-orders',
