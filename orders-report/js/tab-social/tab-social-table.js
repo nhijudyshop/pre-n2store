@@ -13,7 +13,7 @@ function renderTable() {
     if (orders.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="15" style="text-align: center; padding: 60px 20px;">
+                <td colspan="16" style="text-align: center; padding: 60px 20px;">
                     <div style="color: #9ca3af;">
                         <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
                         <p style="margin: 0; font-size: 14px;">Không có đơn hàng nào</p>
@@ -166,6 +166,9 @@ function renderTableRow(order, index) {
             <td data-column="created-date" style="font-size: 12px; color: #6b7280;">
                 ${formatDate(order.createdAt)}
             </td>
+            <td data-column="note" style="max-width: 200px; font-size: 12px;">
+                ${renderNoteCell(order)}
+            </td>
             <td data-column="invoice-status" style="min-width: 160px;">
                 ${typeof window.renderSocialInvoiceCell === 'function' ? window.renderSocialInvoiceCell(order) : '<span style="color: #9ca3af;">—</span>'}
             </td>
@@ -174,6 +177,44 @@ function renderTableRow(order, index) {
             </td>
         </tr>
     `;
+}
+
+// ===== NOTE CELL =====
+function renderNoteCell(order) {
+    const noteText = order.note || '';
+    const noteImages = order.noteImages || [];
+    if (!noteText && noteImages.length === 0) {
+        return '<span style="color: #9ca3af;">—</span>';
+    }
+    let html = '';
+    if (noteText) {
+        const truncated = noteText.length > 50 ? noteText.substring(0, 50) + '...' : noteText;
+        html += `<div style="color: #374151; white-space: normal; word-break: break-word;" title="${noteText.replace(/"/g, '&quot;')}">${truncated}</div>`;
+    }
+    if (noteImages.length > 0) {
+        html += `<div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">`;
+        noteImages.forEach((img, i) => {
+            if (i < 3) {
+                html += `<img src="${img}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" onclick="event.stopPropagation(); openNoteImagePreview('${img.replace(/'/g, "\\'")}')" />`;
+            }
+        });
+        if (noteImages.length > 3) {
+            html += `<span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #f3f4f6; border-radius: 4px; font-size: 11px; color: #6b7280;">+${noteImages.length - 3}</span>`;
+        }
+        html += `</div>`;
+    }
+    return html;
+}
+
+function openNoteImagePreview(src) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; display: flex; align-items: center; justify-content: center; cursor: pointer;';
+    overlay.onclick = () => overlay.remove();
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width: 90vw; max-height: 90vh; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);';
+    overlay.appendChild(img);
+    document.body.appendChild(overlay);
 }
 
 // ===== FILTERING & SEARCH =====
@@ -608,3 +649,4 @@ window.confirmDelete = confirmDelete;
 window.deleteSelectedOrders = deleteSelectedOrders;
 window.updateSearchResultCount = updateSearchResultCount;
 window.changeSocialOrderStatus = changeSocialOrderStatus;
+window.openNoteImagePreview = openNoteImagePreview;

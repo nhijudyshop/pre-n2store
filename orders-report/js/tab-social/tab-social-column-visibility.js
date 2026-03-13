@@ -17,6 +17,7 @@ const DEFAULT_SOCIAL_COLUMN_VISIBILITY = {
     products: true,
     post: true,
     address: false, // Hidden by default
+    note: true,
     total: true,
     'created-date': true,
     'invoice-status': true,
