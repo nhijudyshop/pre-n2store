@@ -1528,9 +1528,7 @@ class InventoryPickerDialog {
     static DETAILS_CACHE_KEY = 'inventory_product_details_cache';
 
     /**
-     * Get product details from localStorage cache
-     * @param {number|string} productId - Product ID
-     * @returns {Object|null} Cached product details or null
+     * Get product details from session cache (cleared on modal close)
      */
     getProductDetailsFromCache(productId) {
         try {
@@ -1545,24 +1543,28 @@ class InventoryPickerDialog {
     }
 
     /**
-     * Save product details to localStorage cache
-     * @param {number|string} productId - Product ID
-     * @param {Object} details - Product details to cache
+     * Save product details to session cache. Excludes _raw data to save space.
+     * Cache is cleared when modal closes.
      */
     saveProductDetailsToCache(productId, details) {
         try {
             const cached = localStorage.getItem(InventoryPickerDialog.DETAILS_CACHE_KEY);
             const detailsMap = cached ? JSON.parse(cached) : {};
 
+            const { _raw, ...detailsWithoutRaw } = details;
             detailsMap[String(productId)] = {
-                ...details,
+                ...detailsWithoutRaw,
                 cachedAt: Date.now()
             };
 
             localStorage.setItem(InventoryPickerDialog.DETAILS_CACHE_KEY, JSON.stringify(detailsMap));
-            console.log(`[InventoryPicker] Cached details for product ${productId}`);
         } catch (e) {
             console.warn('[InventoryPicker] Failed to cache product details:', e);
+            if (e.name === 'QuotaExceededError') {
+                try {
+                    localStorage.removeItem(InventoryPickerDialog.DETAILS_CACHE_KEY);
+                } catch (_) {}
+            }
         }
     }
 
@@ -1720,6 +1722,8 @@ class InventoryPickerDialog {
 
     close() {
         if (this._zoomCleanup) this._zoomCleanup();
+        // Clear details cache on close - only needed during browsing session
+        localStorage.removeItem(InventoryPickerDialog.DETAILS_CACHE_KEY);
         if (this.modalElement) {
             this.modalElement.remove();
             this.modalElement = null;
