@@ -319,14 +319,22 @@ class PurchaseOrderController {
         } else {
             // Firestore tabs: load orders + filter bar
             await this.dataManager.loadOrders(this.currentTab, true);
-            this.ui.renderFilterBar(this.dataManager.filters, this.elements.filterContainer, {
-                onDateChange: (start, end) => this.dataManager.setDateRange(start, end),
-                onQuickFilter: (filter) => this.dataManager.setQuickFilter(filter),
-                onSearch: (term) => this.dataManager.setSearchTerm(term),
-                onStatusFilter: (status) => this.dataManager.setStatusFilter(status),
-                onClear: () => this.dataManager.clearFilters()
-            });
+            this.renderFilterBarWithHandlers();
         }
+    }
+
+    /**
+     * Render filter bar with standard handlers (reusable)
+     */
+    renderFilterBarWithHandlers() {
+        this.ui.renderFilterBar(this.dataManager.filters, this.elements.filterContainer, {
+            onDateChange: (start, end) => this.dataManager.setDateRange(start, end),
+            onQuickFilter: (filter) => this.dataManager.setQuickFilter(filter),
+            onSearch: (term) => this.dataManager.setSearchTerm(term),
+            onStatusFilter: (status) => this.dataManager.setStatusFilter(status),
+            onClear: () => this.dataManager.clearFilters(),
+            onReload: () => this.dataManager.refresh()
+        });
     }
 
     // ========================================
@@ -457,13 +465,18 @@ class PurchaseOrderController {
         this.dataManager.loadOrders(status, true);
 
         // Re-render filter bar for Firestore tabs
-        this.ui.renderFilterBar(this.dataManager.filters, this.elements.filterContainer, {
-            onDateChange: (start, end) => this.dataManager.setDateRange(start, end),
-            onQuickFilter: (filter) => this.dataManager.setQuickFilter(filter),
-            onSearch: (term) => this.dataManager.setSearchTerm(term),
-            onStatusFilter: (status) => this.dataManager.setStatusFilter(status),
-            onClear: () => this.dataManager.clearFilters()
-        });
+        this.renderFilterBarWithHandlers();
+    }
+
+    /**
+     * Switch to tab, or refresh if already on it
+     */
+    switchOrRefreshTab(targetTab) {
+        if (this.currentTab === targetTab) {
+            this.dataManager.refresh();
+        } else {
+            this.handleTabChange(targetTab);
+        }
     }
 
     /**
@@ -495,18 +508,16 @@ class PurchaseOrderController {
                     if (syncResult?.failCount === 0 && syncResult?.successCount > 0) {
                         // All synced OK → update status to AWAITING_PURCHASE
                         await this.dataManager.updateOrderStatus(orderId, this.config.OrderStatus.AWAITING_PURCHASE);
-                        this.handleTabChange(this.config.OrderStatus.AWAITING_PURCHASE);
+                        this.switchOrRefreshTab(this.config.OrderStatus.AWAITING_PURCHASE);
                     } else {
                         // Sync failed → stay as DRAFT, show warning
                         this.ui.showToast('Đồng bộ TPOS có lỗi — đơn giữ ở Nháp để thử lại', 'warning');
-                        this.handleTabChange(this.config.OrderStatus.DRAFT);
+                        this.switchOrRefreshTab(this.config.OrderStatus.DRAFT);
                     }
                 } else {
-                    // Draft save — just switch tab
+                    // Draft save — switch or refresh tab
                     const targetTab = orderData.status || this.config.OrderStatus.DRAFT;
-                    if (this.currentTab !== targetTab) {
-                        this.handleTabChange(targetTab);
-                    }
+                    this.switchOrRefreshTab(targetTab);
                 }
             },
             onCancel: () => {
@@ -1730,7 +1741,7 @@ class PurchaseOrderController {
             this.ui.showToast('Sao chép đơn hàng thành công!', 'success');
 
             // Switch to draft tab to see the new order
-            this.handleTabChange(this.config.OrderStatus.DRAFT);
+            this.switchOrRefreshTab(this.config.OrderStatus.DRAFT);
         } catch (error) {
             this.ui.showToast(error.userMessage || 'Không thể sao chép đơn hàng', 'error');
         }

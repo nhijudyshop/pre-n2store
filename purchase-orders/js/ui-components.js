@@ -250,6 +250,9 @@ class PurchaseOrderUIComponents {
                 </div>
 
                 <div class="filter-group filter-group--actions">
+                    <button id="btnReloadTable" class="btn btn-outline" title="Tải lại bảng">
+                        <i data-lucide="refresh-cw"></i>
+                    </button>
                     <button id="btnClearFilters" class="btn btn-outline" title="Xóa bộ lọc">
                         <i data-lucide="x"></i>
                         <span>Xóa lọc</span>
@@ -340,6 +343,11 @@ class PurchaseOrderUIComponents {
 
         if (clearBtn && handlers.onClear) {
             clearBtn.addEventListener('click', handlers.onClear);
+        }
+
+        const reloadBtn = container.querySelector('#btnReloadTable');
+        if (reloadBtn && handlers.onReload) {
+            reloadBtn.addEventListener('click', handlers.onReload);
         }
     }
 

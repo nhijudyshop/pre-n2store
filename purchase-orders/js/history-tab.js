@@ -86,6 +86,9 @@ window.PurchaseOrderHistory = (function () {
                         <i data-lucide="search"></i>
                         <span>Tìm</span>
                     </button>
+                    <button id="btnHistoryReload" class="btn btn-outline" title="Tải lại bảng">
+                        <i data-lucide="refresh-cw"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -102,6 +105,7 @@ window.PurchaseOrderHistory = (function () {
         };
 
         document.getElementById('btnHistoryFilter').addEventListener('click', applyFilters);
+        document.getElementById('btnHistoryReload').addEventListener('click', () => loadPage(currentPage));
 
         const searchInput = document.getElementById('historySearchInput');
         searchInput.addEventListener('keydown', (e) => {
