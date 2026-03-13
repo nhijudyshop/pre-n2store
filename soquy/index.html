@@ -1749,11 +1749,11 @@
                 <div style="display: flex; gap: 12px; margin-bottom: 12px; flex-shrink: 0;">
                     <div style="flex: 1;">
                         <label style="font-size: 11px; color: #8c8c8c; display: block; margin-bottom: 2px;">Giờ vào</label>
-                        <input type="time" class="form-control" style="padding: 4px 8px; font-size: 14px;">
+                        <input type="text" id="detailCheckIn" class="form-control" placeholder="HH:MM" maxlength="5" style="padding: 4px 8px; font-size: 14px; font-family: monospace;">
                     </div>
                     <div style="flex: 1;">
                         <label style="font-size: 11px; color: #8c8c8c; display: block; margin-bottom: 2px;">Giờ ra</label>
-                        <input type="time" class="form-control" style="padding: 4px 8px; font-size: 14px;">
+                        <input type="text" id="detailCheckOut" class="form-control" placeholder="HH:MM" maxlength="5" style="padding: 4px 8px; font-size: 14px; font-family: monospace;">
                     </div>
                 </div>
                 <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
@@ -1762,11 +1762,11 @@
                 </div>
             </div>
             <div class="modal-footer k-modal-footer" style="padding: 10px 20px;">
-                <button class="k-btn-outline" style="color: #f5222d; border-color: #f5222d;">
+                <button class="k-btn-outline" id="btnDeleteAttendance" style="color: #f5222d; border-color: #f5222d;">
                     <i data-lucide="trash-2"></i> Xóa
                 </button>
                 <div style="flex: 1;"></div>
-                <button class="btn-primary" style="background: #1890ff; border-color: #1890ff;">
+                <button class="btn-primary" id="btnUpdateAttendance" style="background: #1890ff; border-color: #1890ff;">
                     <i data-lucide="save"></i> Cập nhật
                 </button>
             </div>

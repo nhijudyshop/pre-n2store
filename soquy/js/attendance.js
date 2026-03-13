@@ -25,7 +25,7 @@
         HOURLY_RATE: 200000 / 12,   // ~16,667 VND/hour
         LATE_PENALTY_PER_MIN: 5000, // VND per minute late after 8:00
         WORK_START_HOUR: 8,         // 8:00
-        WORK_END_HOUR: 16,          // 16:00 - về trước giờ này = lương chia đôi
+        WORK_END_HOUR: 16,          // 16:00 - về trước giờ này = về sớm
         OT_START_HOUR: 20,          // 20:00 - hết ca, sau giờ này = OT
         OT_MULTIPLIER: 2,           // double rate for OT
     };
@@ -511,10 +511,9 @@
 
     /**
      * Tính lương 1 ngày dựa trên dữ liệu chấm công
-     * - Đúng giờ: vào <= 8:00, ra 16:00-20:00 → 200,000 VND
+     * - Đúng giờ: vào <= 8:00, ra 19:50-20:00 → 200,000 VND (full)
      * - Đi muộn: sau 8:00 → trừ 5,000/phút
-     * - Về sớm: ra trước 16:00 → lương chia đôi (100,000)
-     * - Làm thêm: ra 20:00-24:00 → đủ lương + OT nhân đôi
+     * - Làm thêm: ra sau 20:00 → đủ lương + OT nhân đôi
      */
     function calculateDaySalary(cellData, dailyRate, forceFullDay) {
         const rate = dailyRate || SALARY.DAILY_RATE;
@@ -540,28 +539,26 @@
         // --- Base salary = hourlyRate × giờ làm (8:00-20:00) ---
         const hour8 = new Date(checkIn);
         hour8.setHours(SALARY.WORK_START_HOUR, 0, 0, 0);
-        const hour16 = new Date(checkOut);
-        hour16.setHours(SALARY.WORK_END_HOUR, 0, 0, 0);
         const hour20 = new Date(checkOut);
         hour20.setHours(SALARY.OT_START_HOUR, 0, 0, 0);
 
         const workStart = checkIn > hour8 ? checkIn : hour8; // max(checkin, 8:00)
-        const workEnd = checkOut < hour20 ? checkOut : hour20; // min(checkout, 20:00)
+        let workEnd = checkOut < hour20 ? checkOut : hour20; // min(checkout, 20:00)
+
+        // Về gần cuối ca (từ 19:50) → tính như hết ca 20:00
+        const nearEnd = new Date(hour20.getTime() - 10 * 60 * 1000);
+        if (workEnd >= nearEnd && workEnd < hour20) {
+            workEnd = hour20;
+        }
+
         const baseMinutes = Math.max(0, Math.floor((workEnd - workStart) / (1000 * 60)));
         result.baseMinutes = baseMinutes;
 
         if (forceFullDay) {
-            // Check Full → nhận đủ lương cơ bản của ngày
             result.baseSalary = rate;
             result.fullDayOverride = true;
-            if (checkOut < hour16) result.earlyLeave = true;
         } else {
             result.baseSalary = Math.round(hourlyRate * baseMinutes / 60);
-            // Về trước 16h → lương chia đôi
-            if (checkOut < hour16) {
-                result.earlyLeave = true;
-                result.baseSalary = Math.round(result.baseSalary / 2);
-            }
         }
 
         // --- OT after 20:00 at double rate ---
@@ -1385,10 +1382,11 @@
             .filter(r => r.time)
             .sort((a, b) => a.time - b.time);
 
-        // Giờ vào / Giờ ra
-        const timeInputs = modal.querySelectorAll('input[type="time"]');
-        if (timeInputs[0]) timeInputs[0].value = dayRecords.length > 0 ? formatTime(dayRecords[0].time) : '';
-        if (timeInputs[1]) timeInputs[1].value = dayRecords.length > 1 ? formatTime(dayRecords[dayRecords.length - 1].time) : '';
+        // Giờ vào / Giờ ra (24h)
+        const checkInInput = document.getElementById('detailCheckIn');
+        const checkOutInput = document.getElementById('detailCheckOut');
+        if (checkInInput) checkInInput.value = dayRecords.length > 0 ? formatTime(dayRecords[0].time) : '';
+        if (checkOutInput) checkOutInput.value = dayRecords.length > 1 ? formatTime(dayRecords[dayRecords.length - 1].time) : '';
 
         // Hiện danh sách tất cả lần quẹt + tính lương
         const noteArea = modal.querySelector('textarea');
@@ -1428,13 +1426,7 @@
                 } else {
                     lines.push(`Lương/giờ: ${formatVND(empRate)}đ ÷ 12 = ${formatVND(hourlyRate)}đ/h`);
                     lines.push(`Giờ cơ bản: ${baseDisplay} (8:00-20:00)`);
-                    if (salary.earlyLeave) {
-                        const fullBase = Math.round(hourlyRate * salary.baseMinutes / 60);
-                        lines.push(`→ Lương CB: ${formatVND(hourlyRate)}đ/h × ${baseDisplay} = ${formatVND(fullBase)}đ`);
-                        lines.push(`⚠ Về sớm (trước 16:00) → chia đôi: ${formatVND(salary.baseSalary)}đ`);
-                    } else {
-                        lines.push(`→ Lương CB: ${formatVND(hourlyRate)}đ/h × ${baseDisplay} = ${formatVND(salary.baseSalary)}đ`);
-                    }
+                    lines.push(`→ Lương CB: ${formatVND(hourlyRate)}đ/h × ${baseDisplay} = ${formatVND(salary.baseSalary)}đ`);
                 }
 
                 if (salary.lateMinutes > 0) {
@@ -1468,6 +1460,105 @@
         const closeBtn = modal.querySelector('.btn-icon');
         if (closeBtn) {
             closeBtn.onclick = () => { modal.style.display = 'none'; };
+        }
+
+        // Update button
+        const updateBtn = document.getElementById('btnUpdateAttendance');
+        if (updateBtn) {
+            updateBtn.onclick = async () => {
+                const newIn = checkInInput ? checkInInput.value.trim() : '';
+                const newOut = checkOutInput ? checkOutInput.value.trim() : '';
+
+                if (!newIn) {
+                    showNotification('Vui lòng nhập giờ vào', 'error');
+                    return;
+                }
+
+                try {
+                    const [inH, inM] = newIn.split(':').map(Number);
+                    const dateParts = dateKey.split('-').map(Number);
+                    const checkInDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], inH, inM, 0, 0);
+
+                    let checkOutDate = null;
+                    if (newOut) {
+                        const [outH, outM] = newOut.split(':').map(Number);
+                        checkOutDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], outH, outM, 0, 0);
+                    }
+
+                    // Xóa records cũ
+                    const existing = weekRecords.filter(r =>
+                        String(r.deviceUserId) === String(empId) && r.dateKey === dateKey
+                    );
+                    for (const rec of existing) {
+                        if (!String(rec.id).startsWith('test_')) {
+                            await db.collection(COLLECTIONS.records).doc(rec.id).delete();
+                        }
+                    }
+                    weekRecords = weekRecords.filter(r =>
+                        !(String(r.deviceUserId) === String(empId) && r.dateKey === dateKey)
+                    );
+
+                    // Tạo record check-in mới
+                    const inDoc = await db.collection(COLLECTIONS.records).add({
+                        deviceUserId: String(empId),
+                        dateKey: dateKey,
+                        checkTime: checkInDate,
+                        type: 0,
+                        source: 'manual_edit'
+                    });
+                    weekRecords.push({ id: inDoc.id, deviceUserId: String(empId), dateKey, checkTime: checkInDate, type: 0, source: 'manual_edit' });
+
+                    // Tạo record check-out mới
+                    if (checkOutDate) {
+                        const outDoc = await db.collection(COLLECTIONS.records).add({
+                            deviceUserId: String(empId),
+                            dateKey: dateKey,
+                            checkTime: checkOutDate,
+                            type: 1,
+                            source: 'manual_edit'
+                        });
+                        weekRecords.push({ id: outDoc.id, deviceUserId: String(empId), dateKey, checkTime: checkOutDate, type: 1, source: 'manual_edit' });
+                    }
+
+                    modal.style.display = 'none';
+                    renderTimesheet();
+                    renderSchedule();
+                    showNotification('Đã cập nhật chấm công', 'success');
+                } catch (err) {
+                    console.error('[Attendance] Lỗi cập nhật:', err);
+                    showNotification('Lỗi: ' + err.message, 'error');
+                }
+            };
+        }
+
+        // Delete button
+        const deleteBtn = document.getElementById('btnDeleteAttendance');
+        if (deleteBtn) {
+            deleteBtn.onclick = async () => {
+                if (!confirm(`Xóa chấm công ${empName} ngày ${dateKey}?`)) return;
+
+                try {
+                    const existing = weekRecords.filter(r =>
+                        String(r.deviceUserId) === String(empId) && r.dateKey === dateKey
+                    );
+                    for (const rec of existing) {
+                        if (!String(rec.id).startsWith('test_')) {
+                            await db.collection(COLLECTIONS.records).doc(rec.id).delete();
+                        }
+                    }
+                    weekRecords = weekRecords.filter(r =>
+                        !(String(r.deviceUserId) === String(empId) && r.dateKey === dateKey)
+                    );
+
+                    modal.style.display = 'none';
+                    renderTimesheet();
+                    renderSchedule();
+                    showNotification('Đã xóa chấm công', 'success');
+                } catch (err) {
+                    console.error('[Attendance] Lỗi xóa:', err);
+                    showNotification('Lỗi: ' + err.message, 'error');
+                }
+            };
         }
     }
 
