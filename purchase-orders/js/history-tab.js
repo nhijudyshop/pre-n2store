@@ -16,8 +16,10 @@ window.PurchaseOrderHistory = (function () {
     let currentData = [];
     // Track expanded rows: { orderId: orderLinesData[] }
     const expandedRows = {};
-    // Track done rows: Set of orderId
+    // Track done rows: Set of orderId (synced to Firestore)
     const doneRows = new Set();
+    const DONE_DOC_PATH = 'purchase_history_done/done_invoices';
+    let doneLoaded = false;
 
     // DOM containers (set during init)
     let tableContainer = null;
@@ -43,7 +45,37 @@ window.PurchaseOrderHistory = (function () {
         filterEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
         renderHistoryFilterBar();
-        loadPage(1);
+        loadDoneRows().then(() => loadPage(1));
+    }
+
+    /**
+     * Load done rows from Firestore
+     */
+    async function loadDoneRows() {
+        if (doneLoaded) return;
+        try {
+            const db = firebase.firestore();
+            const doc = await db.doc(DONE_DOC_PATH).get();
+            if (doc.exists) {
+                const ids = doc.data().ids || [];
+                ids.forEach(id => doneRows.add(id));
+            }
+            doneLoaded = true;
+        } catch (e) {
+            console.warn('[History] Failed to load done rows:', e);
+        }
+    }
+
+    /**
+     * Save done rows to Firestore
+     */
+    function saveDoneRows() {
+        try {
+            const db = firebase.firestore();
+            db.doc(DONE_DOC_PATH).set({ ids: Array.from(doneRows), lastUpdated: Date.now() });
+        } catch (e) {
+            console.warn('[History] Failed to save done rows:', e);
+        }
     }
 
     /**
@@ -313,7 +345,7 @@ window.PurchaseOrderHistory = (function () {
             });
         });
 
-        // Bind checkbox for Done watermark
+        // Bind checkbox for Done watermark (persisted to Firestore)
         tableContainer.querySelectorAll('.history-done-cb').forEach(cb => {
             cb.addEventListener('change', () => {
                 const id = parseInt(cb.dataset.id, 10);
@@ -325,6 +357,7 @@ window.PurchaseOrderHistory = (function () {
                     doneRows.delete(id);
                     row?.classList.remove('order-row--done');
                 }
+                saveDoneRows();
             });
         });
     }
