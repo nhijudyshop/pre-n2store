@@ -170,9 +170,7 @@ function renderTableRow(order, index) {
                 ${typeof window.renderSocialInvoiceCell === 'function' ? window.renderSocialInvoiceCell(order) : '<span style="color: #9ca3af;">—</span>'}
             </td>
             <td data-column="status" style="text-align: center;">
-                <span class="status-badge-social ${order.status}" style="background: ${statusConfig.bgColor}; color: ${statusConfig.textColor};">
-                    ${statusConfig.label}
-                </span>
+                ${renderStatusCell(order, statusConfig)}
             </td>
         </tr>
     `;
@@ -518,6 +516,76 @@ function deleteSelectedOrders() {
     }
 }
 
+// ===== STATUS EDIT (ADMIN ONLY) =====
+
+/**
+ * Check if current user is admin
+ */
+function _isAdminUser() {
+    return window.authManager?.isAdminTemplate?.() || false;
+}
+
+/**
+ * Render status cell - editable dropdown for admin, static badge for others
+ */
+function renderStatusCell(order, statusConfig) {
+    if (_isAdminUser()) {
+        const draftConfig = STATUS_CONFIG.draft;
+        const orderConfig = STATUS_CONFIG.order;
+        return `
+            <select class="status-select-social"
+                    data-order-id="${order.id}"
+                    onchange="changeSocialOrderStatus('${order.id}', this.value)"
+                    style="background: ${statusConfig.bgColor}; color: ${statusConfig.textColor}; border: 1px solid ${statusConfig.color};">
+                <option value="draft" ${order.status === 'draft' ? 'selected' : ''}
+                    style="background: ${draftConfig.bgColor}; color: ${draftConfig.textColor};">
+                    ${draftConfig.label}
+                </option>
+                <option value="order" ${order.status === 'order' ? 'selected' : ''}
+                    style="background: ${orderConfig.bgColor}; color: ${orderConfig.textColor};">
+                    ${orderConfig.label}
+                </option>
+            </select>
+        `;
+    }
+    return `
+        <span class="status-badge-social ${order.status}" style="background: ${statusConfig.bgColor}; color: ${statusConfig.textColor};">
+            ${statusConfig.label}
+        </span>
+    `;
+}
+
+/**
+ * Handle status change from dropdown (admin only)
+ */
+async function changeSocialOrderStatus(orderId, newStatus) {
+    if (!_isAdminUser()) {
+        showNotification('Bạn không có quyền thay đổi trạng thái', 'error');
+        return;
+    }
+
+    const order = SocialOrderState.orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const oldStatus = order.status;
+    if (oldStatus === newStatus) return;
+
+    // Update local state
+    order.status = newStatus;
+    saveSocialOrdersToStorage();
+
+    // Sync to Firestore
+    if (typeof updateSocialOrder === 'function') {
+        await updateSocialOrder(orderId, { status: newStatus });
+    }
+
+    const statusLabel = STATUS_CONFIG[newStatus]?.label || newStatus;
+    showNotification(`Đã chuyển trạng thái thành "${statusLabel}"`, 'success');
+
+    // Re-render to update colors
+    performTableSearch();
+}
+
 // ===== EXPORTS =====
 window.renderTable = renderTable;
 window.performTableSearch = performTableSearch;
@@ -534,3 +602,4 @@ window.closeConfirmDeleteModal = closeConfirmDeleteModal;
 window.confirmDelete = confirmDelete;
 window.deleteSelectedOrders = deleteSelectedOrders;
 window.updateSearchResultCount = updateSearchResultCount;
+window.changeSocialOrderStatus = changeSocialOrderStatus;
