@@ -79,22 +79,28 @@
                 <div class="filter-row">
                     <div class="filter-group filter-group-supplier">
                         <label>Nhà cung cấp</label>
-                        <div class="select-wrapper">
-                            <select id="supplierFilter">
-                                <option value="">Chọn nhà cung cấp</option>
-                            </select>
+                        <div class="searchable-select-wrapper" id="supplierSearchWrapper">
+                            <input type="text" id="supplierSearchInput" class="form-input" placeholder="Tìm nhà cung cấp..." autocomplete="off">
                             <button type="button" class="clear-select" id="clearSupplier" style="display: none;">
                                 <i data-lucide="x" style="width: 14px; height: 14px;"></i>
                             </button>
+                            <div class="searchable-dropdown" id="supplierDropdown" style="display: none;"></div>
                         </div>
+                        <!-- Hidden select for compatibility -->
+                        <select id="supplierFilter" style="display: none;">
+                            <option value="">Chọn nhà cung cấp</option>
+                        </select>
                     </div>
 
                     <div class="filter-actions">
-                        <button class="btn btn-primary" id="btnSearch">
+                        <button class="btn btn-primary" id="btnSearch" style="display: none;">
                             <i data-lucide="search"></i> Tìm kiếm
                         </button>
-                        <button class="btn btn-success" id="btnExport">
+                        <button class="btn btn-success" id="btnExport" style="display: none;">
                             <i data-lucide="file-spreadsheet"></i> Xuất excel
+                        </button>
+                        <button class="btn btn-primary" id="btnCreateSupplier">
+                            <i data-lucide="plus"></i> Tạo NCC
                         </button>
                         <div class="column-toggle-wrapper">
                             <button class="btn btn-secondary" id="btnColumnToggle">
@@ -315,6 +321,63 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="btnCloseInvoiceDetailFooter">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Supplier Modal -->
+    <div class="modal-overlay" id="createSupplierModal">
+        <div class="modal modal-note">
+            <div class="modal-header">
+                <h3>Tạo nhà cung cấp mới</h3>
+                <button class="modal-close" id="btnCloseCreateSupplier">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label>Mã NCC <span style="color: #dc2626;">*</span></label>
+                        <input type="text" id="newSupplierRef" class="form-input" placeholder="VD: B28">
+                    </div>
+                    <div class="form-group">
+                        <label>Tên NCC <span style="color: #dc2626;">*</span></label>
+                        <input type="text" id="newSupplierName" class="form-input" placeholder="VD: NGUYỄN VĂN A">
+                    </div>
+                    <div class="form-group">
+                        <label>Ghi chú <span class="text-muted">(tùy chọn)</span></label>
+                        <textarea id="newSupplierNote" class="form-input form-textarea" rows="2" placeholder="Nhập ghi chú..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btnSubmitCreateSupplier">Tạo</button>
+                <button class="btn btn-secondary" id="btnCancelCreateSupplier">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supplier Note Edit Modal -->
+    <div class="modal-overlay" id="supplierNoteModal">
+        <div class="modal modal-note">
+            <div class="modal-header">
+                <h3>Ghi chú nhà cung cấp</h3>
+                <button class="modal-close" id="btnCloseSupplierNote">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label>Nhà cung cấp</label>
+                        <div class="form-value" id="supplierNoteLabel"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Ghi chú</label>
+                        <textarea id="supplierNoteText" class="form-input form-textarea" rows="3" placeholder="Nhập ghi chú..."></textarea>
+                        <div class="form-hint">Nhấn Ctrl+Enter để lưu nhanh</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btnSaveSupplierNote">Lưu</button>
+                <button class="btn btn-secondary" id="btnCancelSupplierNote">Đóng</button>
             </div>
         </div>
     </div>

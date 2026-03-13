@@ -104,6 +104,71 @@
     max-width: 400px;
 }
 
+/* Searchable Supplier Dropdown */
+.searchable-select-wrapper {
+    position: relative;
+}
+
+.searchable-select-wrapper .form-input {
+    width: 100%;
+    padding: 8px 32px 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.searchable-select-wrapper .form-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.searchable-select-wrapper .clear-select {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.searchable-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 100;
+    margin-top: 4px;
+}
+
+.searchable-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.1s;
+}
+
+.searchable-dropdown-item:hover {
+    background: #eef2ff;
+    color: #4338ca;
+}
+
+.searchable-dropdown-item.disabled {
+    color: #9ca3af;
+    cursor: default;
+    font-style: italic;
+}
+
+.searchable-dropdown-item.disabled:hover {
+    background: transparent;
+    color: #9ca3af;
+}
+
 /* Filter Section */
 .filter-section {
     background: #f8fafc;

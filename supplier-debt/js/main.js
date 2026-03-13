@@ -2759,18 +2759,198 @@ async function exportToExcel() {
 }
 
 // =====================================================
-// SUPPLIER NOTE EDIT (inline prompt)
+// SUPPLIER NOTE EDIT (modal)
 // =====================================================
 
+let _supplierNoteEditCode = '';
+
 function openSupplierNoteEdit(supplierCode, supplierName) {
-    const currentNote = SupplierNotesStore.get(supplierCode);
-    const newNote = prompt(`Ghi chú cho [${supplierCode}] ${supplierName}:`, currentNote);
-    if (newNote === null) return; // cancelled
-    SupplierNotesStore.set(supplierCode, newNote).then(() => {
+    _supplierNoteEditCode = supplierCode;
+    const modal = document.getElementById('supplierNoteModal');
+    const label = document.getElementById('supplierNoteLabel');
+    const textarea = document.getElementById('supplierNoteText');
+    label.textContent = `[${supplierCode}] ${supplierName}`;
+    textarea.value = SupplierNotesStore.get(supplierCode);
+    modal.classList.add('show');
+    setTimeout(() => textarea.focus(), 100);
+}
+
+function closeSupplierNoteModal() {
+    document.getElementById('supplierNoteModal')?.classList.remove('show');
+    _supplierNoteEditCode = '';
+}
+
+function saveSupplierNote() {
+    const note = document.getElementById('supplierNoteText').value;
+    SupplierNotesStore.set(_supplierNoteEditCode, note).then(() => {
+        closeSupplierNoteModal();
         renderTable();
         if (window.lucide) window.lucide.createIcons();
         if (window.notificationManager) {
-            window.notificationManager.success(newNote ? 'Đã lưu ghi chú' : 'Đã xóa ghi chú');
+            window.notificationManager.success(note ? 'Đã lưu ghi chú' : 'Đã xóa ghi chú');
+        }
+    });
+}
+
+function initSupplierNoteModal() {
+    document.getElementById('btnCloseSupplierNote')?.addEventListener('click', closeSupplierNoteModal);
+    document.getElementById('btnCancelSupplierNote')?.addEventListener('click', closeSupplierNoteModal);
+    document.getElementById('btnSaveSupplierNote')?.addEventListener('click', saveSupplierNote);
+    document.getElementById('supplierNoteModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'supplierNoteModal') closeSupplierNoteModal();
+    });
+    document.getElementById('supplierNoteText')?.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') saveSupplierNote();
+    });
+}
+
+// =====================================================
+// CREATE SUPPLIER (API + modal)
+// =====================================================
+
+function openCreateSupplierModal() {
+    const modal = document.getElementById('createSupplierModal');
+    document.getElementById('newSupplierRef').value = '';
+    document.getElementById('newSupplierName').value = '';
+    document.getElementById('newSupplierNote').value = '';
+    modal.classList.add('show');
+    setTimeout(() => document.getElementById('newSupplierRef').focus(), 100);
+}
+
+function closeCreateSupplierModal() {
+    document.getElementById('createSupplierModal')?.classList.remove('show');
+}
+
+async function submitCreateSupplier() {
+    const ref = document.getElementById('newSupplierRef').value.trim();
+    const name = document.getElementById('newSupplierName').value.trim();
+    const note = document.getElementById('newSupplierNote').value.trim();
+
+    if (!ref || !name) {
+        if (window.notificationManager) window.notificationManager.warning('Vui lòng nhập Mã NCC và Tên NCC');
+        return;
+    }
+
+    try {
+        const body = {
+            Id: 0, Name: name, Ref: ref, Supplier: true, Customer: false,
+            Active: true, Employee: false, IsCompany: false, CompanyId: 1,
+            Type: 'contact', CompanyType: 'person', Credit: 0, Debit: 0,
+            Discount: 0, AmountDiscount: 0, CreditLimit: 0, OverCredit: false,
+            CategoryId: 0, Status: 'Normal', StatusText: 'Bình thường',
+            Source: 'Default', IsNewAddress: false, Ward_District_City: '',
+            DateCreated: new Date().toISOString(),
+            City: {}, District: {}, Ward: {},
+            ExtraAddress: { Street: null, City: {}, District: {}, Ward: {} },
+            AccountPayable: { Id: 4, Name: 'Phải trả người bán', Code: '331', UserTypeId: 2, UserTypeName: 'Payable', Active: true, CompanyId: 1, CompanyName: 'NJD Live', InternalType: 'payable', NameGet: '331 Phải trả người bán', Reconcile: true },
+            AccountReceivable: { Id: 1, Name: 'Phải thu của khách hàng', Code: '131', UserTypeId: 1, UserTypeName: 'Receivable', Active: true, CompanyId: 1, CompanyName: 'NJD Live', InternalType: 'receivable', NameGet: '131 Phải thu của khách hàng', Reconcile: true },
+            StockCustomer: { Id: 9, Usage: 'customer', ScrapLocation: false, Name: 'Khách hàng', CompleteName: 'Địa điểm đối tác / Khách hàng', ParentLocationId: 2, Active: true, ParentLeft: 13, NameGet: 'Địa điểm đối tác/Khách hàng' },
+            StockSupplier: { Id: 8, Usage: 'supplier', ScrapLocation: false, Name: 'Nhà cung cấp', CompleteName: 'Địa điểm đối tác / Nhà cung cấp', ParentLocationId: 2, Active: true, ParentLeft: 15, NameGet: 'Địa điểm đối tác/Nhà cung cấp' }
+        };
+
+        const url = `${CONFIG.API_BASE_PARTNER}/odata/Partner`;
+        const response = await tposFetch(url, {
+            method: 'POST',
+            headers: { 'feature-version': '2' },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+        }
+
+        await response.json();
+
+        // Save note if provided
+        if (note) {
+            await SupplierNotesStore.set(ref, note);
+        }
+
+        closeCreateSupplierModal();
+        if (window.notificationManager) {
+            window.notificationManager.success(`Đã tạo NCC [${ref}] ${name}`);
+        }
+
+        // Refresh supplier list and data
+        State.allSuppliers = [];
+        await fetchData();
+
+    } catch (error) {
+        console.error('[SupplierDebt] Error creating supplier:', error);
+        if (window.notificationManager) {
+            window.notificationManager.error(`Lỗi tạo NCC: ${error.message}`);
+        }
+    }
+}
+
+function initCreateSupplierModal() {
+    document.getElementById('btnCreateSupplier')?.addEventListener('click', openCreateSupplierModal);
+    document.getElementById('btnCloseCreateSupplier')?.addEventListener('click', closeCreateSupplierModal);
+    document.getElementById('btnCancelCreateSupplier')?.addEventListener('click', closeCreateSupplierModal);
+    document.getElementById('btnSubmitCreateSupplier')?.addEventListener('click', submitCreateSupplier);
+    document.getElementById('createSupplierModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'createSupplierModal') closeCreateSupplierModal();
+    });
+}
+
+// =====================================================
+// SEARCHABLE SUPPLIER DROPDOWN
+// =====================================================
+
+function initSearchableSupplierDropdown() {
+    const input = document.getElementById('supplierSearchInput');
+    const dropdown = document.getElementById('supplierDropdown');
+    const clearBtn = DOM.clearSupplier;
+    if (!input || !dropdown) return;
+
+    function renderDropdownItems(filter = '') {
+        const lowerFilter = filter.toLowerCase();
+        const filtered = State.allSuppliers.filter(s => {
+            const text = `[${s.Code}] ${s.PartnerName}`.toLowerCase();
+            return !filter || text.includes(lowerFilter);
+        });
+
+        if (filtered.length === 0) {
+            dropdown.innerHTML = '<div class="searchable-dropdown-item disabled">Không tìm thấy</div>';
+        } else {
+            dropdown.innerHTML = filtered.map(s =>
+                `<div class="searchable-dropdown-item" data-value="${escapeHtml(s.Code)}">[${escapeHtml(s.Code)}] ${escapeHtml(s.PartnerName)}</div>`
+            ).join('');
+        }
+        dropdown.style.display = 'block';
+    }
+
+    input.addEventListener('focus', () => renderDropdownItems(input.value));
+    input.addEventListener('input', () => renderDropdownItems(input.value));
+
+    dropdown.addEventListener('click', (e) => {
+        const item = e.target.closest('.searchable-dropdown-item');
+        if (!item || item.classList.contains('disabled')) return;
+        const value = item.dataset.value;
+        input.value = item.textContent;
+        dropdown.style.display = 'none';
+        State.selectedSupplier = value;
+        clearBtn.style.display = 'flex';
+        applySupplierFilter();
+        renderTable();
+        calculateTotals();
+    });
+
+    clearBtn.addEventListener('click', () => {
+        input.value = '';
+        State.selectedSupplier = '';
+        clearBtn.style.display = 'none';
+        dropdown.style.display = 'none';
+        applySupplierFilter();
+        renderTable();
+        calculateTotals();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#supplierSearchWrapper')) {
+            dropdown.style.display = 'none';
         }
     });
 }
@@ -2809,25 +2989,6 @@ function initEventHandlers() {
         radio.addEventListener('change', function() {
             State.display = this.value;
         });
-    });
-
-    // Supplier filter
-    DOM.supplierFilter.addEventListener('change', function() {
-        State.selectedSupplier = this.value;
-        DOM.clearSupplier.style.display = this.value ? 'flex' : 'none';
-        applySupplierFilter();
-        renderTable();
-        calculateTotals();
-    });
-
-    // Clear supplier
-    DOM.clearSupplier.addEventListener('click', function() {
-        DOM.supplierFilter.value = '';
-        State.selectedSupplier = '';
-        this.style.display = 'none';
-        applySupplierFilter();
-        renderTable();
-        calculateTotals();
     });
 
     // Page size
@@ -2880,6 +3041,15 @@ async function init() {
 
     // Initialize invoice detail modal
     initInvoiceDetailModal();
+
+    // Initialize supplier note modal
+    initSupplierNoteModal();
+
+    // Initialize create supplier modal
+    initCreateSupplierModal();
+
+    // Initialize searchable supplier dropdown
+    initSearchableSupplierDropdown();
 
     // Initialize web notes store
     await WebNotesStore.init();
