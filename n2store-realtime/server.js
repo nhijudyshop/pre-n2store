@@ -1,6 +1,6 @@
 // =====================================================
 // N2STORE REALTIME SERVER
-// WebSocket proxy for Pancake.vn and TPOS ChatOmni
+// WebSocket proxy for Pancake.vn
 // With PostgreSQL for message persistence
 // Deployed on Render.com (Standard Plan)
 // =====================================================
@@ -62,7 +62,7 @@ async function ensureTablesExist() {
         await dbPool.query(`
             CREATE TABLE IF NOT EXISTS realtime_credentials (
                 id SERIAL PRIMARY KEY,
-                client_type VARCHAR(20) NOT NULL UNIQUE CHECK (client_type IN ('pancake', 'tpos')),
+                client_type VARCHAR(20) NOT NULL UNIQUE,
                 token TEXT NOT NULL,
                 user_id VARCHAR(50),
                 page_ids TEXT,
@@ -340,6 +340,17 @@ class RealtimeClient {
     }
 
     async start(token, userId, pageIds, cookie = null, saveCredentials = true) {
+        // Always force reconnect with fresh credentials
+        // Old connection may be zombie (heartbeat works but no data)
+        if (this.ws) {
+            console.log('[PANCAKE-WS] Closing existing connection for fresh start...');
+            this.stopHeartbeat();
+            clearTimeout(this.reconnectTimer);
+            this.ws.close();
+            this.ws = null;
+            this.isConnected = false;
+        }
+
         this.token = token;
         this.userId = userId;
         this.pageIds = pageIds.map(id => String(id));
@@ -624,224 +635,10 @@ class RealtimeClient {
 }
 
 // =====================================================
-// TPOS REALTIME CLIENT (Socket.IO Protocol)
-// =====================================================
-
-class TposRealtimeClient {
-    constructor() {
-        this.ws = null;
-        this.url = "wss://ws.chatomni.tpos.app/socket.io/?EIO=4&transport=websocket";
-        this.isConnected = false;
-        this.heartbeatInterval = null;
-        this.reconnectTimer = null;
-        this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 50;
-
-        this.pingInterval = 25000;
-        this.pingTimeout = 20000;
-        this.lastPingTime = null;
-        this.lastPongTime = null;
-
-        this.token = null;
-        this.room = 'tomato.tpos.vn';
-    }
-
-    async start(token, room = 'tomato.tpos.vn', saveCredentials = true) {
-        this.token = token;
-        this.room = room;
-        this.reconnectAttempts = 0;
-
-        // Save credentials for auto-reconnect
-        if (saveCredentials) {
-            await saveRealtimeCredentials('tpos', { token, room });
-        }
-
-        this.connect();
-    }
-
-    connect() {
-        if (this.isConnected || !this.token) return;
-
-        console.log('[TPOS-WS] Connecting... (attempt', this.reconnectAttempts + 1, ')');
-
-        const urlWithToken = `${this.url}&token=${encodeURIComponent(this.token)}`;
-
-        const headers = {
-            'Origin': 'https://nhijudyshop.github.io',
-            'Authorization': `Bearer ${this.token}`,
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-            'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8'
-        };
-
-        this.ws = new WebSocket(urlWithToken, { headers });
-
-        this.ws.on('open', () => {
-            console.log('[TPOS-WS] WebSocket connected, sending handshake...');
-            this.reconnectAttempts = 0;
-            const namespaceMsg = '40/chatomni,';
-            this.ws.send(namespaceMsg);
-        });
-
-        this.ws.on('close', (code, reason) => {
-            console.log(`[TPOS-WS] Closed - Code: ${code}`);
-            this.isConnected = false;
-            this.stopHeartbeat();
-
-            if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                const delay = Math.min(2000 * Math.pow(1.5, this.reconnectAttempts), 300000);
-                this.reconnectAttempts++;
-                console.log(`[TPOS-WS] Reconnecting in ${Math.round(delay/1000)}s...`);
-                clearTimeout(this.reconnectTimer);
-                this.reconnectTimer = setTimeout(() => this.connect(), delay);
-            } else {
-                console.error('[TPOS-WS] ❌ Max reconnect attempts reached. Will try again in 30 minutes.');
-                setTimeout(() => {
-                    this.reconnectAttempts = 0;
-                    this.connect();
-                }, 30 * 60 * 1000);
-            }
-        });
-
-        this.ws.on('error', (err) => {
-            console.error('[TPOS-WS] Error:', err.message);
-        });
-
-        this.ws.on('message', (data) => {
-            this.handleMessage(data.toString());
-        });
-    }
-
-    handleMessage(data) {
-        if (data === '2') {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                this.ws.send('3');
-            }
-            this.lastPongTime = Date.now();
-            return;
-        }
-
-        if (data === '3') {
-            this.lastPongTime = Date.now();
-            return;
-        }
-
-        if (data.startsWith('0{')) {
-            try {
-                const info = JSON.parse(data.substring(1));
-                if (info.pingInterval) this.pingInterval = info.pingInterval;
-                if (info.pingTimeout) this.pingTimeout = info.pingTimeout;
-                console.log(`[TPOS-WS] Server timing: pingInterval=${this.pingInterval}ms`);
-            } catch (e) {}
-            return;
-        }
-
-        if (data.startsWith('40/chatomni,')) {
-            console.log('[TPOS-WS] ✅ Namespace connected');
-            this.isConnected = true;
-            this.joinRoom();
-            this.startHeartbeat();
-            return;
-        }
-
-        if (data.startsWith('42/chatomni,')) {
-            const jsonStr = data.substring('42/chatomni,'.length);
-            try {
-                const [eventName, payload] = JSON.parse(jsonStr);
-                this.handleEvent(eventName, payload);
-            } catch (e) {
-                console.error('[TPOS-WS] Parse error:', e);
-            }
-        }
-    }
-
-    handleEvent(eventName, payload) {
-        console.log('[TPOS-WS] Event:', eventName);
-
-        broadcastToClients({
-            type: 'tpos:event',
-            event: eventName,
-            payload: payload
-        });
-
-        if (eventName === 'on-events') {
-            try {
-                const eventData = typeof payload === 'string' ? JSON.parse(payload) : payload;
-                console.log('[TPOS-WS] TPOS Event:', eventData.EventName || eventData.Type);
-                broadcastToClients({
-                    type: 'tpos:parsed-event',
-                    data: eventData
-                });
-            } catch (e) {}
-        }
-    }
-
-    joinRoom() {
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-        this.ws.send(`42/chatomni,["join",{"room":"${this.room}","token":"${this.token}"}]`);
-        console.log('[TPOS-WS] Joining room:', this.room);
-    }
-
-    startHeartbeat() {
-        this.stopHeartbeat();
-        const heartbeatMs = Math.floor(this.pingInterval * 0.8);
-        console.log(`[TPOS-WS] Starting heartbeat every ${heartbeatMs}ms`);
-
-        this.heartbeatInterval = setInterval(() => {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                const timeSinceLastPong = Date.now() - (this.lastPongTime || 0);
-                if (this.lastPongTime && timeSinceLastPong > this.pingTimeout) {
-                    console.error(`[TPOS-WS] No pong for ${timeSinceLastPong}ms, reconnecting...`);
-                    this.ws.close();
-                    return;
-                }
-                this.ws.send('2');
-                this.lastPingTime = Date.now();
-            }
-        }, heartbeatMs);
-    }
-
-    stopHeartbeat() {
-        if (this.heartbeatInterval) {
-            clearInterval(this.heartbeatInterval);
-            this.heartbeatInterval = null;
-        }
-    }
-
-    async stop(disableAutoConnect = true) {
-        this.stopHeartbeat();
-        clearTimeout(this.reconnectTimer);
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
-        }
-        this.isConnected = false;
-        this.reconnectAttempts = 0;
-
-        if (disableAutoConnect) {
-            await disableRealtimeCredentials('tpos');
-        }
-
-        console.log('[TPOS-WS] Stopped');
-    }
-
-    getStatus() {
-        return {
-            connected: this.isConnected,
-            room: this.room,
-            hasToken: !!this.token,
-            reconnectAttempts: this.reconnectAttempts,
-            pingInterval: this.pingInterval,
-            lastPongTime: this.lastPongTime
-        };
-    }
-}
-
-// =====================================================
 // GLOBAL INSTANCES
 // =====================================================
 
 const realtimeClient = new RealtimeClient();
-const tposRealtimeClient = new TposRealtimeClient();
 
 // =====================================================
 // LIVESTREAM DETECTION (server-side, per post_id)
@@ -1061,18 +858,6 @@ async function autoConnectClients() {
         console.log('[AUTO-CONNECT] No Pancake credentials found');
     }
 
-    // Auto-connect TPOS
-    const tposCredentials = await loadRealtimeCredentials('tpos');
-    if (tposCredentials && tposCredentials.token) {
-        console.log('[AUTO-CONNECT] Found TPOS credentials, starting...');
-        await tposRealtimeClient.start(
-            tposCredentials.token,
-            tposCredentials.room || 'tomato.tpos.vn',
-            false // Don't save again
-        );
-    } else {
-        console.log('[AUTO-CONNECT] No TPOS credentials found');
-    }
 }
 
 // =====================================================
@@ -1088,8 +873,7 @@ app.get('/health', (req, res) => {
         uptime: process.uptime(),
         database: dbPool ? 'connected' : 'not configured',
         clients: {
-            pancake: realtimeClient.getStatus(),
-            tpos: tposRealtimeClient.getStatus()
+            pancake: realtimeClient.getStatus()
         }
     });
 });
@@ -1098,19 +882,14 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
     res.json({
         name: 'N2Store Realtime Server',
-        version: '2.0.0',
-        description: 'WebSocket proxy for Pancake.vn and TPOS ChatOmni with database persistence',
+        version: '2.1.0',
+        description: 'WebSocket proxy for Pancake.vn with database persistence',
         database: dbPool ? 'connected' : 'not configured',
         endpoints: {
             pancake: [
                 'POST /api/realtime/start - Start Pancake WebSocket',
                 'POST /api/realtime/stop - Stop Pancake WebSocket',
                 'GET /api/realtime/status - Get Pancake status'
-            ],
-            tpos: [
-                'POST /api/realtime/tpos/start - Start TPOS WebSocket',
-                'POST /api/realtime/tpos/stop - Stop TPOS WebSocket',
-                'GET /api/realtime/tpos/status - Get TPOS status'
             ],
             pendingCustomers: [
                 'GET /api/realtime/pending-customers - Get pending customers',
@@ -1158,30 +937,6 @@ app.post('/api/realtime/reconnect', async (req, res) => {
     realtimeClient.reconnectAttempts = 0;
     realtimeClient.connect();
     res.json({ success: true, message: 'Force reconnect initiated' });
-});
-
-// ===== TPOS REALTIME =====
-
-app.post('/api/realtime/tpos/start', async (req, res) => {
-    const { token, room } = req.body;
-    if (!token) {
-        return res.status(400).json({ error: 'Missing token' });
-    }
-
-    await tposRealtimeClient.start(token, room || 'tomato.tpos.vn');
-    res.json({
-        success: true,
-        message: 'TPOS Realtime client started (credentials saved for auto-reconnect)'
-    });
-});
-
-app.post('/api/realtime/tpos/stop', async (req, res) => {
-    await tposRealtimeClient.stop();
-    res.json({ success: true, message: 'TPOS Realtime client stopped' });
-});
-
-app.get('/api/realtime/tpos/status', (req, res) => {
-    res.json(tposRealtimeClient.getStatus());
 });
 
 // ===== PENDING CUSTOMERS API =====
@@ -1576,7 +1331,7 @@ async function startServer() {
     // Start HTTP server
     server.listen(PORT, () => {
         console.log('='.repeat(60));
-        console.log('🚀 N2Store Realtime Server v2.0');
+        console.log('🚀 N2Store Realtime Server v2.1');
         console.log('='.repeat(60));
         console.log(`📍 Port: ${PORT}`);
         console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
