@@ -131,6 +131,9 @@ function renderTableRow(order, index) {
                     ${tagsHtml}
                 </div>
             </td>
+            <td data-column="note" style="max-width: 200px; font-size: 12px;">
+                ${renderNoteCell(order)}
+            </td>
             <td data-column="customer">
                 <div class="customer-name">${order.customerName || '—'}</div>
             </td>
@@ -166,9 +169,6 @@ function renderTableRow(order, index) {
             <td data-column="created-date" style="font-size: 12px; color: #6b7280;">
                 ${formatDate(order.createdAt)}
             </td>
-            <td data-column="note" style="max-width: 200px; font-size: 12px;">
-                ${renderNoteCell(order)}
-            </td>
             <td data-column="invoice-status" style="min-width: 160px;">
                 ${typeof window.renderSocialInvoiceCell === 'function' ? window.renderSocialInvoiceCell(order) : '<span style="color: #9ca3af;">—</span>'}
             </td>
@@ -195,7 +195,12 @@ function renderNoteCell(order) {
         html += `<div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">`;
         noteImages.forEach((img, i) => {
             if (i < 3) {
-                html += `<img src="${img}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;" onclick="event.stopPropagation(); openNoteImagePreview('${img.replace(/'/g, "\\'")}')" />`;
+                html += `<div class="note-img-thumb-wrapper" style="position: relative; display: inline-block;">
+                    <img src="${img}" class="note-img-thumb" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer;"
+                         onclick="event.stopPropagation(); openNoteImagePreview('${img.replace(/'/g, "\\'")}')"
+                         onmouseenter="showNoteImageHover(this, '${img.replace(/'/g, "\\'")}')"
+                         onmouseleave="hideNoteImageHover()" />
+                </div>`;
             }
         });
         if (noteImages.length > 3) {
@@ -206,7 +211,49 @@ function renderNoteCell(order) {
     return html;
 }
 
+// Hover preview for note images
+let _noteHoverEl = null;
+
+function showNoteImageHover(thumbEl, src) {
+    hideNoteImageHover();
+    const rect = thumbEl.getBoundingClientRect();
+    _noteHoverEl = document.createElement('div');
+    _noteHoverEl.style.cssText = 'position: fixed; z-index: 99998; pointer-events: none; padding: 4px; background: white; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); border: 1px solid #e5e7eb; transition: opacity 0.15s;';
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width: 300px; max-height: 300px; border-radius: 6px; display: block;';
+    _noteHoverEl.appendChild(img);
+    document.body.appendChild(_noteHoverEl);
+
+    // Position: above or below the thumbnail
+    img.onload = () => {
+        if (!_noteHoverEl) return;
+        const hoverRect = _noteHoverEl.getBoundingClientRect();
+        let top = rect.top - hoverRect.height - 8;
+        if (top < 8) {
+            top = rect.bottom + 8;
+        }
+        let left = rect.left + (rect.width / 2) - (hoverRect.width / 2);
+        left = Math.max(8, Math.min(left, window.innerWidth - hoverRect.width - 8));
+        _noteHoverEl.style.top = top + 'px';
+        _noteHoverEl.style.left = left + 'px';
+    };
+
+    // Initial position (before image loads)
+    _noteHoverEl.style.top = (rect.top - 200) + 'px';
+    _noteHoverEl.style.left = rect.left + 'px';
+}
+
+function hideNoteImageHover() {
+    if (_noteHoverEl) {
+        _noteHoverEl.remove();
+        _noteHoverEl = null;
+    }
+}
+
 function openNoteImagePreview(src) {
+    hideNoteImageHover();
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; display: flex; align-items: center; justify-content: center; cursor: pointer;';
     overlay.onclick = () => overlay.remove();

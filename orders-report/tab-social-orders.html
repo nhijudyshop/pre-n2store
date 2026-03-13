@@ -190,6 +190,7 @@
                             <th data-column="actions">Thao tác</th>
                             <th data-column="stt">STT</th>
                             <th data-column="tag">TAG</th>
+                            <th data-column="note">Ghi chú</th>
                             <th data-column="customer">Khách hàng</th>
                             <th data-column="phone">SĐT</th>
                             <th data-column="chat">Chat</th>
@@ -198,7 +199,6 @@
                             <th data-column="address">Địa chỉ</th>
                             <th data-column="total">Tổng</th>
                             <th data-column="created-date">Ngày tạo</th>
-                            <th data-column="note">Ghi chú</th>
                             <th data-column="invoice-status">Phiếu bán hàng</th>
                             <th data-column="status">Trạng thái</th>
                         </tr>
@@ -546,6 +546,10 @@
                         <span>TAG</span>
                     </label>
                     <label class="column-setting-item">
+                        <input type="checkbox" data-column="note" checked />
+                        <span>Ghi chú</span>
+                    </label>
+                    <label class="column-setting-item">
                         <input type="checkbox" data-column="customer" checked />
                         <span>Khách hàng</span>
                     </label>
@@ -576,10 +580,6 @@
                     <label class="column-setting-item">
                         <input type="checkbox" data-column="created-date" checked />
                         <span>Ngày tạo</span>
-                    </label>
-                    <label class="column-setting-item">
-                        <input type="checkbox" data-column="note" checked />
-                        <span>Ghi chú</span>
                     </label>
                     <label class="column-setting-item">
                         <input type="checkbox" data-column="invoice-status" checked />
