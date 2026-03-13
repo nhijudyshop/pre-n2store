@@ -16,6 +16,10 @@ const TAG_PRESET_COLORS = [
     '#e11d48', '#84cc16', '#06b6d4', '#7c3aed', '#db2777'
 ];
 
+// ===== TAG IMAGE STATE =====
+let pendingNewTagImage = null; // base64 image for new tag being added
+let pendingEditTagImages = {}; // { tagId: base64 } for tags being edited
+
 // ===== INIT =====
 function initTagPanel() {
     // Read pin state from localStorage
@@ -166,11 +170,16 @@ function renderTagPanelCards() {
     // Tag cards
     SocialOrderState.tags.forEach(tag => {
         const count = counts[tag.id] || 0;
+        const hoverAttrs = tag.image
+            ? `onmouseenter="showTagImageHover(this, '${tag.id}')" onmouseleave="hideTagImageHover()"`
+            : '';
         html += `
             <div class="tag-panel-card ${activePanelTagId === tag.id ? 'active' : ''}"
-                 onclick="filterByPanelTag('${tag.id}')">
+                 onclick="filterByPanelTag('${tag.id}')" ${hoverAttrs}>
                 <div class="tag-panel-card-icon" style="background: ${tag.color};">
-                    <i class="fas fa-tag"></i>
+                    ${tag.image
+                        ? `<img src="${tag.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`
+                        : `<i class="fas fa-tag"></i>`}
                 </div>
                 <div class="tag-panel-card-info">
                     <div class="tag-panel-card-name">${tag.name}</div>
@@ -284,6 +293,9 @@ function openTagManageModal() {
 
     const modal = document.getElementById('tagManageModal');
     if (modal) modal.classList.add('show');
+
+    // Init paste listener (once)
+    initTagImagePasteListener();
 }
 
 function closeTagManageModal() {
@@ -308,6 +320,15 @@ function createTagManageModal() {
                     <input type="color" id="newTagColor" value="#8b5cf6" title="Chọn màu">
                     <input type="text" id="newTagName" placeholder="Tên tag mới..."
                            onkeydown="if(event.key==='Enter') addNewTag()">
+                    <div class="tag-image-paste-area" id="newTagImagePaste"
+                         onclick="triggerTagImageUpload('new')"
+                         title="Dán (Ctrl+V) hoặc click để chọn ảnh">
+                        <span class="tag-image-paste-placeholder" id="newTagImagePlaceholder">
+                            <i class="fas fa-image"></i>
+                        </span>
+                    </div>
+                    <input type="file" id="newTagImageFile" accept="image/*" style="display:none"
+                           onchange="handleTagImageFileSelect(event, 'new')">
                     <button onclick="addNewTag()">
                         <i class="fas fa-plus"></i> Thêm
                     </button>
@@ -338,6 +359,8 @@ function renderTagManageList() {
 
     list.innerHTML = SocialOrderState.tags.map(tag => {
         const isEditing = editingTagId === tag.id;
+        const tagImage = tag.image || null;
+        const editImage = pendingEditTagImages[tag.id] !== undefined ? pendingEditTagImages[tag.id] : tagImage;
         return `
             <div class="tag-manage-item" data-tag-id="${tag.id}">
                 <input type="color" class="tag-manage-color" value="${tag.color}"
@@ -349,6 +372,25 @@ function renderTagManageList() {
                         ? `<input type="text" value="${tag.name}" id="editTagName_${tag.id}"
                                   onkeydown="if(event.key==='Enter') saveTagEdit('${tag.id}')">`
                         : tag.name}
+                </div>
+                <div class="tag-manage-image">
+                    ${isEditing
+                        ? `<div class="tag-image-paste-area ${editImage ? 'has-image' : ''}" id="editTagImagePaste_${tag.id}"
+                                onclick="triggerTagImageUpload('${tag.id}')"
+                                title="Dán (Ctrl+V) hoặc click để chọn ảnh">
+                               ${editImage
+                                   ? `<img src="${editImage}" class="tag-image-thumb">
+                                      <button class="tag-image-remove" onclick="event.stopPropagation(); removeTagImage('${tag.id}')" title="Xóa ảnh">&times;</button>`
+                                   : `<span class="tag-image-paste-placeholder"><i class="fas fa-image"></i></span>`}
+                           </div>
+                           <input type="file" id="editTagImageFile_${tag.id}" accept="image/*" style="display:none"
+                                  onchange="handleTagImageFileSelect(event, '${tag.id}')">`
+                        : (tagImage
+                            ? `<img src="${tagImage}" class="tag-image-thumb-small"
+                                    onmouseenter="showTagImageHover(this, '${tag.id}')"
+                                    onmouseleave="hideTagImageHover()">`
+                            : `<span class="tag-no-image"><i class="fas fa-image" style="color:#d1d5db;font-size:12px;"></i></span>`)
+                    }
                 </div>
                 <div class="tag-manage-actions">
                     ${isEditing
@@ -404,6 +446,9 @@ function addNewTag() {
     const id = 'tag_' + name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '_' + Date.now();
 
     const newTag = { id, name, color };
+    if (pendingNewTagImage) {
+        newTag.image = pendingNewTagImage;
+    }
     SocialOrderState.tags.push(newTag);
 
     // Save
@@ -419,6 +464,8 @@ function addNewTag() {
 
     // Clear input
     nameInput.value = '';
+    pendingNewTagImage = null;
+    clearNewTagImagePreview();
 
     showNotification(`Đã thêm tag "${name}"`, 'success');
 }
@@ -438,6 +485,7 @@ function startTagEdit(tagId) {
 }
 
 function cancelTagEdit() {
+    if (editingTagId) delete pendingEditTagImages[editingTagId];
     editingTagId = null;
     renderTagManageList();
 }
@@ -459,6 +507,17 @@ function saveTagEdit(tagId) {
     if (colorInput) tag.color = colorInput.value;
 
     tag.name = newName;
+
+    // Update image if changed during edit
+    if (pendingEditTagImages[tagId] !== undefined) {
+        if (pendingEditTagImages[tagId]) {
+            tag.image = pendingEditTagImages[tagId];
+        } else {
+            delete tag.image;
+        }
+        delete pendingEditTagImages[tagId];
+    }
+
     editingTagId = null;
 
     // Save
@@ -468,7 +527,7 @@ function saveTagEdit(tagId) {
     }
 
     // Also update tags embedded in orders
-    updateTagInOrders(tagId, newName, tag.color);
+    updateTagInOrders(tagId, newName, tag.color, tag.image);
 
     // Update UI
     renderTagManageList();
@@ -524,7 +583,7 @@ function deleteTag(tagId) {
     showNotification(`Đã xóa tag "${tag.name}"`, 'success');
 }
 
-function updateTagInOrders(tagId, newName, newColor) {
+function updateTagInOrders(tagId, newName, newColor, newImage) {
     let changed = false;
     SocialOrderState.orders.forEach(order => {
         if (order.tags) {
@@ -532,6 +591,11 @@ function updateTagInOrders(tagId, newName, newColor) {
             if (tag) {
                 tag.name = newName;
                 tag.color = newColor;
+                if (newImage) {
+                    tag.image = newImage;
+                } else {
+                    delete tag.image;
+                }
                 changed = true;
                 // Fire-and-forget: sync to Firestore
                 if (typeof updateSocialOrderTags === 'function') {
@@ -544,6 +608,220 @@ function updateTagInOrders(tagId, newName, newColor) {
     if (changed) {
         saveSocialOrdersToStorage();
         performTableSearch();
+    }
+}
+
+// ===== TAG IMAGE FUNCTIONS =====
+
+/**
+ * Handle paste event on the tag manage modal for image paste
+ */
+let _tagImagePasteListenerInit = false;
+function initTagImagePasteListener() {
+    if (_tagImagePasteListenerInit) return;
+    const modal = document.getElementById('tagManageModal');
+    if (!modal) return;
+    _tagImagePasteListenerInit = true;
+
+    modal.addEventListener('paste', function(e) {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.startsWith('image/')) {
+                e.preventDefault();
+                const file = items[i].getAsFile();
+                processTagImageFile(file);
+                break;
+            }
+        }
+    });
+}
+
+/**
+ * Determine which tag is being targeted for image paste
+ */
+function processTagImageFile(file) {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+
+        // Compress if too large (> 200KB)
+        compressTagImage(base64, (compressed) => {
+            if (editingTagId) {
+                // Editing existing tag
+                pendingEditTagImages[editingTagId] = compressed;
+                renderTagManageList();
+                // Re-focus the edit input
+                setTimeout(() => {
+                    const input = document.getElementById(`editTagName_${editingTagId}`);
+                    if (input) input.focus();
+                }, 50);
+            } else {
+                // Adding new tag
+                pendingNewTagImage = compressed;
+                updateNewTagImagePreview();
+            }
+        });
+    };
+    reader.readAsDataURL(file);
+}
+
+/**
+ * Compress image to reduce storage size
+ */
+function compressTagImage(base64, callback) {
+    const img = new Image();
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 200;
+        let w = img.width;
+        let h = img.height;
+
+        if (w > MAX_SIZE || h > MAX_SIZE) {
+            if (w > h) {
+                h = Math.round(h * MAX_SIZE / w);
+                w = MAX_SIZE;
+            } else {
+                w = Math.round(w * MAX_SIZE / h);
+                h = MAX_SIZE;
+            }
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = function() {
+        callback(base64); // fallback to original
+    };
+    img.src = base64;
+}
+
+/**
+ * Update the new tag image preview in the add form
+ */
+function updateNewTagImagePreview() {
+    const pasteArea = document.getElementById('newTagImagePaste');
+    if (!pasteArea) return;
+
+    if (pendingNewTagImage) {
+        pasteArea.classList.add('has-image');
+        pasteArea.innerHTML = `
+            <img src="${pendingNewTagImage}" class="tag-image-thumb">
+            <button class="tag-image-remove" onclick="event.stopPropagation(); clearNewTagImage()" title="Xóa ảnh">&times;</button>
+        `;
+    } else {
+        pasteArea.classList.remove('has-image');
+        pasteArea.innerHTML = `<span class="tag-image-paste-placeholder" id="newTagImagePlaceholder"><i class="fas fa-image"></i></span>`;
+    }
+}
+
+function clearNewTagImage() {
+    pendingNewTagImage = null;
+    updateNewTagImagePreview();
+}
+
+function clearNewTagImagePreview() {
+    updateNewTagImagePreview();
+}
+
+/**
+ * Trigger file input for image upload
+ */
+function triggerTagImageUpload(tagId) {
+    const fileInput = tagId === 'new'
+        ? document.getElementById('newTagImageFile')
+        : document.getElementById(`editTagImageFile_${tagId}`);
+    if (fileInput) fileInput.click();
+}
+
+/**
+ * Handle file selection from input
+ */
+function handleTagImageFileSelect(event, tagId) {
+    const file = event.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        compressTagImage(e.target.result, (compressed) => {
+            if (tagId === 'new') {
+                pendingNewTagImage = compressed;
+                updateNewTagImagePreview();
+            } else {
+                pendingEditTagImages[tagId] = compressed;
+                renderTagManageList();
+            }
+        });
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again
+    event.target.value = '';
+}
+
+/**
+ * Remove image from a tag being edited
+ */
+function removeTagImage(tagId) {
+    pendingEditTagImages[tagId] = null; // null means explicitly removed
+    renderTagManageList();
+}
+
+/**
+ * Show tag image hover preview (used in manage list and table)
+ */
+let _tagImageHoverEl = null;
+
+function showTagImageHover(el, tagId) {
+    const tag = SocialOrderState.tags.find(t => t.id === tagId);
+    if (!tag || !tag.image) return;
+
+    hideTagImageHover();
+
+    const rect = el.getBoundingClientRect();
+    _tagImageHoverEl = document.createElement('div');
+    _tagImageHoverEl.className = 'tag-image-hover-popup';
+
+    const img = document.createElement('img');
+    img.src = tag.image;
+    _tagImageHoverEl.appendChild(img);
+
+    // Add tag name label
+    const label = document.createElement('div');
+    label.className = 'tag-image-hover-label';
+    label.style.cssText = 'background:' + tag.color;
+    label.textContent = tag.name;
+    _tagImageHoverEl.appendChild(label);
+
+    document.body.appendChild(_tagImageHoverEl);
+
+    // Position above element
+    img.onload = () => {
+        if (!_tagImageHoverEl) return;
+        const hoverRect = _tagImageHoverEl.getBoundingClientRect();
+        let top = rect.top - hoverRect.height - 8;
+        if (top < 8) top = rect.bottom + 8;
+        let left = rect.left + (rect.width / 2) - (hoverRect.width / 2);
+        left = Math.max(8, Math.min(left, window.innerWidth - hoverRect.width - 8));
+        _tagImageHoverEl.style.top = top + 'px';
+        _tagImageHoverEl.style.left = left + 'px';
+    };
+
+    // Initial position
+    _tagImageHoverEl.style.top = (rect.top - 220) + 'px';
+    _tagImageHoverEl.style.left = rect.left + 'px';
+}
+
+function hideTagImageHover() {
+    if (_tagImageHoverEl) {
+        _tagImageHoverEl.remove();
+        _tagImageHoverEl = null;
     }
 }
 
@@ -563,3 +841,10 @@ window.saveTagEdit = saveTagEdit;
 window.updateTagColor = updateTagColor;
 window.deleteTag = deleteTag;
 window.selectPresetColor = selectPresetColor;
+window.triggerTagImageUpload = triggerTagImageUpload;
+window.handleTagImageFileSelect = handleTagImageFileSelect;
+window.removeTagImage = removeTagImage;
+window.clearNewTagImage = clearNewTagImage;
+window.showTagImageHover = showTagImageHover;
+window.hideTagImageHover = hideTagImageHover;
+window.initTagImagePasteListener = initTagImagePasteListener;
