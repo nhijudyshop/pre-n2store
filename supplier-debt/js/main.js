@@ -332,6 +332,8 @@ const DOM = {
     get btnPrev() { return document.getElementById('btnPrev'); },
     get btnNext() { return document.getElementById('btnNext'); },
     get btnLast() { return document.getElementById('btnLast'); },
+    get btnFilterToggle() { return document.getElementById('btnFilterToggle'); },
+    get filterSection() { return document.getElementById('filterSection'); },
     get btnColumnToggle() { return document.getElementById('btnColumnToggle'); },
     get columnToggleDropdown() { return document.getElementById('columnToggleDropdown'); },
     get dataTable() { return document.getElementById('dataTable'); }
@@ -651,6 +653,10 @@ function applySupplierFilter() {
     } else {
         State.filteredData = [...State.data];
     }
+    // Sort by Code A->Z with numeric sorting (B1, B2, B3... B10, MM...)
+    State.filteredData.sort((a, b) =>
+        (a.Code || '').localeCompare(b.Code || '', 'vi', { numeric: true })
+    );
 }
 
 // =====================================================
@@ -2682,6 +2688,16 @@ async function exportToExcel() {
 // =====================================================
 
 function initEventHandlers() {
+    // Filter toggle button
+    DOM.btnFilterToggle.addEventListener('click', () => {
+        const section = DOM.filterSection;
+        const btn = DOM.btnFilterToggle;
+        const isHidden = section.style.display === 'none';
+        section.style.display = isHidden ? '' : 'none';
+        btn.classList.toggle('active', isHidden);
+        if (isHidden) lucide.createIcons({ nodes: [section] });
+    });
+
     // Search button
     DOM.btnSearch.addEventListener('click', () => {
         State.currentPage = 1;
