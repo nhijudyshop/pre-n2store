@@ -1077,6 +1077,61 @@
     }
 
     // =====================================================
+    // IMAGE ZOOM ON HOVER
+    // =====================================================
+    function initImageZoomHover() {
+        let zoomEl = null;
+
+        function getOrCreateZoom() {
+            if (!zoomEl) {
+                zoomEl = document.createElement('img');
+                zoomEl.className = 'image-zoom-preview';
+                document.body.appendChild(zoomEl);
+            }
+            return zoomEl;
+        }
+
+        const tableBody = $('#productTableBody');
+        if (!tableBody) return;
+
+        tableBody.addEventListener('mouseenter', function(e) {
+            const thumb = e.target.closest('.product-thumb');
+            if (!thumb) return;
+            const zoom = getOrCreateZoom();
+            zoom.src = thumb.src;
+            zoom.classList.add('visible');
+            positionZoom(e, zoom);
+        }, true);
+
+        tableBody.addEventListener('mousemove', function(e) {
+            const thumb = e.target.closest('.product-thumb');
+            if (!thumb || !zoomEl) return;
+            positionZoom(e, zoomEl);
+        }, true);
+
+        tableBody.addEventListener('mouseleave', function(e) {
+            const thumb = e.target.closest('.product-thumb');
+            if (!thumb || !zoomEl) return;
+            zoomEl.classList.remove('visible');
+        }, true);
+
+        function positionZoom(e, el) {
+            const offset = 16;
+            const w = 280, h = 280;
+            let x = e.clientX + offset;
+            let y = e.clientY - h / 2;
+
+            // Keep within viewport
+            if (x + w > window.innerWidth) x = e.clientX - w - offset;
+            if (y < 4) y = 4;
+            if (y + h > window.innerHeight - 4) y = window.innerHeight - h - 4;
+
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+        }
+    }
+
+    // =====================================================
     // INIT
     // =====================================================
     async function init() {
@@ -1087,6 +1142,7 @@
 
         loadColumnVisibility();
         setupEventListeners();
+        initImageZoomHover();
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
