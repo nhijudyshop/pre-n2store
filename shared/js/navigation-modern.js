@@ -138,6 +138,14 @@ const MENU_CONFIG = [
         permissionRequired: "baocaosaleonline",
     },
     {
+        href: "../don-inbox/index.html",
+        icon: "inbox",
+        text: "Đơn Inbox",
+        shortText: "Đơn Inbox",
+        pageIdentifier: "don-inbox",
+        permissionRequired: "don-inbox",
+    },
+    {
         href: "../tpos-pancake/index.html",
         icon: "columns",
         text: "Tpos - Pancake",
