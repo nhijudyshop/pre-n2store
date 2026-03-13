@@ -193,9 +193,12 @@ async function initSocialTab() {
         // Update search result count
         updateSearchResultCount();
 
-        // Setup real-time listener for cross-device sync
+        // Setup real-time listeners for cross-device sync
         if (typeof setupSocialOrdersListener === 'function') {
             setupSocialOrdersListener();
+        }
+        if (typeof setupSocialTagsListener === 'function') {
+            setupSocialTagsListener();
         }
 
         // Load currentUserIdentifier from Firestore (needed for cancel order to save canceller name)

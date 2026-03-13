@@ -13,6 +13,7 @@ const SOCIAL_TAGS_COLLECTION = 'social_tags';
 
 // ===== INTERNAL STATE =====
 let _socialOrdersUnsubscribe = null;
+let _socialTagsUnsubscribe = null;
 let _firestoreAvailable = null; // null = unknown, true/false after check
 
 // ===== FIRESTORE HELPER =====
@@ -75,46 +76,113 @@ async function loadSocialOrdersFromFirebase() {
 
 // ===== LOAD TAGS FROM FIRESTORE =====
 /**
- * Load tags from Firestore. Falls back to localStorage/defaults.
+ * Load tags from Firestore (source of truth).
+ * Recovers orphan tags from orders if missing from the tag list.
+ * Falls back to localStorage only if Firestore is unavailable.
+ * NEVER overwrites Firestore with DEFAULT_TAGS blindly.
  * @returns {Promise<Array>} Array of tags
  */
 async function loadSocialTagsFromFirebase() {
     const db = _getFirestoreDB();
     if (!db) {
+        console.warn('[SocialFirebase] Firestore not available for tags, using localStorage');
         return loadSocialTagsFromStorage();
     }
 
     try {
         const doc = await db.collection(SOCIAL_TAGS_COLLECTION).doc('tags').get();
 
-        if (doc.exists && doc.data().tags) {
-            const tags = doc.data().tags;
+        let tags = [];
+        if (doc.exists && doc.data().tags && doc.data().tags.length > 0) {
+            tags = doc.data().tags;
             console.log('[SocialFirebase] Loaded', tags.length, 'tags from Firestore');
-            SocialOrderState.tags = tags;
-            saveSocialTagsToStorage();
-            return tags;
+        } else {
+            // No tags in Firestore yet. Try localStorage first (may have user-created tags)
+            const localTags = loadSocialTagsFromStorage();
+            // Only use localStorage tags if they are NOT just the defaults
+            // (compare by checking if any non-default tags exist)
+            const defaultIds = new Set(DEFAULT_TAGS.map(t => t.id));
+            const hasCustomTags = localTags.some(t => !defaultIds.has(t.id));
+            if (hasCustomTags || localTags.length > DEFAULT_TAGS.length) {
+                tags = localTags;
+                console.log('[SocialFirebase] Using localStorage tags (has custom tags):', tags.length);
+            } else {
+                tags = DEFAULT_TAGS;
+                console.log('[SocialFirebase] Using default tags');
+            }
+            // Save to Firestore for first time
+            await saveSocialTagsToFirebase(tags);
         }
 
-        // No tags doc yet — use defaults and save them
-        const defaults = loadSocialTagsFromStorage();
-        await saveSocialTagsToFirebase(defaults);
-        return defaults;
+        // Recovery: scan orders for tags not in the tags list
+        tags = recoverOrphanTags(tags);
+
+        SocialOrderState.tags = tags;
+        saveSocialTagsToStorage();
+        return tags;
     } catch (e) {
         console.error('[SocialFirebase] Error loading tags:', e);
+        // On error, use localStorage cache but NEVER save back to Firestore
         return loadSocialTagsFromStorage();
     }
 }
 
+/**
+ * Recover tags that exist on orders but are missing from the tag list.
+ * This prevents data loss when tags get accidentally removed from the list.
+ * @param {Array} currentTags - Current tag list
+ * @returns {Array} Tag list with recovered orphan tags
+ */
+function recoverOrphanTags(currentTags) {
+    const tagIds = new Set(currentTags.map(t => t.id));
+    const orphanTags = [];
+
+    // Scan all orders for tags not in the current list
+    (SocialOrderState.orders || []).forEach(order => {
+        (order.tags || []).forEach(tag => {
+            if (tag.id && !tagIds.has(tag.id)) {
+                tagIds.add(tag.id); // avoid duplicates
+                orphanTags.push({
+                    id: tag.id,
+                    name: tag.name || 'Unknown',
+                    color: tag.color || '#6b7280',
+                    image: tag.image || undefined,
+                    recoveredAt: Date.now()
+                });
+            }
+        });
+    });
+
+    if (orphanTags.length > 0) {
+        console.warn('[SocialFirebase] Recovered', orphanTags.length, 'orphan tags from orders:', orphanTags.map(t => t.name));
+        const merged = [...currentTags, ...orphanTags];
+        // Save recovered tags back to Firestore
+        saveSocialTagsToFirebase(merged);
+        return merged;
+    }
+
+    return currentTags;
+}
+
 // ===== SAVE TAGS TO FIRESTORE =====
+/**
+ * Save tags to Firestore. This is the primary storage.
+ * @param {Array} tags - Tags array to save
+ */
 async function saveSocialTagsToFirebase(tags) {
     const db = _getFirestoreDB();
-    if (!db) return;
+    if (!db) {
+        console.warn('[SocialFirebase] Cannot save tags to Firestore (offline)');
+        return;
+    }
 
+    const tagsToSave = tags || SocialOrderState.tags;
     try {
         await db.collection(SOCIAL_TAGS_COLLECTION).doc('tags').set({
-            tags: tags || SocialOrderState.tags,
+            tags: tagsToSave,
             updatedAt: Date.now()
         });
+        console.log('[SocialFirebase] Saved', tagsToSave.length, 'tags to Firestore');
     } catch (e) {
         console.error('[SocialFirebase] Error saving tags:', e);
     }
@@ -307,14 +375,63 @@ function setupSocialOrdersListener() {
     }
 }
 
+// ===== REAL-TIME LISTENER FOR TAGS =====
 /**
- * Stop the real-time listener
+ * Setup Firestore real-time listener for tags (cross-device sync).
+ * Ensures tags are always up-to-date from Firestore.
+ */
+function setupSocialTagsListener() {
+    const db = _getFirestoreDB();
+    if (!db) return () => {};
+
+    if (_socialTagsUnsubscribe) {
+        console.log('[SocialFirebase] Tags listener already active');
+        return _socialTagsUnsubscribe;
+    }
+
+    try {
+        _socialTagsUnsubscribe = db.collection(SOCIAL_TAGS_COLLECTION).doc('tags')
+            .onSnapshot(doc => {
+                if (doc.exists && doc.data().tags) {
+                    const remoteTags = doc.data().tags;
+                    // Only update if remote has data (never overwrite with empty)
+                    if (remoteTags.length > 0) {
+                        SocialOrderState.tags = remoteTags;
+                        saveSocialTagsToStorage();
+
+                        // Re-render UI if visible
+                        if (typeof populateTagFilter === 'function') populateTagFilter();
+                        if (typeof renderTagPanelCards === 'function') renderTagPanelCards();
+
+                        console.log('[SocialFirebase] Tags real-time update:', remoteTags.length, 'tags');
+                    }
+                }
+            }, error => {
+                console.error('[SocialFirebase] Tags listener error:', error);
+                _socialTagsUnsubscribe = null;
+            });
+
+        console.log('[SocialFirebase] Tags real-time listener active');
+        return _socialTagsUnsubscribe;
+    } catch (e) {
+        console.error('[SocialFirebase] Error setting up tags listener:', e);
+        return () => {};
+    }
+}
+
+/**
+ * Stop the real-time listeners
  */
 function stopSocialOrdersListener() {
     if (_socialOrdersUnsubscribe) {
         _socialOrdersUnsubscribe();
         _socialOrdersUnsubscribe = null;
-        console.log('[SocialFirebase] Listener stopped');
+        console.log('[SocialFirebase] Orders listener stopped');
+    }
+    if (_socialTagsUnsubscribe) {
+        _socialTagsUnsubscribe();
+        _socialTagsUnsubscribe = null;
+        console.log('[SocialFirebase] Tags listener stopped');
     }
 }
 
@@ -355,6 +472,7 @@ window.bulkDeleteSocialOrders = bulkDeleteSocialOrders;
 window.updateSocialOrderTags = updateSocialOrderTags;
 window.getSocialOrderById = getSocialOrderById;
 window.setupSocialOrdersListener = setupSocialOrdersListener;
+window.setupSocialTagsListener = setupSocialTagsListener;
 window.stopSocialOrdersListener = stopSocialOrdersListener;
 window.isFirestoreAvailable = isFirestoreAvailable;
 window.getNextSTT = getNextSTT;
