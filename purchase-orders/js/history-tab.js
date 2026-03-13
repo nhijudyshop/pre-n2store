@@ -154,7 +154,8 @@ window.PurchaseOrderHistory = (function () {
      */
     function toUTCISOString(date) {
         const utc = new Date(date.getTime() - 7 * 60 * 60 * 1000);
-        return utc.toISOString().replace('Z', '+00:00');
+        // Encode special chars: + → %2B, : → %3A (OData URL requires this)
+        return utc.toISOString().replace('Z', '%2B00%3A00').replaceAll(':', '%3A');
     }
 
     /**
