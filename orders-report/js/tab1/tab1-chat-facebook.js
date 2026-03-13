@@ -22,7 +22,7 @@ console.log('[Tab1-Chat-Facebook] Loading...');
  * @returns {Promise<{success: boolean, error?: string, messageId?: string}>}
  */
 async function sendMessageViaFacebookTag(params) {
-    const { pageId, psid, message, imageUrls } = params;
+    const { pageId, psid, message, imageUrls, postId, customerName } = params;
 
     console.log('[FB-TAG-SEND] ========================================');
     console.log('[FB-TAG-SEND] Attempting to send message via Facebook Graph API with POST_PURCHASE_UPDATE tag');
@@ -126,7 +126,9 @@ async function sendMessageViaFacebookTag(params) {
             message: message,
             pageToken: facebookPageToken,
             useTag: true, // Use POST_PURCHASE_UPDATE tag
-            imageUrls: imageUrls || [] // Include image URLs if provided
+            imageUrls: imageUrls || [], // Include image URLs if provided
+            postId: postId || window.purchaseFacebookPostId || null, // For Private Reply fallback
+            customerName: customerName || window.currentCustomerName || null // For comment search
         };
 
         const response = await fetch(facebookSendUrl, {
@@ -231,7 +233,7 @@ window.close24hFallbackModal = function () {
     if (modal) modal.style.display = 'none';
 };
 
-window.sendViaFacebookTagFromModal = async function (encodedMessage, pageId, psid, imageUrls = []) {
+window.sendViaFacebookTagFromModal = async function (encodedMessage, pageId, psid, imageUrls = [], postId = null, customerName = null) {
     window.close24hFallbackModal();
 
     const message = decodeURIComponent(encodedMessage);
@@ -240,7 +242,7 @@ window.sendViaFacebookTagFromModal = async function (encodedMessage, pageId, psi
         window.notificationManager.show('Đang gửi qua Facebook Graph API...', 'info');
     }
 
-    const result = await sendMessageViaFacebookTag({ pageId, psid, message, imageUrls });
+    const result = await sendMessageViaFacebookTag({ pageId, psid, message, imageUrls, postId, customerName });
 
     if (result.success) {
         if (window.notificationManager) {

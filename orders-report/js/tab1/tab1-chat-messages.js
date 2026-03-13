@@ -1138,7 +1138,11 @@ async function sendMessageInternal(messageData) {
                     console.log('[MESSAGE] Extracted image URLs for Facebook Tag:', imageUrls);
                 }
 
-                window.sendViaFacebookTagFromModal(encodeURIComponent(originalMessage), pageId, psid, imageUrls);
+                // Pass postId and customerName for Private Reply fallback
+                const fbPostId = messageData.order?.Facebook_PostId || window.purchaseFacebookPostId || null;
+                const customerName = messageData.order?.PartnerName || window.currentCustomerName || null;
+
+                window.sendViaFacebookTagFromModal(encodeURIComponent(originalMessage), pageId, psid, imageUrls, fbPostId, customerName);
             } else {
                 let message = error.is24HourError
                     ? 'Không thể gửi Inbox (đã quá 24h). Thử gửi qua Facebook Message Tag hoặc dùng COMMENT!'
