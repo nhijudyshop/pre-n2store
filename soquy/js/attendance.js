@@ -14,6 +14,7 @@
         deviceUsers: 'attendance_device_users',
         commands: 'attendance_commands',
         syncStatus: 'attendance_sync_status',
+        fullday: 'attendance_fullday',
     };
 
     const DAY_NAMES = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
@@ -57,26 +58,42 @@
         return hiddenEmployees.has(String(empId));
     }
 
-    // Full-day salary override (skip early leave halving)
-    const FULLDAY_KEY = 'attendance_fullday_overrides';
-    let fullDayOverrides = new Set(JSON.parse(localStorage.getItem(FULLDAY_KEY) || '[]'));
+    // Full-day salary override — lưu trên Firestore
+    let fullDayOverrides = new Set();
 
-    function saveFullDay() {
-        localStorage.setItem(FULLDAY_KEY, JSON.stringify([...fullDayOverrides]));
+    async function loadFullDayOverrides() {
+        try {
+            const snapshot = await db.collection(COLLECTIONS.fullday).get();
+            fullDayOverrides = new Set();
+            snapshot.forEach(doc => fullDayOverrides.add(doc.id));
+            console.log(`[Attendance] Loaded ${fullDayOverrides.size} fullday overrides`);
+        } catch (err) {
+            console.error('[Attendance] Lỗi load fullday:', err);
+        }
     }
 
     function isFullDay(empId, dateKey) {
         return fullDayOverrides.has(`${empId}_${dateKey}`);
     }
 
-    function toggleFullDay(empId, dateKey) {
+    async function toggleFullDay(empId, dateKey) {
         const key = `${empId}_${dateKey}`;
-        if (fullDayOverrides.has(key)) {
-            fullDayOverrides.delete(key);
-        } else {
-            fullDayOverrides.add(key);
+        try {
+            if (fullDayOverrides.has(key)) {
+                fullDayOverrides.delete(key);
+                await db.collection(COLLECTIONS.fullday).doc(key).delete();
+            } else {
+                fullDayOverrides.add(key);
+                await db.collection(COLLECTIONS.fullday).doc(key).set({
+                    empId: String(empId),
+                    dateKey: dateKey,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        } catch (err) {
+            console.error('[Attendance] Lỗi toggle fullday:', err);
+            showNotification('Lỗi lưu Full day: ' + err.message, 'error');
         }
-        saveFullDay();
         renderTimesheet();
         renderSchedule();
     }
@@ -117,7 +134,7 @@
 
         bindEvents();
         injectTestButton();
-        loadEmployees().then(() => {
+        Promise.all([loadEmployees(), loadFullDayOverrides()]).then(() => {
             loadWeekData();
         });
         listenSyncStatus();
