@@ -413,10 +413,11 @@ class RealtimeClient {
 
         this.ws.on('message', (data) => {
             try {
-                const msg = JSON.parse(data);
+                const raw = data.toString();
+                const msg = JSON.parse(raw);
                 this.handleMessage(msg);
             } catch (e) {
-                console.error('[PANCAKE-WS] Parse error:', e);
+                console.error('[PANCAKE-WS] Parse error:', e, 'raw:', data?.toString?.()?.substring(0, 200));
             }
         });
     }
@@ -448,7 +449,9 @@ class RealtimeClient {
             { accessToken: this.token, userId: this.userId, platform: "web" }
         ];
         this.ws.send(JSON.stringify(userJoinMsg));
-        console.log('[PANCAKE-WS] Joining users channel...');
+        console.log(`[PANCAKE-WS] Joining users:${this.userId} channel...`);
+        console.log(`[PANCAKE-WS] Token (first 20 chars): ${this.token?.substring(0, 20)}...`);
+        console.log(`[PANCAKE-WS] Cookie present: ${!!this.cookie}, length: ${this.cookie?.length || 0}`);
 
         // 2. Join Multiple Pages Channel
         const pagesRef = this.makeRef();
@@ -463,7 +466,7 @@ class RealtimeClient {
             }
         ];
         this.ws.send(JSON.stringify(pagesJoinMsg));
-        console.log(`[PANCAKE-WS] Joining multiple_pages channel with ${this.pageIds.length} pages...`);
+        console.log(`[PANCAKE-WS] Joining multiple_pages:${this.userId} with ${this.pageIds.length} pages: [${this.pageIds.join(', ')}]`);
 
         // 3. Get Online Status
         setTimeout(() => {
@@ -478,6 +481,23 @@ class RealtimeClient {
 
     handleMessage(msg) {
         const [joinRef, ref, topic, event, payload] = msg;
+
+        // Debug: log ALL messages from Pancake (để thấy phx_reply, heartbeat, errors)
+        if (event === 'phx_reply') {
+            const status = payload?.status || 'unknown';
+            const resp = payload?.response;
+            console.log(`[PANCAKE-WS] 📋 phx_reply [${topic}] status=${status}`, resp ? JSON.stringify(resp).substring(0, 200) : '');
+            if (status === 'error') {
+                console.error(`[PANCAKE-WS] ❌ Channel join FAILED: ${topic}`, JSON.stringify(resp));
+            }
+        } else if (event === 'phx_error') {
+            console.error(`[PANCAKE-WS] ❌ phx_error [${topic}]`, JSON.stringify(payload).substring(0, 300));
+        } else if (event === 'phx_close') {
+            console.warn(`[PANCAKE-WS] ⚠️ phx_close [${topic}]`);
+        } else if (event !== 'pages:update_conversation' && event !== 'order:tags_updated') {
+            // Log mọi event khác để debug
+            console.log(`[PANCAKE-WS] 📨 Event: ${event} [${topic}]`, JSON.stringify(payload).substring(0, 300));
+        }
 
         if (event === 'pages:update_conversation') {
             const conversation = payload.conversation;
@@ -588,10 +608,17 @@ class RealtimeClient {
     getStatus() {
         return {
             connected: this.isConnected,
+            wsReadyState: this.ws?.readyState ?? 'no_ws', // 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED
             hasToken: !!this.token,
+            tokenFirst20: this.token?.substring(0, 20) || null,
             userId: this.userId,
+            pageIds: this.pageIds || [],
             pageCount: this.pageIds?.length || 0,
-            reconnectAttempts: this.reconnectAttempts
+            hasCookie: !!this.cookie,
+            cookieLength: this.cookie?.length || 0,
+            reconnectAttempts: this.reconnectAttempts,
+            heartbeatActive: !!this.heartbeatInterval,
+            refCounter: this.refCounter,
         };
     }
 }
@@ -1118,6 +1145,19 @@ app.post('/api/realtime/stop', async (req, res) => {
 
 app.get('/api/realtime/status', (req, res) => {
     res.json(realtimeClient.getStatus());
+});
+
+// Debug: force reconnect to test
+app.post('/api/realtime/reconnect', async (req, res) => {
+    console.log('[PANCAKE-WS] 🔄 Force reconnect requested');
+    if (realtimeClient.ws) {
+        realtimeClient.ws.close();
+        realtimeClient.ws = null;
+    }
+    realtimeClient.isConnected = false;
+    realtimeClient.reconnectAttempts = 0;
+    realtimeClient.connect();
+    res.json({ success: true, message: 'Force reconnect initiated' });
 });
 
 // ===== TPOS REALTIME =====
