@@ -16,6 +16,8 @@ window.PurchaseOrderHistory = (function () {
     let currentData = [];
     // Track expanded rows: { orderId: orderLinesData[] }
     const expandedRows = {};
+    // Track done rows: Set of orderId
+    const doneRows = new Set();
 
     // DOM containers (set during init)
     let tableContainer = null;
@@ -244,9 +246,14 @@ window.PurchaseOrderHistory = (function () {
             const dateFormatted = formatDate(item.DateInvoice);
             const dateParts = dateFormatted.split('\n');
             const isExpanded = !!expandedRows[item.Id];
+            const isDone = doneRows.has(item.Id);
             return `
-                <tr class="order-row ${idx === 0 ? 'order-row--first' : ''} ${isExpanded ? 'order-row--expanded' : ''}"
-                    data-order-id="${item.Id}" style="border-top: ${idx > 0 ? '1px solid var(--color-border-light)' : 'none'}; cursor: pointer;">
+                <tr class="order-row ${idx === 0 ? 'order-row--first' : ''} ${isExpanded ? 'order-row--expanded' : ''} ${isDone ? 'order-row--done' : ''}"
+                    data-order-id="${item.Id}" style="border-top: ${idx > 0 ? '1px solid var(--color-border-light)' : 'none'}; cursor: pointer; position: relative;">
+                    <td style="width: 36px; text-align: center;" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="history-done-cb" data-id="${item.Id}" ${isDone ? 'checked' : ''}
+                               style="width: 16px; height: 16px; cursor: pointer; accent-color: #22c55e;">
+                    </td>
                     <td>
                         <div class="cell-supplier">
                             <span class="supplier-name">${escapeHtml(item.PartnerDisplayName || '')}</span>
@@ -265,7 +272,7 @@ window.PurchaseOrderHistory = (function () {
                     <td><span style="font-size: 13px;">${escapeHtml(item.CompanyName || '')}</span></td>
                 </tr>
                 <tr class="expand-row" id="expand-${item.Id}" style="display: ${isExpanded ? 'table-row' : 'none'};">
-                    <td colspan="7" style="padding: 0; background: #f8fafc;">
+                    <td colspan="8" style="padding: 0; background: #f8fafc;">
                         <div class="expand-content" id="expand-content-${item.Id}">
                             ${isExpanded ? renderExpandedContent(item.Id, item) : ''}
                         </div>
@@ -279,6 +286,7 @@ window.PurchaseOrderHistory = (function () {
                 <table class="po-table">
                     <thead>
                         <tr>
+                            <th style="width: 36px;"></th>
                             <th>Nhà cung cấp</th>
                             <th style="width: 120px;">Ngày đơn hàng</th>
                             <th>Số</th>
@@ -302,6 +310,21 @@ window.PurchaseOrderHistory = (function () {
             row.addEventListener('click', () => {
                 const orderId = parseInt(row.dataset.orderId, 10);
                 toggleExpandRow(orderId);
+            });
+        });
+
+        // Bind checkbox for Done watermark
+        tableContainer.querySelectorAll('.history-done-cb').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const id = parseInt(cb.dataset.id, 10);
+                const row = tableContainer.querySelector(`tr.order-row[data-order-id="${id}"]`);
+                if (cb.checked) {
+                    doneRows.add(id);
+                    row?.classList.add('order-row--done');
+                } else {
+                    doneRows.delete(id);
+                    row?.classList.remove('order-row--done');
+                }
             });
         });
     }
