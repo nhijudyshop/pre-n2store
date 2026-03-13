@@ -300,24 +300,33 @@ class PurchaseOrderController {
         this.ui.renderSummaryCardsSkeleton(this.elements.summaryContainer);
         this.tableRenderer.renderSkeleton();
 
-        // Set default tab
-        this.currentTab = this.config.OrderStatus.DRAFT;
+        // Restore tab from URL hash, default to DRAFT
+        const hash = window.location.hash.replace('#', '');
+        const validTabs = [...Object.values(this.config.OrderStatus), 'HISTORY'];
+        this.currentTab = validTabs.includes(hash) ? hash : this.config.OrderStatus.DRAFT;
 
-        // Load data in parallel
+        // Load stats & counts (always needed for summary cards + tab badges)
         await Promise.all([
             this.dataManager.loadStats(),
-            this.dataManager.loadStatusCounts(),
-            this.dataManager.loadOrders(this.currentTab, true)
+            this.dataManager.loadStatusCounts()
         ]);
 
-        // Render filter bar
-        this.ui.renderFilterBar(this.dataManager.filters, this.elements.filterContainer, {
-            onDateChange: (start, end) => this.dataManager.setDateRange(start, end),
-            onQuickFilter: (filter) => this.dataManager.setQuickFilter(filter),
-            onSearch: (term) => this.dataManager.setSearchTerm(term),
-            onStatusFilter: (status) => this.dataManager.setStatusFilter(status),
-            onClear: () => this.dataManager.clearFilters()
-        });
+        if (this.currentTab === 'HISTORY') {
+            // History tab: init TPOS module
+            if (window.PurchaseOrderHistory) {
+                window.PurchaseOrderHistory.init();
+            }
+        } else {
+            // Firestore tabs: load orders + filter bar
+            await this.dataManager.loadOrders(this.currentTab, true);
+            this.ui.renderFilterBar(this.dataManager.filters, this.elements.filterContainer, {
+                onDateChange: (start, end) => this.dataManager.setDateRange(start, end),
+                onQuickFilter: (filter) => this.dataManager.setQuickFilter(filter),
+                onSearch: (term) => this.dataManager.setSearchTerm(term),
+                onStatusFilter: (status) => this.dataManager.setStatusFilter(status),
+                onClear: () => this.dataManager.clearFilters()
+            });
+        }
     }
 
     // ========================================
@@ -431,6 +440,8 @@ class PurchaseOrderController {
         }
 
         this.currentTab = status;
+        // Save to URL hash for refresh persistence
+        window.location.hash = status;
         this.ui.updateActiveTab(status, this.elements.tabsContainer);
 
         if (status === 'HISTORY') {
