@@ -85,8 +85,8 @@ export async function handleFacebookSend(request, url) {
         console.log('[FACEBOOK-SEND] Graph API URL:', graphApiUrl);
         if (postId) console.log('[FACEBOOK-SEND] Post ID for Private Reply fallback:', postId);
 
-        // Tag priority: HUMAN_AGENT → CUSTOMER_FEEDBACK
-        const TAG_SEQUENCE = ['HUMAN_AGENT', 'CUSTOMER_FEEDBACK'];
+        // Tag priority: HUMAN_AGENT (7-day window) → POST_PURCHASE_UPDATE (order updates)
+        const TAG_SEQUENCE = ['HUMAN_AGENT', 'POST_PURCHASE_UPDATE'];
 
         const messageIds = [];
         let lastResult = null;

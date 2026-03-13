@@ -811,6 +811,30 @@ async function sendMessageInternal(messageData) {
             console.log('[MESSAGE] Building REPLY_INBOX payload');
         }
 
+        // Step 2.5: Pre-check 24h window for reply_inbox (skip unnecessary Pancake API call)
+        if (messageReplyType === 'reply_inbox' && window.pancakeDataManager?.check24HourWindow) {
+            try {
+                const check24h = await window.pancakeDataManager.check24HourWindow(channelId, actualConversationId, customerId);
+                if (!check24h.canSend) {
+                    console.warn(`[MESSAGE] 24h pre-check: EXPIRED (${check24h.hoursSinceLastMessage?.toFixed(1)}h) - skipping Pancake API, going to fallback`);
+                    if (window.notificationManager) {
+                        window.notificationManager.show(
+                            `Đã quá 24h (${check24h.hoursSinceLastMessage?.toFixed(0)}h). Đang thử gửi qua Facebook...`,
+                            'warning', 5000
+                        );
+                    }
+                    const error24h = new Error('24H_POLICY_ERROR');
+                    error24h.is24HourError = true;
+                    error24h.originalMessage = check24h.reason || `${check24h.hoursSinceLastMessage?.toFixed(1)}h since last customer message`;
+                    throw error24h;
+                }
+                console.log(`[MESSAGE] 24h pre-check: OK (${check24h.hoursSinceLastMessage?.toFixed(1)}h)`);
+            } catch (checkError) {
+                if (checkError.is24HourError) throw checkError;
+                console.warn('[MESSAGE] 24h pre-check failed, proceeding with send:', checkError.message);
+            }
+        }
+
         // Step 3: Send message
         let replyUrl;
         let requestOptions;
@@ -892,19 +916,27 @@ async function sendMessageInternal(messageData) {
             if (!replyData.success) {
                 console.error('[MESSAGE] API Error:', replyData);
 
+                const errorMsg = replyData.message || replyData.error || '';
                 const is24HourError = (replyData.e_code === 10 && replyData.e_subcode === 2018278) ||
-                    (replyData.message && replyData.message.includes('khoảng thời gian cho phép'));
+                    errorMsg.includes('khoảng thời gian cho phép') ||
+                    errorMsg.includes('outside of allowed window') ||
+                    errorMsg.includes('outside the allowed window') ||
+                    errorMsg.includes('Cannot message users who are not admins') ||
+                    errorMsg.includes('24 hour') ||
+                    errorMsg.includes('24h') ||
+                    (replyData.e_code === 10 && errorMsg.toLowerCase().includes('policy'));
 
                 if (is24HourError) {
-                    console.warn('[MESSAGE] 24-hour policy violation detected');
+                    console.warn('[MESSAGE] 24-hour policy violation detected:', errorMsg);
                     const error24h = new Error('24H_POLICY_ERROR');
                     error24h.is24HourError = true;
-                    error24h.originalMessage = replyData.message;
+                    error24h.originalMessage = errorMsg;
                     throw error24h;
                 }
 
                 const isUserUnavailable = (replyData.e_code === 551) ||
-                    (replyData.message && replyData.message.includes('không có mặt'));
+                    errorMsg.includes('không có mặt') ||
+                    errorMsg.includes('not available');
 
                 if (isUserUnavailable) {
                     console.warn('[MESSAGE] User unavailable (551) error detected');
@@ -927,16 +959,16 @@ async function sendMessageInternal(messageData) {
             apiError = err;
             console.warn('[MESSAGE] API failed:', err.message);
 
-            // Fallback: Private Reply (for error 551 only)
-            if (!apiSuccess && err.isUserUnavailable) {
-                console.log('[MESSAGE] User unavailable (#551), checking for Private Reply context...');
+            // Fallback: Private Reply (for 24h error AND 551 error)
+            if (!apiSuccess && (err.isUserUnavailable || err.is24HourError)) {
+                const errorType = err.is24HourError ? '24h' : '551';
+                console.log(`[MESSAGE] ${errorType} error, checking for Private Reply context...`);
 
                 if (window.notificationManager) {
-                    window.notificationManager.show(
-                        'Lỗi 551: Không thể gửi inbox. Đang thử Private Reply...',
-                        'warning',
-                        5000
-                    );
+                    const msg = err.is24HourError
+                        ? 'Đã quá 24h. Đang thử Private Reply...'
+                        : 'Lỗi 551: Không thể gửi inbox. Đang thử Private Reply...';
+                    window.notificationManager.show(msg, 'warning', 5000);
                 }
 
                 const facebookPostId = order.Facebook_PostId || window.purchaseFacebookPostId;
@@ -945,8 +977,8 @@ async function sendMessageInternal(messageData) {
                 const realFacebookPageToken = window.currentCRMTeam?.Facebook_PageToken;
 
                 if (facebookPostId && facebookCommentId && facebookASUserId && realFacebookPageToken) {
-                    console.log('[MESSAGE] Found comment context, attempting Private Reply fallback...');
-                    showChatSendingIndicator('Khách chưa nhắn tin, đang thử Private Reply...');
+                    console.log(`[MESSAGE] Found comment context, attempting Private Reply fallback (${errorType})...`);
+                    showChatSendingIndicator(err.is24HourError ? 'Quá 24h, đang thử Private Reply...' : 'Khách chưa nhắn tin, đang thử Private Reply...');
 
                     try {
                         const commentIds = facebookCommentId.toString().split(',').map(id => id.trim());
@@ -979,7 +1011,7 @@ async function sendMessageInternal(messageData) {
                         if (prResponse.ok) {
                             const prData = await prResponse.json();
                             if (prData.success !== false) {
-                                console.log('[MESSAGE] Private Reply fallback succeeded!');
+                                console.log(`[MESSAGE] Private Reply fallback (${errorType}) succeeded!`);
                                 apiSuccess = true;
                                 apiError = null;
 
@@ -999,15 +1031,8 @@ async function sendMessageInternal(messageData) {
                         console.error('[MESSAGE] Private Reply fallback failed:', prError);
                     }
                 } else {
-                    console.warn('[MESSAGE] Cannot try Private Reply: Missing context');
-
-                    if (window.notificationManager) {
-                        window.notificationManager.show(
-                            'Lỗi 551: Không thể gửi inbox! Hãy dùng COMMENT để trả lời khách!',
-                            'error',
-                            8000
-                        );
-                    }
+                    console.warn(`[MESSAGE] Cannot try Private Reply (${errorType}): Missing context -`,
+                        { postId: !!facebookPostId, commentId: !!facebookCommentId, asUserId: !!facebookASUserId, pageToken: !!realFacebookPageToken });
                 }
             }
         }
@@ -1126,10 +1151,59 @@ async function sendMessageInternal(messageData) {
                 console.log('[MESSAGE] Using currentChatPSID as last fallback:', psid);
             }
 
-            // Auto-send via Facebook Tag for 24h error or 551 error
-            if ((error.is24HourError || error.isUserUnavailable) && originalMessage && pageId && psid) {
-                const errorType = error.is24HourError ? '24h error' : '551 (user unavailable)';
-                console.log(`[MESSAGE] Auto-sending via Facebook Tag for ${errorType}`);
+            // Step A: Try client-side Private Reply first (fast, no PSID needed)
+            const order = messageData.order || {};
+            const fbPostId = order.Facebook_PostId || window.purchaseFacebookPostId;
+            const fbCommentId = order.Facebook_CommentId || window.purchaseCommentId;
+            const realPageToken = window.currentCRMTeam?.Facebook_PageToken;
+
+            if (fbPostId && fbCommentId && realPageToken && originalMessage) {
+                console.log(`[MESSAGE] Trying client-side Private Reply first (${errorType})...`);
+                try {
+                    const commentIds = fbCommentId.toString().split(',').map(id => id.trim());
+                    const prUrl = window.API_CONFIG.buildUrl.facebookSend();
+                    const prPayload = {
+                        pageId: pageId,
+                        recipient: { comment_id: commentIds[0] },
+                        message: { text: originalMessage },
+                        pageToken: realPageToken
+                    };
+
+                    const prResp = await API_CONFIG.smartFetch(prUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify(prPayload)
+                    }, 1, true);
+
+                    if (prResp.ok) {
+                        const prData = await prResp.json();
+                        if (prData.success !== false) {
+                            console.log(`[MESSAGE] Client-side Private Reply succeeded (${errorType})!`);
+                            if (window.notificationManager) {
+                                window.notificationManager.show('Đã gửi tin nhắn (Private Reply) thành công!', 'success');
+                            }
+                            // Optimistic UI update
+                            const now = new Date().toISOString();
+                            window.allChatMessages.push({
+                                Id: `pr_${Date.now()}`, id: `pr_${Date.now()}`,
+                                Message: originalMessage + '\n\n[Private Reply]',
+                                CreatedTime: now, IsOwner: true, is_temp: true
+                            });
+                            renderChatMessages(window.allChatMessages, true);
+                            autoMarkAsRead(0);
+                            return; // Success - done!
+                        }
+                    }
+                    console.warn('[MESSAGE] Client-side Private Reply failed, falling through to Facebook Tag...');
+                } catch (prErr) {
+                    console.warn('[MESSAGE] Client-side Private Reply error:', prErr.message);
+                }
+            }
+
+            // Step B: Fall back to Facebook Tag (worker-side with HUMAN_AGENT, CUSTOMER_FEEDBACK, then worker Private Reply)
+            if (originalMessage && pageId && psid) {
+                const errorDesc = error.is24HourError ? '24h error' : '551 (user unavailable)';
+                console.log(`[MESSAGE] Auto-sending via Facebook Tag for ${errorDesc}`);
 
                 const imageUrls = [];
                 if (messageData.uploadedImagesData && messageData.uploadedImagesData.length > 0) {
@@ -1148,15 +1222,12 @@ async function sendMessageInternal(messageData) {
                     console.log('[MESSAGE] Extracted image URLs for Facebook Tag:', imageUrls);
                 }
 
-                // Pass postId and customerName for Private Reply fallback
-                const fbPostId = messageData.order?.Facebook_PostId || window.purchaseFacebookPostId || null;
-                const customerName = messageData.order?.PartnerName || window.currentCustomerName || null;
-
-                window.sendViaFacebookTagFromModal(encodeURIComponent(originalMessage), pageId, psid, imageUrls, fbPostId, customerName);
+                const customerName = order.PartnerName || window.currentCustomerName || null;
+                window.sendViaFacebookTagFromModal(encodeURIComponent(originalMessage), pageId, psid, imageUrls, fbPostId || null, customerName);
             } else {
                 let message = error.is24HourError
-                    ? 'Không thể gửi Inbox (đã quá 24h). Thử gửi qua Facebook Message Tag hoặc dùng COMMENT!'
-                    : 'Không thể gửi Inbox (người dùng không có mặt). Đang thử gửi qua Facebook...';
+                    ? 'Không thể gửi Inbox (đã quá 24h). Hãy dùng COMMENT để trả lời khách!'
+                    : 'Không thể gửi Inbox (người dùng không có mặt). Hãy dùng COMMENT để trả lời khách!';
 
                 if (window.notificationManager) {
                     window.notificationManager.show(message, 'warning', 8000);

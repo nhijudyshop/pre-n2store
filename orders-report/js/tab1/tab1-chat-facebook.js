@@ -1,6 +1,6 @@
 // =====================================================
 // tab1-chat-facebook.js - Facebook Graph API Integration
-// Send message via Facebook Tag (POST_PURCHASE_UPDATE),
+// Send message via Facebook Tag (HUMAN_AGENT / POST_PURCHASE_UPDATE),
 // 24h policy fallback UI, switchToCommentMode
 // =====================================================
 // Dependencies: tab1-chat-core.js (state globals), tab1-chat-messages.js (renderChatMessages)
@@ -12,7 +12,7 @@
 console.log('[Tab1-Chat-Facebook] Loading...');
 
 /**
- * Send message via Facebook Graph API with POST_PURCHASE_UPDATE message tag
+ * Send message via Facebook Graph API with HUMAN_AGENT / POST_PURCHASE_UPDATE message tag
  * Used to bypass 24h policy when normal Pancake API fails
  * @param {object} params - Message parameters
  * @param {string} params.pageId - Facebook Page ID
@@ -25,7 +25,7 @@ async function sendMessageViaFacebookTag(params) {
     const { pageId, psid, message, imageUrls, postId, customerName } = params;
 
     console.log('[FB-TAG-SEND] ========================================');
-    console.log('[FB-TAG-SEND] Attempting to send message via Facebook Graph API with POST_PURCHASE_UPDATE tag');
+    console.log('[FB-TAG-SEND] Attempting to send message via Facebook Graph API with HUMAN_AGENT / POST_PURCHASE_UPDATE tag');
     console.log('[FB-TAG-SEND] Page ID:', pageId, 'PSID:', psid);
 
     try {
@@ -125,7 +125,7 @@ async function sendMessageViaFacebookTag(params) {
             psid: psid,
             message: message,
             pageToken: facebookPageToken,
-            useTag: true, // Use POST_PURCHASE_UPDATE tag
+            useTag: true, // Use HUMAN_AGENT / POST_PURCHASE_UPDATE tag
             imageUrls: imageUrls || [], // Include image URLs if provided
             postId: postId || window.purchaseFacebookPostId || null, // For Private Reply fallback
             customerName: customerName || window.currentCustomerName || null // For comment search
@@ -197,7 +197,7 @@ window.show24hFallbackPrompt = function (messageText, pageId, psid) {
                 <button onclick="window.sendViaFacebookTagFromModal('${encodeURIComponent(messageText)}', '${pageId}', '${psid}')"
                     style="padding: 12px 16px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="fab fa-facebook"></i>
-                    Gửi với Message Tag (POST_PURCHASE_UPDATE)
+                    Gửi với Message Tag (HUMAN_AGENT / POST_PURCHASE_UPDATE)
                 </button>
                 <p style="font-size: 12px; color: #9ca3af; margin: 0; padding: 0 8px;">
                     Chỉ dùng cho thông báo liên quan đơn hàng (xác nhận, vận chuyển, yêu cầu hành động)
