@@ -55,9 +55,15 @@ function renderTableRow(order, index) {
     if (order.tags && order.tags.length > 0) {
         tagsHtml = order.tags
             .map(
-                (tag) => `
-            <span class="order-tag" style="background: ${tag.color};">${tag.name}</span>
-        `
+                (tag) => {
+                    // Look up the full tag from state to get image
+                    const fullTag = SocialOrderState.tags.find(t => t.id === tag.id);
+                    const hasImage = fullTag?.image || tag.image;
+                    const hoverAttrs = hasImage
+                        ? `onmouseenter="showTagImageHover(this, '${tag.id}')" onmouseleave="hideTagImageHover()"`
+                        : '';
+                    return `<span class="order-tag ${hasImage ? 'has-image' : ''}" style="background: ${tag.color};" ${hoverAttrs}>${tag.name}</span>`;
+                }
             )
             .join(' ');
     }
