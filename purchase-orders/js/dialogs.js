@@ -328,13 +328,22 @@ class VariantGeneratorDialog {
      */
     async loadCSVData() {
         try {
-            const repoBase = window.location.pathname.match(/\/n2store\//)?.[0] ?
-                window.location.pathname.substring(0, window.location.pathname.indexOf('/n2store/') + '/n2store/'.length) : '/';
-            const basePath = `${repoBase}purchase-orders/`;
+            // Determine base path from current page location
+            // The page is at .../purchase-orders/index.html, CSVs are in the same directory
+            const pathParts = window.location.pathname.split('/');
+            // Remove the filename (e.g., index.html) to get the directory
+            pathParts.pop();
+            const basePath = pathParts.join('/') + '/';
 
             const [attrsText, valsText] = await Promise.all([
-                fetch(`${basePath}product_attributes_rows.csv`).then(r => r.text()),
-                fetch(`${basePath}product_attribute_values_rows.csv`).then(r => r.text())
+                fetch(`${basePath}product_attributes_rows.csv`).then(r => {
+                    if (!r.ok) throw new Error(`Failed to fetch attributes: ${r.status}`);
+                    return r.text();
+                }),
+                fetch(`${basePath}product_attribute_values_rows.csv`).then(r => {
+                    if (!r.ok) throw new Error(`Failed to fetch attribute values: ${r.status}`);
+                    return r.text();
+                })
             ]);
 
             const attrsRows = this.parseCSV(attrsText);
