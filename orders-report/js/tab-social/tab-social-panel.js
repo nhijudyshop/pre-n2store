@@ -19,6 +19,7 @@ const TAG_PRESET_COLORS = [
 // ===== TAG IMAGE STATE =====
 let pendingNewTagImage = null; // base64 image for new tag being added
 let pendingEditTagImages = {}; // { tagId: base64 } for tags being edited
+let hoveredImageTagId = null; // tag ID whose image area mouse is hovering over
 
 // ===== INIT =====
 function initTagPanel() {
@@ -385,11 +386,18 @@ function renderTagManageList() {
                            </div>
                            <input type="file" id="editTagImageFile_${tag.id}" accept="image/*" style="display:none"
                                   onchange="handleTagImageFileSelect(event, '${tag.id}')">`
-                        : (tagImage
-                            ? `<img src="${tagImage}" class="tag-image-thumb-small"
-                                    onmouseenter="showTagImageHover(this, '${tag.id}')"
-                                    onmouseleave="hideTagImageHover()">`
-                            : `<span class="tag-no-image"><i class="fas fa-image" style="color:#d1d5db;font-size:12px;"></i></span>`)
+                        : `<div class="tag-image-paste-area ${tagImage ? 'has-image' : ''}"
+                                onmouseenter="setHoveredImageTag('${tag.id}')"
+                                onmouseleave="setHoveredImageTag(null)"
+                                onclick="triggerTagImageUpload('${tag.id}')"
+                                title="Dán (Ctrl+V) hoặc click để chọn ảnh">
+                               ${tagImage
+                                   ? `<img src="${tagImage}" class="tag-image-thumb">
+                                      <button class="tag-image-remove" onclick="event.stopPropagation(); directRemoveTagImage('${tag.id}')" title="Xóa ảnh">&times;</button>`
+                                   : `<span class="tag-image-paste-placeholder"><i class="fas fa-image"></i></span>`}
+                           </div>
+                           <input type="file" id="editTagImageFile_${tag.id}" accept="image/*" style="display:none"
+                                  onchange="handleTagImageFileSelect(event, '${tag.id}')">`
                     }
                 </div>
                 <div class="tag-manage-actions">
@@ -639,7 +647,8 @@ function initTagImagePasteListener() {
 }
 
 /**
- * Determine which tag is being targeted for image paste
+ * Determine which tag is being targeted for image paste.
+ * Priority: hoveredImageTagId > editingTagId > new tag form
  */
 function processTagImageFile(file) {
     if (!file) return;
@@ -648,13 +657,14 @@ function processTagImageFile(file) {
     reader.onload = function(e) {
         const base64 = e.target.result;
 
-        // Compress if too large (> 200KB)
         compressTagImage(base64, (compressed) => {
-            if (editingTagId) {
-                // Editing existing tag
+            if (hoveredImageTagId) {
+                // Mouse is hovering over a tag's image area - directly save
+                directSaveTagImage(hoveredImageTagId, compressed);
+            } else if (editingTagId) {
+                // Tag is in edit mode
                 pendingEditTagImages[editingTagId] = compressed;
                 renderTagManageList();
-                // Re-focus the edit input
                 setTimeout(() => {
                     const input = document.getElementById(`editTagName_${editingTagId}`);
                     if (input) input.focus();
@@ -753,9 +763,13 @@ function handleTagImageFileSelect(event, tagId) {
             if (tagId === 'new') {
                 pendingNewTagImage = compressed;
                 updateNewTagImagePreview();
-            } else {
+            } else if (editingTagId === tagId) {
+                // Tag is in edit mode - store as pending
                 pendingEditTagImages[tagId] = compressed;
                 renderTagManageList();
+            } else {
+                // Tag is NOT in edit mode - save directly
+                directSaveTagImage(tagId, compressed);
             }
         });
     };
@@ -825,6 +839,65 @@ function hideTagImageHover() {
     }
 }
 
+/**
+ * Track which tag's image area the mouse is hovering over.
+ * Used by paste handler to know which tag to assign the image to.
+ */
+function setHoveredImageTag(tagId) {
+    hoveredImageTagId = tagId;
+}
+
+/**
+ * Directly save an image to a tag without entering edit mode.
+ * Used when pasting/uploading while hovering over a tag's image area.
+ */
+function directSaveTagImage(tagId, imageBase64) {
+    const tag = SocialOrderState.tags.find(t => t.id === tagId);
+    if (!tag) return;
+
+    tag.image = imageBase64;
+
+    // Save to storage + Firebase
+    saveSocialTagsToStorage();
+    if (typeof saveSocialTagsToFirebase === 'function') {
+        saveSocialTagsToFirebase(SocialOrderState.tags);
+    }
+
+    // Update tags embedded in orders
+    updateTagInOrders(tagId, tag.name, tag.color, tag.image);
+
+    // Update UI
+    renderTagManageList();
+    if (isTagPanelOpen) renderTagPanelCards();
+
+    showNotification(`Đã cập nhật ảnh cho tag "${tag.name}"`, 'success');
+}
+
+/**
+ * Directly remove an image from a tag without entering edit mode.
+ */
+function directRemoveTagImage(tagId) {
+    const tag = SocialOrderState.tags.find(t => t.id === tagId);
+    if (!tag) return;
+
+    delete tag.image;
+
+    // Save to storage + Firebase
+    saveSocialTagsToStorage();
+    if (typeof saveSocialTagsToFirebase === 'function') {
+        saveSocialTagsToFirebase(SocialOrderState.tags);
+    }
+
+    // Update tags embedded in orders
+    updateTagInOrders(tagId, tag.name, tag.color, undefined);
+
+    // Update UI
+    renderTagManageList();
+    if (isTagPanelOpen) renderTagPanelCards();
+
+    showNotification(`Đã xóa ảnh tag "${tag.name}"`, 'success');
+}
+
 // ===== EXPORTS =====
 window.initTagPanel = initTagPanel;
 window.toggleTagPanel = toggleTagPanel;
@@ -848,3 +921,6 @@ window.clearNewTagImage = clearNewTagImage;
 window.showTagImageHover = showTagImageHover;
 window.hideTagImageHover = hideTagImageHover;
 window.initTagImagePasteListener = initTagImagePasteListener;
+window.setHoveredImageTag = setHoveredImageTag;
+window.directSaveTagImage = directSaveTagImage;
+window.directRemoveTagImage = directRemoveTagImage;
