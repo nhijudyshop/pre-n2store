@@ -133,10 +133,10 @@ const COLUMN_DEFINITIONS = [
     { key: 'address', label: 'Địa chỉ', defaultVisible: false },
     { key: 'amount', label: 'Giá trị', defaultVisible: true },
     { key: 'transferContent', label: 'Nội dung chuyển khoản', defaultVisible: false },
+    { key: 'image', label: 'Hình ảnh', defaultVisible: true },
     { key: 'note', label: 'Ghi chú', defaultVisible: true },
     { key: 'fundType', label: 'Loại sổ quỹ', defaultVisible: false },
-    { key: 'status', label: 'Trạng thái', defaultVisible: false },
-    { key: 'image', label: 'Hình ảnh', defaultVisible: true }
+    { key: 'status', label: 'Trạng thái', defaultVisible: false }
 ];
 
 const PAGE_SIZES = [15, 30, 50, 100];
