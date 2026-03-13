@@ -582,6 +582,7 @@ async function fetchData() {
         params.set('$top', State.pageSize);
         params.set('$skip', (State.currentPage - 1) * State.pageSize);
         params.set('$count', 'true');
+        params.set('$orderby', 'Code asc');
 
         const url = `${CONFIG.API_BASE}/${CONFIG.ENDPOINT}?${params.toString()}`;
 
