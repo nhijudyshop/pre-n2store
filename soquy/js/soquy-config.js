@@ -140,7 +140,7 @@ const COLUMN_DEFINITIONS = [
 ];
 
 const PAGE_SIZES = [15, 30, 50, 100];
-const DEFAULT_PAGE_SIZE = 15;
+const DEFAULT_PAGE_SIZE = 100;
 
 // Time filter options
 const TIME_FILTERS = {
