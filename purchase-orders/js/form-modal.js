@@ -1020,7 +1020,7 @@ class PurchaseOrderFormModal {
     calculateTotals() {
         const totalQuantity = this.formData.items.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
         const totalAmount = this.formData.items.reduce((sum, item) => {
-            const price = this.parsePrice(item.purchasePrice);
+            const price = this.parsePrice(item.sellingPrice);
             const qty = parseInt(item.quantity) || 0;
             return sum + (price * qty);
         }, 0);
@@ -1479,7 +1479,7 @@ class PurchaseOrderFormModal {
         return this.formData.items.map((item, index) => {
             const purchaseVal = parseFloat(String(item.purchasePrice).replace(/[,.]/g, '')) || 0;
             const sellingVal = parseFloat(String(item.sellingPrice).replace(/[,.]/g, '')) || 0;
-            const subtotal = purchaseVal * (parseInt(item.quantity) || 0);
+            const subtotal = sellingVal * (parseInt(item.quantity) || 0);
 
             return `
                 <tr data-item-id="${item.id}">
@@ -2085,8 +2085,8 @@ class PurchaseOrderFormModal {
                     this.updateTotals();
 
                     // Update per-row subtotal (parsePrice handles ×1000)
-                    if (field === 'purchasePrice' || field === 'quantity') {
-                        const price = this.parsePrice(item.purchasePrice);
+                    if (field === 'sellingPrice' || field === 'quantity') {
+                        const price = this.parsePrice(item.sellingPrice);
                         const qty = parseInt(item.quantity) || 0;
                         const subtotalCell = row?.querySelector('.subtotal-cell');
                         if (subtotalCell) subtotalCell.textContent = this.formatNumber(price * qty) + ' đ';
