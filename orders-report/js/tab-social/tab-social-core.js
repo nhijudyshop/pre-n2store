@@ -15,7 +15,7 @@ const SocialOrderState = {
     // Filters
     filters: {
         search: '',
-        status: 'all',
+        status: 'draft',
         source: 'all',
         tag: 'all',
     },
@@ -174,10 +174,8 @@ async function initSocialTab() {
             SocialOrderState.orders = loadSocialOrdersFromStorage();
             SocialOrderState.tags = loadSocialTagsFromStorage();
         }
-        SocialOrderState.filteredOrders = [...SocialOrderState.orders];
-
-        // Render table
-        renderTable();
+        // Apply default filters (status=draft) and render table
+        performTableSearch();
 
         // Initialize column visibility
         if (typeof initializeColumnVisibility === 'function') {
