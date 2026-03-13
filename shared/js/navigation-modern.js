@@ -1912,6 +1912,9 @@ class UnifiedNavigationManager {
                 cursor: pointer; z-index: 1001;
                 transition: all 200ms ease;
             }
+            .sidebar.collapsed ~ .main-content .sidebar-toggle-fixed {
+                display: flex;
+            }
             .sidebar-toggle-fixed:hover {
                 background: var(--primary-dark, #4f46e5);
                 transform: scale(1.05);
