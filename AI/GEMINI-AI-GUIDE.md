@@ -1,6 +1,6 @@
 # 🤖 Google Gemini AI - Hướng Dẫn Sử Dụng
 
-> Tất cả chức năng có thể dùng với 10 API keys hiện có  
+> Tất cả chức năng có thể dùng với 10 API keys hiện có.
 > Cập nhật: 12/2025
 
 ---
